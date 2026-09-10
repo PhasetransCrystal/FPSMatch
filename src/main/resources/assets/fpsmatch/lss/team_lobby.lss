@@ -1,0 +1,22 @@
+// Team roster and player actions for the competitive HUD skin.
+.ready-summary { font-size: 9; text-color: #FF66B77B; text-shadow: false; text-wrap: hide; }
+.team-header-toggle { position: absolute; left: 0; right: 0; top: 0; bottom: 0; height: auto; base-background: group(rect(#FF202B35, 0), border(1, #FF465866)); hover-background: group(rect(#FF2A3844, 0), border(1, #FF718391)); pressed-background: rect(#FF303D49, 0); }
+.team-chevron-icon { position: absolute; left: 8; top: 8; width: 16; height: 16; }
+.team-chevron-icon.team-chevron-expanded { background: sprite(fpsmatch:textures/gui/competitive/chevron-down.png); }
+.team-chevron-icon.team-chevron-collapsed { background: sprite(fpsmatch:textures/gui/competitive/chevron-right.png); }
+.team-header-segment { display: none; }
+.team-header-toggle .__button_text__ { horizontal-align: left; text-color: #FFFFC766; font-size: 12; text-shadow: false; }
+.team-header-label { position: absolute; left: 34; right: 70; top: 11; height: 13; font-size: 10; text-color: #FFE7EDF2; text-shadow: false; text-wrap: hide; }
+.team-header-count { position: absolute; right: 10; top: 11; width: 54; height: 12; font-size: 9; text-color: #FF8B99A6; horizontal-align: right; text-shadow: false; }
+.row-hit { base-background: rect(#FF182128, 0); hover-background: rect(#FF253440, 0); pressed-background: rect(#FF303D49, 0); }
+.team-player-avatar { position: absolute; left: 25; top: 6; width: 20; height: 20; }
+.team-player-signal { position: absolute; left: 9; top: 13; width: 7; height: 7; background: rect(#FF596875, 0); }
+.team-player-signal.online { background: rect(#FF718391, 0); }
+.team-player-signal.ready { background: rect(#FFE6A23C, 0); }
+.team-player-name { position: absolute; left: 55; right: 70; top: 11; height: 13; font-size: 10; text-color: #FFD7DFE7; text-shadow: false; text-wrap: hide; }
+.team-player-name.offline { text-color: #FF596875; }
+.team-player-state { position: absolute; right: 10; top: 11; width: 54; height: 13; font-size: 9; horizontal-align: right; text-color: #FF8B99A6; text-shadow: false; text-wrap: hide; }
+.team-player-state.ready { text-color: #FF66B77B; }
+.detail-name { width: 100%; padding-all: 10; font-size: 16; text-color: #FFE7EDF2; text-wrap: wrap; text-shadow: false; }
+.detail-fact { width: 100%; padding-left: 10; padding-right: 10; padding-top: 5; padding-bottom: 5; font-size: 10; text-color: #FFD7DFE7; text-wrap: wrap; text-shadow: false; line-spacing: 2; }
+.detail-secondary { text-color: #FF8B99A6; }

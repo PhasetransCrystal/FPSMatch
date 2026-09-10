@@ -1,0 +1,20 @@
+// Map browser rules for the competitive HUD skin.
+.icon-btn { padding-all: 0; width: 18; height: 18; }
+.icon-btn .__button_text__ { display: none; }
+.icon-refresh { base-background: sprite(fpsmatch:textures/gui/competitive/rotate-cw.png); hover-background: group(rect(#FF33424F, 0), sprite(fpsmatch:textures/gui/competitive/rotate-cw.png)); pressed-background: group(rect(#FF465866, 0), sprite(fpsmatch:textures/gui/competitive/rotate-cw.png)); }
+.icon-close { base-background: sprite(fpsmatch:textures/gui/competitive/x.png); hover-background: group(rect(#FF513036, 0), sprite(fpsmatch:textures/gui/competitive/x.png)); pressed-background: group(rect(#FF6A3A40, 0), sprite(fpsmatch:textures/gui/competitive/x.png)); }
+.icon-refresh.__disabled__ { base-background: sprite(fpsmatch:textures/gui/competitive/rotate-cw.png); color: #FF64717D; }
+.icon-close.__disabled__ { base-background: sprite(fpsmatch:textures/gui/competitive/x.png); color: #FF64717D; }
+.toast.__error__ { background: group(rect(#FF35252A, 0), border(1, #FFD65C5C)); }
+.room-row-status { position: absolute; right: 9; top: 23; width: 4; height: 3; }
+.room-row-preview { position: absolute; left: 8; top: 6; width: 44; height: 44; }
+.room-row-name { position: absolute; left: 58; right: 66; top: 8; height: 15; font-size: 10; text-color: #FFE7EDF2; text-shadow: false; text-wrap: hide; }
+.room-row-meta { position: absolute; left: 58; right: 66; top: 30; height: 12; font-size: 7; text-color: #FF8B99A6; text-shadow: false; text-wrap: hide; }
+.room-row-players { position: absolute; right: 8; top: 8; width: 54; height: 12; font-size: 9; text-color: #FFD7DFE7; text-shadow: false; }
+.room-row-state { position: absolute; right: 8; top: 31; width: 56; height: 12; font-size: 9; text-shadow: false; text-wrap: hide; }
+.compact .room-row-preview { left: 8; top: 9; width: 38; height: 38; }
+.compact .room-row-name { left: 52; right: 52; }
+.compact .room-row-meta { left: 52; right: 52; }
+.compact .room-row-players { width: 40; }
+.compact .room-row-state { width: 42; }
+.danger-text { text-color: #FFFF7777; }

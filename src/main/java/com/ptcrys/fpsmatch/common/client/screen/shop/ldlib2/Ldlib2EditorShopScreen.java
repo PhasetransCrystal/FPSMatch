@@ -47,6 +47,8 @@ public final class Ldlib2EditorShopScreen extends AbstractContainerScreen<Editor
         );
         modularUI = view.modularUI();
         modularUI.setScreenAndInit(this);
+        // XML element ids are queryable only after the UI is attached to the screen.
+        view.bind();
         ModularMenuUiSupport.attach(modularUI, menu);
         imageWidth = Math.max(1, Math.round(modularUI.getWidth()));
         imageHeight = Math.max(1, Math.round(modularUI.getHeight()));
@@ -56,8 +58,6 @@ public final class Ldlib2EditorShopScreen extends AbstractContainerScreen<Editor
         addRenderableWidget(modularUI.getWidget());
         setFocused(modularUI.getWidget());
         accessibility = new Ldlib2AccessibilityController(modularUI, title);
-        accessibility.registerGroup(view::focusTargets);
-        accessibility.reconcileFocus();
     }
 
     @Override
@@ -97,8 +97,7 @@ public final class Ldlib2EditorShopScreen extends AbstractContainerScreen<Editor
             if (accessibility != null) {
                 accessibility.announce(
                         Component.translatable("gui.fpsm.shop_editor.open.timeout"), true);
-                accessibility.reconcileFocus();
-            }
+                }
         }
     }
 
@@ -117,25 +116,15 @@ public final class Ldlib2EditorShopScreen extends AbstractContainerScreen<Editor
         }
         if (accessibility != null) {
             accessibility.announce(message, true);
-            accessibility.reconcileFocus();
         }
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (accessibility != null && accessibility.keyPressed(keyCode, scanCode, modifiers)) {
-            return true;
-        }
         if (openingSlot && keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
-    }
-
-    @Override
-    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return accessibility != null && accessibility.keyReleased(keyCode, scanCode, modifiers)
-                || super.keyReleased(keyCode, scanCode, modifiers);
     }
 
     @Override
@@ -161,7 +150,6 @@ public final class Ldlib2EditorShopScreen extends AbstractContainerScreen<Editor
         }
         if (accessibility != null) {
             accessibility.clearAnnouncement();
-            accessibility.reconcileFocus();
         }
         slotClicked(menu.slots.get(slotIndex), slotIndex, 0, ClickType.PICKUP);
     }

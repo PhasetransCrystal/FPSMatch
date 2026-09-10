@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- FPSMatch map settings editor — competitive tactical HUD skin.
+     Shell geometry is applied from Java (Ldlib2MapSettingsScreen.applyResponsiveLayout);
+     this file owns structure, visuals and static text. -->
+<ldlib2-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Low-Drag-MC/LDLib2/refs/heads/1.21/ldlib2-ui.xsd">
+    <stylesheet location="fpsmatch:lss/rhodes.lss"/>
+    <style>
+        /* pending-state tones — toggled from Java on #fpsmatch.map_settings.pending */
+        .pending-warning {
+            text-color: #FFE6A23C;
+        }
+        .pending-danger {
+            text-color: #FFFF7777;
+        }
+        /* 9px text on the Java-created dense row buttons */
+        .compact-btn .__button_text__ {
+            font-size: 9;
+        }
+        /* slider track inside setting rows */
+        .settings-slider .__scroller_scroll_container__ {
+            background: sdf(#FF1D2832, 0, 1, #FF465866);
+            padding-all: 0;
+        }
+    </style>
+    <root id="fpsmatch.map_settings.root" class="rhodes-root" style="width: 100%; height: 100%">
+        <element id="fpsmatch.map_settings.tabs" class="lobby-tabs" focusable="false">
+            <fpsm-button id="fpsmatch.map_settings.tab.details" class="lobby-tab" text-key="gui.fpsm.team_manage.tab.details"><element class="tab-icon tab-icon-details" focusable="false"/></fpsm-button>
+            <fpsm-button id="fpsmatch.map_settings.tab.players" class="lobby-tab" text-key="gui.fpsm.team_manage.tab.players"><element class="tab-icon tab-icon-players" focusable="false"/></fpsm-button>
+            <fpsm-button id="fpsmatch.map_settings.tab.settings" class="lobby-tab" text-key="gui.fpsm.team_manage.tab.settings"><element class="tab-icon tab-icon-settings" focusable="false"/></fpsm-button>
+            <fpsm-button id="fpsmatch.map_settings.tab.more" class="lobby-tab" text-key="gui.fpsm.team_manage.tab.more"><element class="tab-icon tab-icon-more" focusable="false"/></fpsm-button>
+        </element>
+            <label id="fpsmatch.map_settings.header" class="title" focusable="false"
+                   style="position: absolute; left: 8; right: 8; top: 8; height: 21"><lang key="gui.fpsm.team_manage.title"/></label>
+            <label id="fpsmatch.map_settings.subtitle" class="identity" focusable="false"/>
+            <label id="fpsmatch.map_settings.pending" class="muted" focusable="false" style="text-wrap: wrap"/>
+            <fpsm-button id="fpsmatch.map_settings.shop" class="btn-secondary" text-key="gui.fpsm.map_settings.shop"/>
+            <fpsm-button id="fpsmatch.map_settings.clear_changes" class="btn-quiet" text-key="gui.fpsm.map_select.settings.clear_changes"/>
+            <fpsm-button id="fpsmatch.map_settings.save" class="btn-primary" text-key="gui.fpsm.map_select.settings.save"/>
+            <fpsm-button id="fpsmatch.map_settings.exit" class="btn-quiet" text-key="gui.back"/>
+        <element id="fpsmatch.map_settings.panel" class="panel" focusable="false">
+            <fpsm-textfield id="fpsmatch.map_settings.search"/>
+            <fpsm-button id="fpsmatch.map_settings.category_filter" class="btn-secondary" text-key="gui.fpsm.map_select.settings.category_filter"/>
+            <label id="fpsmatch.map_settings.empty" class="muted" focusable="false" visible="false"
+                   style="position: absolute; left: 10; right: 10; top: 34; height: 16; text-wrap: wrap"><lang key="gui.fpsm.map_select.settings.empty"/></label>
+            <virtual-scroller-view id="fpsmatch.map_settings.list" class="rhodes-scroller"
+                                   style="virtual-estimated-item-height: 33; virtual-overscan-pixels: 66"/>
+            <element id="fpsmatch.map_settings.category_filter.popup" class="panel-elevated" focusable="false"
+                     visible="false" style="padding-all: 3">
+                <virtual-scroller-view id="fpsmatch.map_settings.category_filter.list" class="rhodes-scroller"
+                                       style="position: absolute; left: 3; right: 3; top: 3; bottom: 26; virtual-estimated-item-height: 23; virtual-overscan-pixels: 46"/>
+                <fpsm-button id="fpsmatch.map_settings.category_filter.clear" class="btn-quiet" active="false"
+                             text-key="gui.fpsm.map_select.settings.category_filter.clear"
+                             style="position: absolute; left: 3; right: 3; bottom: 3; height: 20"/>
+            </element>
+        </element>
+    </root>
+</ldlib2-ui>

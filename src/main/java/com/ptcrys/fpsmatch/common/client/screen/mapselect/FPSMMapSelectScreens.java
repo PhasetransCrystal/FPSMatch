@@ -51,6 +51,10 @@ public final class FPSMMapSelectScreens {
      */
     public static void openSelection(MapSelectionSnapshotS2CPacket packet, @Nullable Screen parent) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (!minecraft.isSameThread()) {
+            minecraft.execute(() -> openSelection(packet, parent));
+            return;
+        }
         if (minecraft.screen instanceof Ldlib2MapSelectionScreen screen) {
             screen.applySnapshot(packet);
             return;
@@ -129,8 +133,8 @@ public final class FPSMMapSelectScreens {
     }
 
     /**
-     * Active detail update: the room browser keeps the selected room in its right-hand preview.
-     * Explicit management/team transitions still open their dedicated child pages.
+     * Active detail update: the room detail and lobby are one unified team-management page.
+     * It owns room context, membership actions, team switching and the live roster.
      */
     public static void openDetail(MapRoomDetailS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -166,25 +170,20 @@ public final class FPSMMapSelectScreens {
         }
 
         if (current instanceof Ldlib2MapSelectionScreen list) {
+            if (!list.acceptsDetail(packet.detail())) return;
             list.applyDetail(packet.detail());
             if (list.consumePendingDetailOpen()) {
-                openChild(new Ldlib2MapDetailScreen(packet.detail(), list));
-                return;
-            }
-            if (list.consumePendingManageOpen()) {
-                openChild(new Ldlib2MapManageScreen(packet.detail(), list));
+                openChild(new Ldlib2TeamManageScreen(packet.detail(), list));
                 return;
             }
             if (list.consumePendingTeamOpen()) {
-                if (!"csdm".equalsIgnoreCase(packet.detail().summary().gameType())) {
-                    openChild(new Ldlib2TeamManageScreen(packet.detail(), list));
-                }
+                openChild(new Ldlib2TeamManageScreen(packet.detail(), list));
                 return;
             }
             return;
         }
 
-        openChild(new Ldlib2MapDetailScreen(packet.detail(), sanitizeParent(current)));
+        openChild(new Ldlib2TeamManageScreen(packet.detail(), sanitizeParent(current)));
     }
 
     /**

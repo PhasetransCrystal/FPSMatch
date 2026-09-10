@@ -90,13 +90,15 @@ public final class Ldlib2AccessibilityController {
 
     public void updateNarrationState(NarrationElementOutput output) {
         Objects.requireNonNull(output, "output");
-        reconcileFocus();
         output.add(NarratedElementType.TITLE, component(title));
-        focusModel.focused().ifPresent(target -> {
-            output.add(NarratedElementType.POSITION, component(target.accessibleName()));
-            addIfPresent(output, NarratedElementType.HINT, target.state());
-            addIfPresent(output, NarratedElementType.USAGE, target.hint());
-        });
+        for (UIElement element = modularUI.getFocusedElement(); element != null; element = element.getParent()) {
+            if (element instanceof FocusTarget target && eligible(target)) {
+                output.add(NarratedElementType.POSITION, component(target.accessibleName()));
+                addIfPresent(output, NarratedElementType.HINT, target.state());
+                addIfPresent(output, NarratedElementType.USAGE, target.hint());
+                break;
+            }
+        }
         if (announcement != null) {
             output.add(announcementIsError
                     ? NarratedElementType.HINT
@@ -134,7 +136,7 @@ public final class Ldlib2AccessibilityController {
         focusModel.setTargets(targets);
         targets.stream()
                 .filter(this::eligible)
-                .filter(target -> target.element().isFocused())
+                .filter(target -> target.element().isFocused() || target.element().isChildFocused())
                 .findFirst()
                 .ifPresent(focusModel::adopt);
     }

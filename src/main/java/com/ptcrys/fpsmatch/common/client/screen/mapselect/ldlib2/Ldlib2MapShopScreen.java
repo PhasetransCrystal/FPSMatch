@@ -1,16 +1,16 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
-import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.UITemplate;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.VirtualScrollerView;
-import com.lowdragmc.lowdraglib2.math.Size;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleButton;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessiblePanel;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2XmlUi;
 import com.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorNavigation;
 import com.ptcrys.fpsmatch.common.packet.mapselect.EditableShopInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
@@ -23,44 +23,39 @@ import org.appliedenergistics.yoga.YogaPositionType;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Accessible, responsive shop picker for opening the server-owned editor menu. */
+/**
+ * Accessible, responsive shop picker for opening the server-owned editor menu.
+ * Layout structure lives in {@code fpsmatch:ldlib2/ui/map_shop.xml}; this class binds data.
+ */
 public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
+    private static final String LAYOUT = "fpsmatch:ldlib2/ui/map_shop.xml";
+    private static final String ROW_LAYOUT = "fpsmatch:ldlib2/ui/rows/shop_row.xml";
     private static final int OPEN_TIMEOUT_TICKS = 200;
 
-    private final Label header;
-    private final Label subtitleLabel;
-    private final UIElement panel;
-    private final VirtualScrollerView<EditableShopInfo> list;
-    private final Label emptyLabel;
-    private final Label statusLabel;
-    private final AccessibleButton backButton;
+    private Label header;
+    private Label subtitleLabel;
+    private UIElement panel;
+    private VirtualScrollerView<EditableShopInfo> list;
+    private Label emptyLabel;
+    private Label statusLabel;
+    private AccessibleButton backButton;
+    private UITemplate rowTemplate;
     private boolean compact;
+    private boolean bound;
     private boolean openingEditor;
     private int openingTicks;
 
     public Ldlib2MapShopScreen(MapRoomDetail detail, Screen parent) {
-        this(build(), detail, parent);
-    }
-
-    private Ldlib2MapShopScreen(Parts parts, MapRoomDetail detail, Screen parent) {
-        super(parts.ui(), Component.translatable("gui.fpsm.map_shop.title"), detail, parent);
-        this.header = parts.header();
-        this.subtitleLabel = parts.subtitle();
-        this.panel = parts.panel();
-        this.list = parts.list();
-        this.emptyLabel = parts.empty();
-        this.statusLabel = parts.status();
-        this.backButton = parts.back();
-        list.setItemUIProvider(this::shopRow);
-        backButton.setOnClick(event -> onClose());
-        registerFocusGroup(this::focusTargets);
-        refreshContent();
+        super(Ldlib2XmlUi.load(LAYOUT),
+                Component.translatable("gui.fpsm.map_shop.title"), detail, parent);
     }
 
     @Override
     public void init() {
         super.init();
+        bind();
         applyResponsiveLayout();
+        refreshContent();
     }
 
     @Override
@@ -79,7 +74,9 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
 
     @Override
     protected void onDetailApplied() {
-        refreshContent();
+        if (bound) {
+            refreshContent();
+        }
     }
 
     public boolean isEditorOpenPending() {
@@ -92,62 +89,102 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
         }
         openingEditor = false;
         openingTicks = 0;
-        statusLabel.setValue(message);
-        FPSMMapSelectTheme.status(statusLabel, FPSMMapSelectTheme.DANGER);
-        FPSMMapSelectTheme.buttonState(backButton,
-                FPSMMapSelectTheme.ButtonKind.QUIET, true);
-        list.refreshVisibleItems();
+        if (statusLabel != null) {
+            statusLabel.setValue(message);
+            statusLabel.textStyle(style -> style.textColor(FPSMMapSelectTheme.DANGER));
+        }
+        setBackEnabled(true);
+        if (list != null) {
+            list.refreshVisibleItems();
+        }
         announce(message, true);
-        accessibility().reconcileFocus();
+    }
+
+    private void bind() {
+        UI ui = modularUI.ui;
+        header = Ldlib2XmlUi.require(ui, "fpsmatch.map_shop.header", Label.class);
+        subtitleLabel = Ldlib2XmlUi.require(ui, "fpsmatch.map_shop.subtitle", Label.class);
+        panel = Ldlib2XmlUi.require(ui, "fpsmatch.map_shop.panel", UIElement.class);
+        emptyLabel = Ldlib2XmlUi.require(ui, "fpsmatch.map_shop.empty", Label.class);
+        statusLabel = Ldlib2XmlUi.require(ui, "fpsmatch.map_shop.status", Label.class);
+        backButton = Ldlib2XmlUi.require(ui, "fpsmatch.map_shop.back", AccessibleButton.class);
+        @SuppressWarnings("unchecked")
+        VirtualScrollerView<EditableShopInfo> shopList =
+                (VirtualScrollerView<EditableShopInfo>) Ldlib2XmlUi.require(
+                        ui, "fpsmatch.map_shop.list", VirtualScrollerView.class);
+        list = shopList;
+        rowTemplate = UITemplate.of(Ldlib2XmlUi.loadUi(ROW_LAYOUT).rootElement);
+        if (list != null) {
+            list.setItemUIProvider(this::shopRow);
+        }
+        if (backButton != null) {
+            backButton.setOnClick(event -> onClose());
+        }
+        bound = true;
     }
 
     private void refreshContent() {
-        subtitleLabel.setValue(Component.literal(
-                detail.summary().gameType() + " / " + detail.summary().mapName()));
-        list.setItems(detail.editableShops());
-        list.refreshVisibleItems();
+        if (!bound) {
+            return;
+        }
+        if (subtitleLabel != null) {
+            subtitleLabel.setValue(Component.literal(
+                    detail.summary().gameType() + " / " + detail.summary().mapName()));
+        }
         boolean empty = detail.editableShops().isEmpty();
-        emptyLabel.setVisible(empty);
-        if (!openingEditor) {
+        if (list != null) {
+            list.setItems(detail.editableShops());
+            list.refreshVisibleItems();
+        }
+        if (emptyLabel != null) {
+            emptyLabel.setVisible(empty);
+        }
+        if (!openingEditor && statusLabel != null) {
             statusLabel.setValue(Component.translatable(empty
                     ? "gui.fpsm.map_shop.unsupported"
                     : "gui.fpsm.map_shop.selection.ready"));
-            FPSMMapSelectTheme.status(statusLabel,
-                    empty ? FPSMMapSelectTheme.MUTED : FPSMMapSelectTheme.SUCCESS);
+            statusLabel.textStyle(style -> style.textColor(
+                    empty ? FPSMMapSelectTheme.MUTED : FPSMMapSelectTheme.SUCCESS));
         }
     }
 
     private UIElement shopRow(EditableShopInfo shop) {
-        AccessiblePanel row = new AccessiblePanel();
-        row.setId(rowId(shop));
-        row.setAccessibleName(Component.literal(shop.displayName()));
-        row.setAccessibleState(() -> Component.literal(shop.teamName()));
-        row.setAccessibleHint(() -> Component.translatable("gui.fpsm.map_shop.edit.hint"));
-        row.setOnActivate(() -> openEditor(shop));
-        row.setActive(!openingEditor);
+        UIElement row = rowTemplate.copy().createUI().rootElement;
+        String id = rowId(shop);
+        row.setId(id + ".root");
         row.layout(layout -> layout.widthPercent(100).height(compact ? 50 : 40));
-        FPSMMapSelectTheme.elevated(row);
 
-        Label name = label(row.getId() + ".name", Component.literal(shop.displayName()));
-        FPSMMapSelectTheme.body(name);
-        name.textStyle(style -> style.fontSize(11));
-        Label team = label(row.getId() + ".team", Component.literal(shop.teamName()));
-        FPSMMapSelectTheme.status(team, FPSMMapSelectTheme.SUCCESS);
-        team.textStyle(style -> style.fontSize(9));
-        Label action = label(row.getId() + ".action",
-                Component.translatable("gui.fpsm.map_shop.edit"));
-        FPSMMapSelectTheme.status(action, FPSMMapSelectTheme.ACCENT);
-        action.textStyle(style -> style.fontSize(10));
-        if (compact) {
-            inset(name, 9, 76, 7, 14);
-            inset(team, 9, 76, 27, 12);
-            right(action, 9, 18, 60, 14);
-        } else {
-            inset(name, 12, 214, 12, 14);
-            right(team, 106, 13, 96, 14);
-            right(action, 12, 12, 78, 14);
+        AccessiblePanel entry = row.selectId("row", AccessiblePanel.class).findFirst().orElse(null);
+        if (entry == null) {
+            FPSMatch.LOGGER.error("[FPSM UI] shop row fragment is missing #row panel");
+            return row;
         }
-        row.addChildren(name, team, action);
+        entry.setId(id);
+        entry.setAccessibleName(Component.literal(shop.displayName()));
+        entry.setAccessibleState(() -> Component.literal(shop.teamName()));
+        entry.setAccessibleHint(() -> Component.translatable("gui.fpsm.map_shop.edit.hint"));
+        entry.setOnActivate(() -> openEditor(shop));
+        entry.setActive(!openingEditor);
+        if (compact) {
+            entry.addClass("compact");
+        } else {
+            entry.removeClass("compact");
+        }
+
+        Label name = row.selectId("name", Label.class).findFirst().orElse(null);
+        if (name != null) {
+            name.setId(id + ".name");
+            name.setValue(Component.literal(shop.displayName()));
+        }
+        Label team = row.selectId("team", Label.class).findFirst().orElse(null);
+        if (team != null) {
+            team.setId(id + ".team");
+            team.setValue(Component.literal(shop.teamName()));
+        }
+        Label action = row.selectId("action", Label.class).findFirst().orElse(null);
+        if (action != null) {
+            action.setId(id + ".action");
+        }
         return row;
     }
 
@@ -157,11 +194,14 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
         }
         openingEditor = true;
         openingTicks = 0;
-        statusLabel.setValue(Component.translatable("gui.fpsm.shop_editor.state.opening"));
-        FPSMMapSelectTheme.status(statusLabel, FPSMMapSelectTheme.WARNING);
-        FPSMMapSelectTheme.buttonState(backButton,
-                FPSMMapSelectTheme.ButtonKind.QUIET, false);
-        list.refreshVisibleItems();
+        if (statusLabel != null) {
+            statusLabel.setValue(Component.translatable("gui.fpsm.shop_editor.state.opening"));
+            statusLabel.textStyle(style -> style.textColor(FPSMMapSelectTheme.WARNING));
+        }
+        setBackEnabled(false);
+        if (list != null) {
+            list.refreshVisibleItems();
+        }
         MapRoomDetail capturedDetail = detail;
         Screen capturedParent = parent;
         ShopEditorNavigation.beginMapRoom(
@@ -171,20 +211,27 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
                 shop.gameType(), shop.mapName(), shop.teamName()));
     }
 
-    private List<Ldlib2AccessibilityController.FocusTarget> focusTargets() {
-        List<Ldlib2AccessibilityController.FocusTarget> targets = new ArrayList<>();
-        list.allChildrenStream()
-                .filter(AccessiblePanel.class::isInstance)
-                .map(AccessiblePanel.class::cast)
-                .filter(UIElement::isActive)
-                .forEach(targets::add);
-        if (backButton.isActive()) {
-            targets.add(backButton);
+    private void setBackEnabled(boolean enabled) {
+        if (backButton == null) {
+            return;
         }
-        return List.copyOf(targets);
+        backButton.setActive(enabled);
+        backButton.setAllowHitTest(enabled);
+        backButton.setFocusable(enabled);
+        if (enabled) {
+            backButton.removeClass("__disabled__");
+        } else {
+            if (backButton.isFocused()) {
+                backButton.blur();
+            }
+            backButton.addClass("__disabled__");
+        }
     }
 
     private void applyResponsiveLayout() {
+        if (!bound) {
+            return;
+        }
         compact = width < 460 || height < 300;
         int margin = compact ? 8 : 16;
         int headerHeight = compact ? 48 : 58;
@@ -201,12 +248,10 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
                 Math.max(1, width - margin * 2 - backWidth - 12), 18);
         absolute(backButton, Math.max(margin, width - margin - backWidth),
                 height - actionHeight + 8, backWidth, 28);
-        header.textStyle(style -> style.fontSize(16));
-        subtitleLabel.textStyle(style -> style.fontSize(9));
-        statusLabel.textStyle(style -> style.fontSize(9));
-        backButton.textStyle(style -> style.fontSize(10));
-        list.virtualScrollerViewStyle(style -> style.estimatedItemHeight(compact ? 53f : 43f));
-        list.refreshVisibleItems();
+        if (list != null) {
+            list.virtualScrollerViewStyle(style -> style.estimatedItemHeight(compact ? 53f : 43f));
+            list.refreshVisibleItems();
+        }
     }
 
     @Override
@@ -223,71 +268,12 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
                 + "." + shop.teamName();
     }
 
-    private static Parts build() {
-        UIElement root = new UIElement().setId("fpsmatch.map_shop.root");
-        root.layout(layout -> layout.widthPercent(100).heightPercent(100));
-        FPSMMapSelectTheme.root(root);
-        Label header = label("fpsmatch.map_shop.header",
-                Component.translatable("gui.fpsm.map_shop.title"));
-        FPSMMapSelectTheme.title(header);
-        Label subtitle = label("fpsmatch.map_shop.subtitle", Component.empty());
-        FPSMMapSelectTheme.mapIdentity(subtitle);
-        UIElement panel = new UIElement().setId("fpsmatch.map_shop.panel");
-        FPSMMapSelectTheme.panel(panel);
-        Label empty = label("fpsmatch.map_shop.empty",
-                Component.translatable("gui.fpsm.map_shop.unsupported"));
-        FPSMMapSelectTheme.muted(empty);
-        empty.textStyle(style -> style.fontSize(10));
-        VirtualScrollerView<EditableShopInfo> list = new VirtualScrollerView<>();
-        list.setId("fpsmatch.map_shop.list");
-        FPSMMapSelectTheme.virtualScroller(list);
-        panel.addChildren(empty, list);
-        Label status = label("fpsmatch.map_shop.status",
-                Component.translatable("gui.fpsm.map_shop.selection.ready"));
-        AccessibleButton back = new AccessibleButton();
-        back.setId("fpsmatch.map_shop.back");
-        back.setText(Component.translatable("gui.back"));
-        FPSMMapSelectTheme.button(back, FPSMMapSelectTheme.ButtonKind.QUIET);
-        root.addChildren(header, subtitle, panel, status, back);
-        return new Parts(ModularUI.of(UI.of(root,
-                size -> Size.of(size.getWidth(), size.getHeight()))),
-                header, subtitle, panel, list, empty, status, back);
-    }
-
-    private static Label label(String id, Component text) {
-        Label label = new Label();
-        label.setId(id);
-        label.setValue(text);
-        label.setAllowHitTest(false);
-        label.setFocusable(false);
-        return label;
-    }
-
     private static void absolute(UIElement element, int left, int top, int width, int height) {
+        if (element == null) {
+            return;
+        }
         element.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().bottomAuto().left(left).top(top)
                 .width(Math.max(1, width)).height(Math.max(1, height)));
-    }
-
-    private static void inset(UIElement element, int left, int right, int top, int height) {
-        element.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .bottomAuto().left(left).right(right).top(top).height(height));
-    }
-
-    private static void right(UIElement element, int right, int top, int width, int height) {
-        element.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .leftAuto().bottomAuto().right(right).top(top).width(width).height(height));
-    }
-
-    private record Parts(
-            ModularUI ui,
-            Label header,
-            Label subtitle,
-            UIElement panel,
-            VirtualScrollerView<EditableShopInfo> list,
-            Label empty,
-            Label status,
-            AccessibleButton back
-    ) {
     }
 }

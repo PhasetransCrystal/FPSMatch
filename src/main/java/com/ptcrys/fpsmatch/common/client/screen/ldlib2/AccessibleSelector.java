@@ -2,6 +2,7 @@ package com.ptcrys.fpsmatch.common.client.screen.ldlib2;
 
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
+import com.lowdragmc.lowdraglib2.registry.annotation.LDLRegister;
 import net.minecraft.network.chat.Component;
 
 import java.util.Objects;
@@ -9,6 +10,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /** LDLib2 selector with explicit keyboard disclosure and narratable value state. */
+@LDLRegister(name = "fpsm-selector", group = "fpsm", registry = "ldlib2:ui_element")
 public class AccessibleSelector<T> extends Selector<T>
         implements Ldlib2AccessibilityController.FocusTarget {
     private final KeyboardActivationLatch activationLatch = new KeyboardActivationLatch();

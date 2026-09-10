@@ -3,6 +3,8 @@ package com.ptcrys.fpsmatch.common.client.screen.ldlib2;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.VirtualScrollerView;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEventDispatcher;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
@@ -10,12 +12,9 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.ArrayList;
 
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_TAB;
-import static org.lwjgl.glfw.GLFW.GLFW_MOD_SHIFT;
-
-/** Base screen that adds deterministic traversal and narration to LDLib2. */
+/** Base screen that adds direct pointer dispatch and narration to LDLib2. */
 public abstract class AccessibleModularUIScreen extends ModularUIScreen {
     private final Ldlib2AccessibilityController accessibility;
     private UIElement directPointerTarget;
@@ -23,36 +22,52 @@ public abstract class AccessibleModularUIScreen extends ModularUIScreen {
     private float directPointerStartX;
     private float directPointerStartY;
     private boolean modularUiRemoved;
+    private boolean keyboardFocusVisible;
 
     protected AccessibleModularUIScreen(ModularUI modularUI, Component title) {
         super(modularUI, title);
         accessibility = new Ldlib2AccessibilityController(modularUI, title);
+        accessibility.registerGroup(() -> {
+            List<Ldlib2AccessibilityController.FocusTarget> targets = new ArrayList<>();
+            collectFocusTargets(modularUI.ui.rootElement, targets);
+            return targets;
+        });
     }
 
     protected final Ldlib2AccessibilityController accessibility() {
         return accessibility;
     }
 
-    protected final void registerFocusGroup(
-            Supplier<List<Ldlib2AccessibilityController.FocusTarget>> targets
-    ) {
-        accessibility.registerGroup(targets);
+    @Override
+    public void init() {
+        // LDLib2 renders opacity < 1 through a full-window offscreen target. Keep the
+        // root on the direct render path, including the first frame after a resize.
+        modularUI.ui.rootElement.style(style -> style.opacity(1f));
+        super.init();
+        modularUiRemoved = false;
     }
 
     @Override
-    public void init() {
-        super.init();
-        accessibility.reconcileFocus();
+    public void render(net.minecraft.client.gui.GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.render(graphics, mouseX, mouseY, partialTick);
+        if (keyboardFocusVisible && net.minecraft.client.Minecraft.getInstance().screen == this) {
+            FPSMLdlib2Theme.drawIndicator(modularUI.getFocusedElement(), graphics,
+                    (int) modularUI.getLeftPos(), (int) modularUI.getTopPos());
+        }
+    }
+
+    protected final void setKeyboardFocusVisible(boolean visible) {
+        keyboardFocusVisible = visible;
     }
 
     @Override
     public void tick() {
         super.tick();
-        accessibility.reconcileFocus();
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        keyboardFocusVisible = false;
         if (directPointerTarget != null) {
             return false;
         }
@@ -199,16 +214,49 @@ public abstract class AccessibleModularUIScreen extends ModularUIScreen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (accessibility.keyPressed(keyCode, scanCode, modifiers)) {
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_TAB
+                || keyCode >= org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT && keyCode <= org.lwjgl.glfw.GLFW.GLFW_KEY_UP) {
+            keyboardFocusVisible = true;
+        }
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_TAB
+                && accessibility.moveFocus((modifiers & org.lwjgl.glfw.GLFW.GLFW_MOD_SHIFT) != 0)) {
+            revealKeyboardFocus();
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
+    private static void collectFocusTargets(UIElement element, List<Ldlib2AccessibilityController.FocusTarget> targets) {
+        if (!element.isVisible() || !element.isDisplayed() || !element.isActive()) return;
+        if (element instanceof Ldlib2AccessibilityController.FocusTarget target) targets.add(target);
+        for (UIElement child : element.getChildren()) collectFocusTargets(child, targets);
+    }
+
+    private void revealKeyboardFocus() {
+        UIElement focused = modularUI.getFocusedElement();
+        if (focused == null) return;
+        String id = focused.getId();
+        for (UIElement ancestor = focused.getParent(); ancestor != null; ancestor = ancestor.getParent()) {
+            if (!(ancestor instanceof ScrollerView scroller) || !scroller.viewContainer.isAncestorOf(focused)) continue;
+            float top = scroller.viewPort.getContentY();
+            float height = scroller.viewPort.getContentHeight();
+            float delta = focused.getPositionY() < top ? focused.getPositionY() - top
+                    : Math.max(0, focused.getPositionY() + focused.getSizeHeight() - top - height);
+            float total = scroller instanceof VirtualScrollerView<?> virtual
+                    ? virtual.getTotalVirtualHeight() : scroller.viewContainer.getSizeHeight();
+            if (delta == 0 || total <= height) continue;
+            float normalized = Math.max(0, Math.min(1, scroller.verticalScroller.getNormalizedValue() + delta / (total - height)));
+            scroller.verticalScroller.setNormalizedValue(normalized);
+            // Virtual scrolling replaces the focused row, so recover the new instance by its stable ID.
+            if (id != null && !id.isEmpty()) modularUI.ui.rootElement.selectId(id, UIElement.class)
+                    .findFirst().ifPresent(UIElement::focus);
+            break;
+        }
+    }
+
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return accessibility.keyReleased(keyCode, scanCode, modifiers)
-                || super.keyReleased(keyCode, scanCode, modifiers);
+        return super.keyReleased(keyCode, scanCode, modifiers);
     }
 
     @Override

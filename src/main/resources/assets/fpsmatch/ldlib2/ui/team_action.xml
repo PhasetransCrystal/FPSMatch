@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ldlib2-ui>
+    <stylesheet location="fpsmatch:lss/rhodes.lss"/>
+    <root id="fpsmatch.team_action.root" class="rhodes-root" style="width: 100%; height: 100%">
+        <element id="fpsmatch.team_action.panel" class="context-menu">
+            <label id="fpsmatch.team_action.title" class="title" focusable="false"
+                   style="position: absolute; left: 12; right: 12; top: 12; height: 19"><lang key="gui.fpsm.team_manage.context.switch"/></label>
+            <label id="fpsmatch.team_action.player" class="muted" focusable="false"
+                   style="position: absolute; left: 12; right: 12; top: 36; height: 14; text-wrap: hide"/>
+            <virtual-scroller-view id="fpsmatch.team_action.actions" class="rhodes-scroller"/>
+            <label id="fpsmatch.team_action.status" class="muted" focusable="false" style="text-wrap: hide"/>
+            <fpsm-button id="fpsmatch.team_action.cancel" class="btn-quiet" text-key="gui.cancel"/>
+            <fpsm-button id="fpsmatch.team_action.confirm" class="btn-primary" text-key="gui.fpsm.team_manage.team.confirm"/>
+        </element>
+    </root>
+</ldlib2-ui>

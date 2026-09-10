@@ -3,12 +3,14 @@ package com.ptcrys.fpsmatch.common.client.screen.ldlib2;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Tab;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TabView;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
+import com.lowdragmc.lowdraglib2.registry.annotation.LDLRegister;
 import net.minecraft.network.chat.Component;
 
 import java.util.Objects;
 import java.util.function.Supplier;
 
 /** LDLib2 tab with deterministic keyboard selection and narration. */
+@LDLRegister(name = "fpsm-tab", group = "fpsm", registry = "ldlib2:ui_element")
 public class AccessibleTab extends Tab implements Ldlib2AccessibilityController.FocusTarget {
     private final KeyboardActivationLatch activationLatch = new KeyboardActivationLatch();
     private Supplier<Component> accessibleName = () -> text.getText();

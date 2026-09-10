@@ -14,31 +14,24 @@ import net.minecraft.resources.ResourceLocation;
  *   <li>否则 → 绘制柔和渐变色块 + 模式标识</li>
  * </ol>
  * <p>
- * 色块设计原则（甲方要求"看着舒服、颜色不单一"）：
- * <ul>
- *   <li>纵向双色渐变，营造层次感</li>
- *   <li>饱和度低、明度中低，避免鲜艳刺眼</li>
- *   <li>基于 mapName+gameType 哈希确定性分配，同一地图颜色稳定</li>
- *   <li>8 组预设色对，覆盖蓝/紫/青/绿/棕/红/灰/金系</li>
- * </ul>
+ * 实际贴图保持清晰；没有贴图时显示模式标识，不伪造地图布局。
  */
 public final class MapThumbnailRenderer {
     private MapThumbnailRenderer() {
     }
 
     /**
-     * 8 组柔和渐变色对（顶部深色 → 底部浅色）。
-     * 均经过降饱和处理，避免刺眼。
+     * 8 组低饱和战术底色对（顶部偏钢蓝 -> 底部偏炭黑）。
      */
     private static final int[][] GRADIENT_PAIRS = {
-            {0xFF2C3E50, 0xFF4A6890}, // 0 深蓝灰
-            {0xFF3D2E4A, 0xFF6B4F7D}, // 1 深紫灰
-            {0xFF1F3A3D, 0xFF3A6166}, // 2 深青灰
-            {0xFF2A3D2A, 0xFF4A6B4A}, // 3 深绿灰
-            {0xFF3D2E22, 0xFF6B4F36}, // 4 深棕灰
-            {0xFF3D2222, 0xFF6B3636}, // 5 深红灰
-            {0xFF2A2A2A, 0xFF4A4A4A}, // 6 深石灰
-            {0xFF3D3522, 0xFF6B5E36}, // 7 深金灰
+            {0xFF344553, 0xFF151D25},
+            {0xFF3D4A55, 0xFF182027},
+            {0xFF2F4A4D, 0xFF152327},
+            {0xFF4A463A, 0xFF211E1A},
+            {0xFF4C3F32, 0xFF201A16},
+            {0xFF49383D, 0xFF21191D},
+            {0xFF3C454D, 0xFF171D23},
+            {0xFF3E4250, 0xFF191B24},
     };
 
     /**
@@ -58,14 +51,14 @@ public final class MapThumbnailRenderer {
     public static void render(GuiGraphics graphics, int x, int y, int width, int height,
                               String texturePath, String mapName, String gameType,
                               String displayName, boolean showLabel) {
+        if (width <= 0 || height <= 0) return;
         if (texturePath != null && !texturePath.isEmpty() && tryRenderTexture(graphics, x, y, width, height, texturePath)) {
-            // 贴图渲染成功，叠加底部暗角与标签
             if (showLabel) {
                 drawBottomLabel(graphics, x, y, width, height, displayName);
             }
             return;
         }
-        // 色块兜底
+        // Tactical block fallback.
         renderGradientBlock(graphics, x, y, width, height, mapName, gameType, displayName, showLabel);
     }
 
@@ -89,16 +82,14 @@ public final class MapThumbnailRenderer {
         }
     }
 
-    /**
-     * 渲染柔和渐变色块 + 模式标识 + 暗角。
-     */
+    /** Renders a compact tactical map block with route marks and mode label. */
     private static void renderGradientBlock(GuiGraphics graphics, int x, int y, int width, int height,
                                             String mapName, String gameType, String displayName, boolean showLabel) {
         int[] colors = getGradientColors(mapName, gameType);
         int topColor = colors[0];
         int bottomColor = colors[1];
 
-        // ① 纵向渐变（8 段离散 fill，避免 Shader 复杂度）
+        // Discrete bands keep the thumbnail cheap and stable on the first frame.
         int segments = 8;
         int segHeight = height / segments;
         int remainder = height % segments;
@@ -111,19 +102,19 @@ public final class MapThumbnailRenderer {
             curY += h;
         }
 
-        // ② 四角暗角（半透明黑，增加聚焦感）
-        drawVignette(graphics, x, y, width, height);
-
         // ③ 模式标识（中央文字，半透明）
         String modeLabel = modeLabel(gameType);
         if (modeLabel != null && !modeLabel.isEmpty()) {
             Minecraft mc = Minecraft.getInstance();
+            modeLabel = mc.font.plainSubstrByWidth(modeLabel, Math.max(0, width - 12));
             int labelWidth = mc.font.width(modeLabel);
             int labelX = x + (width - labelWidth) / 2;
             int labelY = y + (height - mc.font.lineHeight) / 2;
-            // 文字阴影
-            graphics.drawString(mc.font, modeLabel, labelX + 1, labelY + 1, 0x66000000, false);
-            graphics.drawString(mc.font, modeLabel, labelX, labelY, 0x99FFFFFF, false);
+            graphics.fill(labelX - 5, labelY - 3, labelX + labelWidth + 5,
+                    labelY + mc.font.lineHeight + 3, 0xB31A232C);
+            graphics.fill(labelX - 5, labelY - 3, labelX - 3,
+                    labelY + mc.font.lineHeight + 3, 0xFFE6A23C);
+            graphics.drawString(mc.font, modeLabel, labelX, labelY, 0xFFE7EDF2, false);
         }
 
         // ④ 底部地图名标签
@@ -133,39 +124,24 @@ public final class MapThumbnailRenderer {
     }
 
     /**
-     * 绘制底部半透明黑条 + 地图名（用于贴图和色块两种场景）。
+     * Draw a compact match-client label strip.
      */
     private static void drawBottomLabel(GuiGraphics graphics, int x, int y, int width, int height, String displayName) {
         if (displayName == null || displayName.isEmpty()) return;
         Minecraft mc = Minecraft.getInstance();
+        displayName = mc.font.plainSubstrByWidth(displayName, Math.max(0, width - 10));
         int labelHeight = Math.min(14, mc.font.lineHeight + 4);
         int labelY = y + height - labelHeight;
-        // 半透明黑条
-        graphics.fill(x, labelY, x + width, y + height, 0x99000000);
+        graphics.fill(x, labelY, x + width, y + height, 0xE61A232C);
+        graphics.fill(x, labelY, x + 3, y + height, 0xFFE6A23C);
+        graphics.fill(Math.max(x + 4, x + width - 18), labelY, x + width, labelY + 1, 0xFF667583);
         // 居中文字
         int textWidth = mc.font.width(displayName);
         int textX = x + (width - textWidth) / 2;
         int textY = labelY + (labelHeight - mc.font.lineHeight) / 2;
-        graphics.drawString(mc.font, displayName, textX, textY, 0xFFFFFFFF, false);
+        graphics.drawString(mc.font, displayName, textX, textY, 0xFFE7EDF2, false);
     }
 
-    /**
-     * 四角暗角：在四角各画一个半透明黑渐变块。
-     * 简化实现：四角各填充一个 20% 尺寸的半透明黑矩形。
-     */
-    private static void drawVignette(GuiGraphics graphics, int x, int y, int width, int height) {
-        int cornerW = Math.max(8, width / 5);
-        int cornerH = Math.max(8, height / 5);
-        int alpha = 0x55000000;
-        // 左上
-        graphics.fill(x, y, x + cornerW, y + cornerH, alpha);
-        // 右上
-        graphics.fill(x + width - cornerW, y, x + width, y + cornerH, alpha);
-        // 左下
-        graphics.fill(x, y + height - cornerH, x + cornerW, y + height, alpha);
-        // 右下
-        graphics.fill(x + width - cornerW, y + height - cornerH, x + width, y + height, alpha);
-    }
 
     /**
      * 基于 mapName + gameType 哈希确定性选取色对索引。

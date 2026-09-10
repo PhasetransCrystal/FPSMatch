@@ -1,0 +1,87 @@
+{
+  "project": "Lucide",
+  "version": "0.468.0",
+  "license": "ISC; Feather-derived portions MIT",
+  "licenseSource": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/LICENSE",
+  "featherLicenseSource": "https://raw.githubusercontent.com/feathericons/feather/v4.29.2/LICENSE",
+  "adaptation": "Rendered at 48x48; monochrome RGB #e7edf2; original alpha retained.",
+  "icons": [
+    {
+      "name": "map",
+      "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/map.svg",
+      "sourceSha256": "41300a8ef2c2a4cf36ec3f8a730bcb4754543889eb23b98e7435de7a0757752d",
+      "texture": "textures/gui/competitive/map.png",
+      "pngSha256": "74d6ee561dd141e13c19f89f41eb48d1a872489102cde273f83480a0395b5c93"
+    },
+    {
+      "name": "users",
+      "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/users.svg",
+      "sourceSha256": "c94a3781b154ab2716e1696c25c50d37b4b5634f26cb80ae1cdea20cfafc49c1",
+      "texture": "textures/gui/competitive/users.png",
+      "pngSha256": "5628fd2f877123bb92fc96eeb2f1f54f0e66465c5ca104880c0dbb10ffbdddbe"
+    },
+    {
+      "name": "sliders-horizontal",
+      "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/sliders-horizontal.svg",
+      "sourceSha256": "4a6b5404724a439227964670bf9eb71bcebd98384178441e50093f2620169b1a",
+      "texture": "textures/gui/competitive/sliders-horizontal.png",
+      "pngSha256": "07cc24d95b852c1b6a87cbfc41ecc2dc847313a304b87512c132bf1488c83b0a"
+    },
+    {
+      "name": "ellipsis",
+      "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/ellipsis.svg",
+      "sourceSha256": "4f495cc72013ffdfec677f03b33a150f7b4dd741979283fd6853a09024bca112",
+      "texture": "textures/gui/competitive/ellipsis.png",
+      "pngSha256": "24e58d342f90960d97a215921e6841b8484161971dba918775555e00883c52b7"
+    },
+    {
+      "name": "rotate-cw",
+      "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/rotate-cw.svg",
+      "sourceSha256": "ddcfe6d87240475946935e77411cd4d15a06f3d28a9b921bafed224ebe953668",
+      "texture": "textures/gui/competitive/rotate-cw.png",
+      "pngSha256": "a86c2844b8cdbabacdd016be44912e4e5ecb5abab4646f3577aaa99d21ac9920"
+    },
+    {
+      "name": "x",
+      "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/x.svg",
+      "sourceSha256": "4a9cdab38fbb96162e7dace28e33f4ca0e49d8963a6162abc3d4691b7d675117",
+      "texture": "textures/gui/competitive/x.png",
+      "pngSha256": "366d956f811c0a83c516f3c955030dc9962e0176f74d457299df8d8d01d53c86"
+    },
+    {
+      "name": "chevron-down",
+      "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/chevron-down.svg",
+      "sourceSha256": "66ea878e72ed3488bb3b464c39dfdccee8d1f78e560dccea40e5e12da0e87e87",
+      "texture": "textures/gui/competitive/chevron-down.png",
+      "pngSha256": "0e090ff21a7265ceb8938a3f8e3728cde4fdc09d5aee7e3daeca7b713afd691c"
+    },
+    {
+      "name": "chevron-right",
+      "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/chevron-right.svg",
+      "sourceSha256": "2758143d7b2434e4aa7307dfd34405c87909ff4052f21b5f3f40d45224b4f19b",
+      "texture": "textures/gui/competitive/chevron-right.png",
+      "pngSha256": "66213ac72a687bfb4f0e2c434ee4f91ffb5c68b6d93adbe09ac02842fc9a592f"
+    },
+    {
+      "name": "arrow-right-left",
+      "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/arrow-right-left.svg",
+      "sourceSha256": "c32f61f0ea5aea4f11592db61e42774977a95086a4fa40656d00289a9604b9ad",
+      "texture": "textures/gui/competitive/arrow-right-left.png",
+      "pngSha256": "0cb5b5b752deb96fbaf517e5155c928197b53b19ef72b06977af15fde7384ef2"
+    },
+    {
+      "name": "user-x",
+      "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/user-x.svg",
+      "sourceSha256": "41bd4862065bcb049980d0939dadb4e2e8f929424d54da7e1c222e165664b00b",
+      "texture": "textures/gui/competitive/user-x.png",
+      "pngSha256": "388db0d07be126144abf24c33162c96101a02c049ea7ef4218e3bba8264b3fe1"
+    },
+    {
+      "name": "shopping-cart",
+      "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/shopping-cart.svg",
+      "sourceSha256": "f0e802256fcfac4ed69780fadf4c910f938ea6274ff61a2b4d525f6365e6a5c5",
+      "texture": "textures/gui/competitive/shopping-cart.png",
+      "pngSha256": "4b822d60ee4da3dc7be5404de43ba5e6840b799ebd878cdd2bfcc510d9c16506"
+    }
+  ]
+}
