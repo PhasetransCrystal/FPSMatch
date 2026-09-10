@@ -1,0 +1,90 @@
+// FPSMatch competitive HUD skin.
+// A compact CS2-like match client language: dark steel surfaces, thin rules,
+// dense labels, orange action state, and restrained status colors.
+
+.eyebrow { font-size: 7; text-color: #FF8B99A6; text-shadow: false; text-wrap: hide; }
+.title { font-size: 14; text-color: #FFE7EDF2; text-shadow: false; text-wrap: hide; }
+.section { font-size: 9; text-color: #FFB3BEC8; text-shadow: false; text-wrap: hide; }
+.body { font-size: 10; text-color: #FFD7DFE7; text-shadow: false; }
+.muted, .annotation { font-size: 9; text-color: #FF8B99A6; text-shadow: false; text-wrap: hide; }
+.identity { font-size: 10; text-color: #FFE7EDF2; text-shadow: false; text-wrap: hide; }
+.index { font-size: 20; text-color: #FFE7EDF2; text-shadow: false; text-wrap: hide; }
+.accent-text { text-color: #FFE6A23C; }
+
+.rhodes-root { background: #FF181C20; }
+
+.panel { background: rect(#FF23282D, 0); }
+.panel-elevated { background: group(rect(#FF2B3035, 0), border(1, #FF48525A)); }
+.panel-flat { background: #001A232C; }
+.header-band { background: rect(#FF24292D, 0); }
+.header-band .eyebrow { text-color: #FFE6A23C; }
+.header-band .title { font-size: 15; }
+.toast { background: group(rect(#FF202B35, 0), border(1, #FF465866)); }
+.preview { background: group(rect(#FF121A22, 0), border(1, #FF3A4A57)); }
+.ticks { background: rect(#FF303D49, 0); }
+
+fpsm-button:host { padding-all: 3; height: 16; }
+.btn-primary { base-background: group(rect(#FFB5792D, 0), border(1, #FFE6A23C)); hover-background: group(rect(#FFD39138, 0), border(1, #FFFFC766)); pressed-background: rect(#FF8A5C22, 0); }
+.btn-primary .__button_text__ { text-color: #FF11171D; text-shadow: false; font-size: 10; }
+.btn-secondary { base-background: group(rect(#FF26323D, 0), border(1, #FF465866)); hover-background: group(rect(#FF33424F, 0), border(1, #FF6B7C89)); pressed-background: rect(#FF1E2932, 0); }
+.btn-secondary .__button_text__, .btn-quiet .__button_text__, .menu-command .__button_text__, .team-choice .__button_text__ { text-color: #FFD7DFE7; text-shadow: false; font-size: 10; }
+.btn-danger { base-background: group(rect(#FF35252A, 0), border(1, #FFD65C5C)); hover-background: group(rect(#FF513036, 0), border(1, #FFFF7777)); pressed-background: rect(#FF2B1D22, 0); }
+.btn-danger .__button_text__, .menu-danger .__button_text__ { text-color: #FFFF8A8A; text-shadow: false; font-size: 10; }
+.btn-quiet { base-background: rect(#FF1D2832, 0); hover-background: rect(#FF2A3844, 0); pressed-background: rect(#FF182128, 0); }
+fpsm-button.__disabled__ { base-background: group(rect(#FF1A222A, 0), border(1, #FF33414C)); opacity: 1; }
+fpsm-button.__disabled__ .__button_text__ { text-color: #FF596875; text-shadow: false; }
+
+.room-row { base-background: group(rect(#FF1B252F, 0), border(1, #FF30404C)); hover-background: group(rect(#FF253440, 0), border(1, #FF647583)); pressed-background: group(rect(#FF303D49, 0), border(1, #FFE6A23C)); }
+.room-row.__selected__ { base-background: group(rect(#FF1B252F, 0), border(1, #FF30404C)); hover-background: group(rect(#FF253440, 0), border(1, #FF647583)); pressed-background: group(rect(#FF303D49, 0), border(1, #FFE6A23C)); }
+
+fpsm-textfield:host { background: group(rect(#FF151E27, 0), border(1, #FF3A4A57)); cursor-color: #FFE6A23C; focus-overlay: rect(#00000000, 0); error-color: #FFFF7777; text-color: #FFD7DFE7; padding-all: 2; }
+fpsm-selector:host { background: group(rect(#FF151E27, 0), border(1, #FF3A4A57)); max-item: 7; show-overlay: true; close-after-select: true; }
+.__selector_dialog__, .__search-component_dialog__ { background: group(rect(#FF1A232C, 0), border(1, #FF465866)); }
+.selector-candidate { font-size: 9; text-color: #FFD7DFE7; text-shadow: false; text-wrap: hide; }
+
+fpsm-toggle:host { height: 12; mark-background: sdf(#FFE6A23C, 1); }
+fpsm-toggle .__toggle_button__ { base-background: sdf(#FF202B35, 0, 1, #FF52616D); pressed-background: sdf(#FF73552A, 0, 1, #FFE6A23C); hover-background: sdf(#FF33424F, 0, 1, #FF788895); }
+fpsm-toggle .__toggle_mark-icon__ { margin-all: 2; width: auto; height: auto; flex: 1; }
+
+.lobby-tab, .tab { base-background: rect(#FF1D2832, 0); hover-background: group(rect(#FF2A3844, 0), border(1, #FF647583)); pressed-background: rect(#FF303D49, 0); }
+.lobby-tab.tab-active, .tab.tab-active { base-background: rect(#FF343B41, 0); }
+.tab-indicator { position: absolute; left: 6; right: 6; bottom: 0; height: 1; background: rect(#00000000, 0); }
+.tab-active .tab-indicator { background: rect(#FFE6A23C, 0); }
+.lobby-tab.tab-active .__button_text__, .tab.tab-active .__button_text__ { text-color: #FFFFC766; }
+.lobby-tab .__button_text__, .tab .__button_text__ { text-color: #FFD7DFE7; horizontal-align: left; padding-left: 14; padding-right: 2; font-size: 9; text-shadow: false; text-wrap: hide; }
+fpsm-tab:host { base-background: rect(#FF1D2832, 0); hover-background: rect(#FF2A3844, 0); pressed-background: group(rect(#FF303D49, 0), border(1, #FFE6A23C)); padding-all: 2; }
+
+.tab-icon { position: absolute; left: 5; top: 6; width: 12; height: 12; }
+.tab-icon-details { background: sprite(fpsmatch:textures/gui/competitive/map.png); }
+.tab-icon-players { background: sprite(fpsmatch:textures/gui/competitive/users.png); }
+.tab-icon-settings { background: sprite(fpsmatch:textures/gui/competitive/sliders-horizontal.png); }
+.tab-icon-more { background: sprite(fpsmatch:textures/gui/competitive/ellipsis.png); }
+.lobby-tab.__disabled__ .tab-icon { color: #FF64717D; }
+
+scroller-vertical:host { width: 4; }
+scroller-horizontal:host { height: 4; }
+.__scroller_scroll_container__ { background: rect(#00101820, 0); padding-all: 0; }
+scroller-vertical .__scroller_scroll_bar__, scroller-horizontal .__scroller_scroll_bar__ { base-background: rect(#FF465866, 0); hover-background: rect(#FFE6A23C, 0); pressed-background: rect(#FFFFC766, 0); }
+.__scroller_head_button__, .__scroller_tail_button__ { display: none; }
+.rhodes-scroller .__scroller_view_view-port__ { background: rect(#FF1C2024, 0); padding-all: 2; }
+.rhodes-scroller .__scroller_view_vertical-scroller__ { width: 4; margin-left: 2; }
+.map-selection-scroller .__scroller_view_horizontal-scroller__ { display: none; }
+
+item-slot, .item-slot_bg { background: sdf(#FF1D2832, 0, 1, #FF465866); hover-overlay: sdf(#334E6A7C, 0); }
+.settings-category { background: group(rect(#FF202B35, 0), border(1, #FF465866)); }
+.settings-entry { background: group(rect(#001A232C, 0), border(1, #FF30404C)); }
+.settings-entry.__modified__ { background: group(rect(#332F291E, 0), border(1, #FFE6A23C)); }
+.settings-entry.__invalid__, .settings-entry .__invalid__ { background: group(rect(#4435252A, 0), border(1, #FFD65C5C)); }
+
+.context-menu { background: group(rect(#FF1A232C, 0), border(1, #FF647583)); }
+.menu-command, .team-choice { base-background: rect(#FF202B35, 0); hover-background: rect(#FF33424F, 0); pressed-background: rect(#FF3A4853, 0); }
+.team-choice.choice-active { base-background: group(rect(#FF343B41, 0), border(1, #FF8998A4)); }
+.menu-command .__button_text__ { horizontal-align: left; padding-left: 21; text-wrap: hide; }
+.command-icon { position: absolute; left: 7; top: 6; width: 12; height: 12; }
+.command-icon-switch { background: sprite(fpsmatch:textures/gui/competitive/arrow-right-left.png); }
+.command-icon-kick { background: sprite(fpsmatch:textures/gui/competitive/user-x.png); }
+
+.detail-name { width: 100%; padding-all: 10; font-size: 16; text-color: #FFE7EDF2; text-wrap: wrap; text-shadow: false; }
+.detail-fact { width: 100%; padding-left: 10; padding-right: 10; padding-top: 5; padding-bottom: 5; font-size: 10; text-color: #FFD7DFE7; text-wrap: wrap; text-shadow: false; line-spacing: 2; }
+.detail-secondary { text-color: #FF8B99A6; }
+.ready-summary { font-size: 9; text-color: #FF66B77B; text-shadow: false; text-wrap: hide; }

@@ -39,7 +39,7 @@ public final class TeamActionModel {
             return false;
         }
         MapRoomPlayerInfo target = findPlayer(detail, player);
-        return target != null && target.online() && !target.spectator();
+        return target != null && target.online();
     }
 
     private static boolean canSwitchInRoom(MapRoomDetail detail) {

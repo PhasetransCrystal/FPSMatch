@@ -3,12 +3,16 @@ package com.ptcrys.fpsmatch.common.client.screen.ldlib2;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEventListener;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
+import com.lowdragmc.lowdraglib2.registry.annotation.LDLRegister;
+import com.lowdragmc.lowdraglib2.utils.XmlUtils;
 import net.minecraft.network.chat.Component;
+import org.w3c.dom.Element;
 
 import java.util.Objects;
 import java.util.function.Supplier;
 
 /** LDLib2 button with a keyboard-equivalent activation path and narration metadata. */
+@LDLRegister(name = "fpsm-button", group = "fpsm", registry = "ldlib2:ui_element")
 public class AccessibleButton extends Button implements Ldlib2AccessibilityController.FocusTarget {
     private final KeyboardActivationLatch activationLatch = new KeyboardActivationLatch();
     private UIEventListener action;
@@ -24,6 +28,14 @@ public class AccessibleButton extends Button implements Ldlib2AccessibilityContr
                 this::canActivate,
                 this::activate
         );
+    }
+
+    @Override
+    public void loadXml(Element element) {
+        super.loadXml(element);
+        if (element.hasAttribute("text-key")) {
+            setText(Component.translatable(XmlUtils.getAsString(element, "text-key", "")));
+        }
     }
 
     @Override
@@ -70,16 +82,32 @@ public class AccessibleButton extends Button implements Ldlib2AccessibilityContr
         return this;
     }
 
+    /** Hidden controls leave layout; disabled controls retain their label and dimensions. */
+    public AccessibleButton setAvailability(boolean visible, boolean enabled) {
+        if ((!visible || !enabled) && isFocused()) {
+            blur();
+        }
+        setVisible(visible);
+        setDisplay(visible);
+        setActive(visible && enabled);
+        setAllowHitTest(visible && enabled);
+        setFocusable(visible && enabled);
+        if (!visible || !enabled) {
+            activationLatch.reset();
+        }
+        return this;
+    }
+
     @Override
     public void activate() {
-        if (action != null && isActive()) {
+        if (canActivate()) {
             action.handleEvent(Ldlib2AccessibilityController.keyboardActivationEvent(this));
         }
     }
 
     @Override
     public boolean canActivate() {
-        return action != null && isActive();
+        return action != null && isActive() && isVisible() && isFocusable();
     }
 
     @Override

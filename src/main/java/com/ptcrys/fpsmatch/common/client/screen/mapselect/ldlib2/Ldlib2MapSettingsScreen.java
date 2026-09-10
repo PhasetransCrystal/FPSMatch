@@ -1,6 +1,5 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
-import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap;
@@ -8,10 +7,16 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Scroller;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.VirtualScrollerView;
-import com.lowdragmc.lowdraglib2.math.Size;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleButton;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleTextField;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
+import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
+import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2XmlUi;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSettingInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSettingsC2SPacket;
@@ -20,9 +25,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
+import org.lwjgl.glfw.GLFW;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -30,94 +35,147 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
-/** Editable map-room settings list. */
+/**
+ * Editable map-room settings list.
+ * Layout structure lives in {@code fpsmatch:ldlib2/ui/map_settings.xml};
+ * {@link MapSettingsGroupingModel} grouping logic stays on the Java side.
+ */
 public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
-    private final UIElement sidebar;
-    private final UIElement panel;
-    private final Label subtitleLabel;
-    private final Label pendingLabel;
-    private final TextField searchField;
-    private final AccessibleButton categoryFilterButton;
-    private final UIElement categoryFilterPopup;
-    private final VirtualScrollerView<String> categoryFilterList;
-    private final AccessibleButton clearCategorySelectionButton;
-    private final VirtualScrollerView<SettingListEntry> list;
-    private final Label emptyLabel;
-    private final AccessibleButton clearButton;
-    private final AccessibleButton saveButton;
-    private final AccessibleButton exitButton;
+    private static final String LAYOUT = "fpsmatch:ldlib2/ui/map_settings.xml";
+
+    private MapLobbyTabs tabs;
+    private String pendingTab;
+    private boolean saveSucceeded;
+    private UIElement panel;
+    private Label subtitleLabel;
+    private Label pendingLabel;
+    private AccessibleButton shopButton;
+    private TextField searchField;
+    private AccessibleButton categoryFilterButton;
+    private UIElement categoryFilterPopup;
+    private VirtualScrollerView<String> categoryFilterList;
+    private AccessibleButton clearCategorySelectionButton;
+    private VirtualScrollerView<SettingListEntry> list;
+    private Label emptyLabel;
+    private AccessibleButton clearButton;
+    private AccessibleButton saveButton;
+    private AccessibleButton exitButton;
     private final Map<String, String> pendingValues = new LinkedHashMap<>();
     private final Set<String> selectedCategories = new LinkedHashSet<>();
     private List<String> availableCategories = List.of();
     private String searchQuery = "";
     private boolean saveInFlight;
-    private boolean closeAfterSave;
     private int saveTicks;
     private boolean saveFailed;
     private Component saveFailureMessage;
     private int submittedChangeCount;
     private boolean discardConfirmation;
     private boolean compactEditor;
+    private boolean bound;
 
     public Ldlib2MapSettingsScreen(MapRoomDetail detail, Screen parent) {
-        this(build(), detail, parent);
-    }
-
-    private Ldlib2MapSettingsScreen(Parts parts, MapRoomDetail detail, Screen parent) {
-        super(parts.ui(), Component.translatable("gui.fpsm.map_select.settings.title"), detail, parent);
-        this.sidebar = parts.sidebar();
-        this.panel = parts.panel();
-        this.subtitleLabel = parts.subtitle();
-        this.pendingLabel = parts.pending();
-        this.searchField = parts.search();
-        this.categoryFilterButton = parts.categoryFilterButton();
-        this.categoryFilterPopup = parts.categoryFilterPopup();
-        this.categoryFilterList = parts.categoryFilterList();
-        this.clearCategorySelectionButton = parts.clearCategorySelectionButton();
-        this.list = parts.list();
-        this.emptyLabel = parts.empty();
-        this.clearButton = parts.clearButton();
-        this.saveButton = parts.saveButton();
-        this.exitButton = parts.exitButton();
-        this.list.setItemUIProvider(this::listRow);
-        this.categoryFilterList.setItemUIProvider(this::categoryFilterRow);
-        this.searchField.setTextResponder(value -> {
-            this.searchQuery = value == null ? "" : value.trim();
-            refreshContent();
-        });
-        this.categoryFilterButton.setOnClick(e ->
-                this.categoryFilterPopup.setVisible(!this.categoryFilterPopup.isVisible()));
-        this.clearCategorySelectionButton.setOnClick(e -> clearCategorySelection());
-        this.clearButton.setOnClick(e -> clearPendingChanges());
-        this.saveButton.setOnClick(e -> {
-            if (discardConfirmation) {
-                cancelDiscard();
-            } else {
-                saveAndClose();
-            }
-        });
-        this.exitButton.setOnClick(e -> {
-            if (discardConfirmation) {
-                discardAndClose();
-            } else {
-                requestClose();
-            }
-        });
-        refreshContent();
+        super(Ldlib2XmlUi.load(LAYOUT),
+                Component.translatable("gui.fpsm.map_select.settings.title"), detail, parent);
     }
 
     @Override
     public void init() {
         super.init();
+        bind();
         applyResponsiveLayout();
-        list.refreshVisibleItems();
+        if (list != null) list.refreshVisibleItems();
+        refreshContent();
     }
 
     @Override
     public void renderBackground(GuiGraphics graphics) {
         FPSMLdlib2Backdrop.drawMapIndex(graphics, width, height);
+    }
+
+    private void bind() {
+        if (bound) return;
+        UI ui = modularUI.ui;
+        tabs = new MapLobbyTabs(ui, "fpsmatch.map_settings", "settings", this::requestTab);
+        panel = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.panel", UIElement.class);
+        subtitleLabel = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.subtitle", Label.class);
+        pendingLabel = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.pending", Label.class);
+        shopButton = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.shop", AccessibleButton.class);
+        searchField = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.search", TextField.class);
+        categoryFilterButton = Ldlib2XmlUi.require(
+                ui, "fpsmatch.map_settings.category_filter", AccessibleButton.class);
+        categoryFilterPopup = Ldlib2XmlUi.require(
+                ui, "fpsmatch.map_settings.category_filter.popup", UIElement.class);
+        @SuppressWarnings("unchecked")
+        VirtualScrollerView<String> filterList = (VirtualScrollerView<String>) Ldlib2XmlUi.require(
+                ui, "fpsmatch.map_settings.category_filter.list", VirtualScrollerView.class);
+        categoryFilterList = filterList;
+        clearCategorySelectionButton = Ldlib2XmlUi.require(
+                ui, "fpsmatch.map_settings.category_filter.clear", AccessibleButton.class);
+        @SuppressWarnings("unchecked")
+        VirtualScrollerView<SettingListEntry> settingsList =
+                (VirtualScrollerView<SettingListEntry>) Ldlib2XmlUi.require(
+                        ui, "fpsmatch.map_settings.list", VirtualScrollerView.class);
+        list = settingsList;
+        emptyLabel = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.empty", Label.class);
+        clearButton = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.clear_changes", AccessibleButton.class);
+        saveButton = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.save", AccessibleButton.class);
+        exitButton = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.exit", AccessibleButton.class);
+        if (searchField != null) {
+            searchField.setAnyString();
+            searchField.textFieldStyle(style -> style.fontSize(10)
+                    .placeholder(Component.translatable("gui.fpsm.map_select.settings.search")));
+            searchField.setTextResponder(value -> {
+                this.searchQuery = value == null ? "" : value.trim();
+                refreshContent();
+            });
+        }
+        if (categoryFilterButton != null) {
+            categoryFilterButton.style(style -> style.tooltips(Component.translatable(
+                    "gui.fpsm.map_select.settings.category_filter.tooltip")));
+            categoryFilterButton.setOnClick(e -> {
+                if (categoryFilterPopup != null) {
+                    categoryFilterPopup.setVisible(!categoryFilterPopup.isVisible());
+                }
+            });
+        }
+        if (clearCategorySelectionButton != null) {
+            clearCategorySelectionButton.setOnClick(e -> clearCategorySelection());
+        }
+        if (clearButton != null) {
+            clearButton.setOnClick(e -> clearPendingChanges());
+        }
+        if (shopButton != null) {
+            shopButton.setOnClick(e -> FPSMMapSelectScreens.openChild(
+                    new Ldlib2MapShopScreen(detail, this)));
+        }
+        if (saveButton != null) {
+            saveButton.setOnClick(e -> {
+                if (discardConfirmation) {
+                    cancelDiscard();
+                } else {
+                    saveChanges();
+                }
+            });
+        }
+        if (exitButton != null) {
+            exitButton.setOnClick(e -> {
+                if (discardConfirmation) {
+                    discardAndClose();
+                } else {
+                    requestClose();
+                }
+            });
+        }
+        if (list != null) {
+            list.setItemUIProvider(this::listRow);
+        }
+        if (categoryFilterList != null) {
+            categoryFilterList.setItemUIProvider(this::categoryFilterRow);
+        }
+        bound = true;
     }
 
     @Override
@@ -129,10 +187,10 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         saveTicks++;
         if (saveTicks >= 200) {
             saveInFlight = false;
-            closeAfterSave = false;
             saveFailed = true;
             saveFailureMessage = Component.translatable(
                     "gui.fpsm.map_select.settings.save_timeout");
+            list.refreshVisibleItems();
             updatePendingState();
             announce(saveFailureMessage, true);
         }
@@ -148,9 +206,9 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         }
         saveInFlight = false;
         saveTicks = 0;
-        closeAfterSave = false;
         saveFailed = true;
         saveFailureMessage = packet.message();
+        list.refreshVisibleItems();
         updatePendingState();
         announce(saveFailureMessage, true);
     }
@@ -158,8 +216,12 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
     @Override
     protected void onDetailApplied() {
         if (!detail.summary().currentPlayerOp()) {
-            pendingValues.clear();
             discardConfirmation = false;
+            if (saveInFlight) {
+                saveInFlight = false;
+                saveFailed = true;
+                saveFailureMessage = Component.translatable("gui.fpsm.map_select.manage.no_permission");
+            }
         }
         prunePendingValues();
         if (saveInFlight && pendingValues.isEmpty()) {
@@ -167,20 +229,16 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
             saveTicks = 0;
             saveFailed = false;
             saveFailureMessage = null;
-            if (closeAfterSave) {
-                closeAfterSave = false;
-                if (parent instanceof Ldlib2MapManageScreen manageScreen) {
-                    manageScreen.showSettingsSaveSuccess(submittedChangeCount);
-                }
-                submittedChangeCount = 0;
-                super.onClose();
-                return;
-            }
+            saveSucceeded = true;
+            announce(Component.translatable("gui.fpsm.map_select.settings.save_success", submittedChangeCount), true);
         }
         refreshContent();
     }
 
     private void refreshContent() {
+        if (!bound) {
+            return;
+        }
         subtitleLabel.setValue(Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()));
         List<String> categories = MapSettingsGroupingModel.categories(detail.settings());
         selectedCategories.retainAll(categories);
@@ -218,8 +276,10 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
                 ? Component.translatable("gui.fpsm.map_select.settings.category_filter")
                 : Component.translatable("gui.fpsm.map_select.settings.category_filter.selected",
                         selectedCategories.size()));
-        categoryFilterButton.setActive(!categories.isEmpty());
-        clearCategorySelectionButton.setActive(!selectedCategories.isEmpty());
+        setButtonEnabled(categoryFilterButton, !categories.isEmpty());
+        setButtonEnabled(clearCategorySelectionButton, !selectedCategories.isEmpty());
+        shopButton.setAvailability(true, detail.summary().currentPlayerOp()
+                && !detail.editableShops().isEmpty() && pendingValues.isEmpty() && !saveInFlight);
         categoryFilterList.refreshVisibleItems();
     }
 
@@ -232,10 +292,8 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         toggle.setAccessibleName(categoryName);
         toggle.setAccessibleState(() -> toggleLabel(selectedCategories.contains(category)));
         toggle.layout(layout -> layout.widthPercent(100).height(20).marginBottom(3));
-        FPSMMapSelectTheme.button(toggle, selectedCategories.contains(category)
-                ? FPSMMapSelectTheme.ButtonKind.PRIMARY
-                : FPSMMapSelectTheme.ButtonKind.SECONDARY);
-        toggle.textStyle(style -> style.fontSize(9));
+        toggle.addClass(selectedCategories.contains(category) ? "btn-primary" : "btn-secondary");
+        toggle.addClass("compact-btn");
         toggle.style(style -> style.tooltips(Component.translatable(
                 MapRoomSettingInfo.categoryTranslationKey(category))));
         toggle.setOnClick(event -> {
@@ -273,35 +331,27 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
     }
 
     private void applyResponsiveLayout() {
-        boolean stacked = width < 360 && height >= 300;
-        int margin = Math.min(16, Math.max(8, width / 32));
-        int gap = 8;
-        int sidebarWidth;
-        int sidebarHeight;
-        int contentLeft;
-        int contentTop;
-        int contentWidth;
-        int contentHeight;
-        if (stacked) {
-            sidebarWidth = Math.max(1, width - margin * 2);
-            sidebarHeight = 92;
-            contentLeft = margin;
-            contentTop = margin + sidebarHeight + gap;
-            contentWidth = sidebarWidth;
-            contentHeight = Math.max(1, height - contentTop - margin);
-        } else {
-            int availableWidth = Math.max(2, width - margin * 2 - gap);
-            sidebarWidth = Math.min(158, Math.max(104, availableWidth * 28 / 100));
-            sidebarWidth = Math.min(sidebarWidth, Math.max(1, availableWidth * 42 / 100));
-            sidebarHeight = Math.max(1, height - margin * 2);
-            contentLeft = margin + sidebarWidth + gap;
-            contentTop = margin;
-            contentWidth = Math.max(1, width - contentLeft - margin);
-            contentHeight = sidebarHeight;
+        if (!bound) {
+            return;
         }
-        absolute(sidebar, margin, margin, sidebarWidth, sidebarHeight);
-        absolute(panel, contentLeft, contentTop, contentWidth, contentHeight);
-        layoutSidebar(sidebarWidth, sidebarHeight, stacked);
+        int margin = Math.min(16, Math.max(8, width / 32));
+        int contentWidth = Math.max(1, width - margin * 2);
+        int actionColumns = contentWidth < 300 ? 2 : 4;
+        int footerHeight = actionColumns == 2 ? 105 : 74;
+        int contentTop = height < 300 ? 61 : 76;
+        int contentHeight = Math.max(1, height - contentTop - footerHeight);
+        tabs.layout(width, height);
+        absolute(subtitleLabel, margin, 32, contentWidth, 13);
+        subtitleLabel.setVisible(height >= 300);
+        absolute(panel, margin, contentTop, contentWidth, contentHeight);
+        absolute(pendingLabel, margin, height - footerHeight + 3, contentWidth, 30);
+        int buttonWidth = Math.max(1, (contentWidth - (actionColumns - 1) * 5) / actionColumns);
+        AccessibleButton[] actions = {shopButton, clearButton, saveButton, exitButton};
+        for (int i = 0; i < actions.length; i++) {
+            absolute(actions[i], margin + i % actionColumns * (buttonWidth + 5),
+                    height - 34 - (actionColumns == 2 ? 31 : 0) + i / actionColumns * 31, buttonWidth, 26);
+            actions[i].textStyle(style -> style.fontSize(9));
+        }
 
         int padding = contentWidth >= 20 ? 7 : 1;
         int controlHeight = 22;
@@ -326,8 +376,10 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         }
         absolute(list, padding, listTop, Math.max(1, contentWidth - padding * 2),
                 Math.max(1, contentHeight - listTop - 7));
+        absolute(emptyLabel, padding, listTop, Math.max(1, contentWidth - padding * 2),
+                Math.max(1, contentHeight - listTop - 7));
         int popupTop = stackedToolbar ? 58 : 31;
-        int desiredPopupHeight = Math.max(54, availableCategories.size() * 23 + 28);
+        int desiredPopupHeight = Math.max(54, availableCategories.size() * 23 + 32);
         int popupHeight = Math.max(1,
                 Math.min(desiredPopupHeight, contentHeight - popupTop - padding));
         absolute(categoryFilterPopup, Math.max(padding, contentWidth - padding - filterWidth),
@@ -343,26 +395,10 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         }
     }
 
-    private void layoutSidebar(int sidebarWidth, int sidebarHeight, boolean stacked) {
-        if (stacked) {
-            absolute(subtitleLabel, 0, 24, sidebarWidth, 14);
-            absolute(pendingLabel, 0, 41, sidebarWidth, 17);
-            int buttonGap = 5;
-            int buttonTop = 64;
-            int buttonWidth = Math.max(1, (sidebarWidth - buttonGap * 2) / 3);
-            absolute(clearButton, 0, buttonTop, buttonWidth, 24);
-            absolute(saveButton, buttonWidth + buttonGap, buttonTop, buttonWidth, 24);
-            absolute(exitButton, (buttonWidth + buttonGap) * 2, buttonTop, buttonWidth, 24);
+    private static void absolute(UIElement element, int left, int top, int width, int height) {
+        if (element == null) {
             return;
         }
-        absolute(subtitleLabel, 0, 28, sidebarWidth, 16);
-        absolute(pendingLabel, 0, 50, sidebarWidth, Math.max(24, sidebarHeight - 142));
-        absolute(clearButton, 0, Math.max(0, sidebarHeight - 82), sidebarWidth, 22);
-        absolute(saveButton, 0, Math.max(0, sidebarHeight - 55), sidebarWidth, 26);
-        absolute(exitButton, 0, Math.max(0, sidebarHeight - 24), sidebarWidth, 24);
-    }
-
-    private static void absolute(UIElement element, int left, int top, int width, int height) {
         element.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().bottomAuto().left(left).top(top)
                 .width(Math.max(1, width)).height(Math.max(1, height)));
@@ -374,7 +410,10 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
     }
 
     private boolean saveChanges() {
+        normalizePendingValues();
+        prunePendingValues();
         if (pendingValues.isEmpty()) {
+            refreshContent();
             return true;
         }
         if (saveInFlight || !detail.summary().currentPlayerOp() || !allPendingValuesValid()) {
@@ -390,39 +429,50 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         saveTicks = 0;
         saveFailed = false;
         saveFailureMessage = null;
+        list.refreshVisibleItems();
         updatePendingState();
         return false;
     }
 
-    private void saveAndClose() {
-        closeAfterSave = true;
-        if (saveChanges()) {
-            closeAfterSave = false;
+    private void requestTab(String tab) {
+        if ("settings".equals(tab) || saveInFlight) return;
+        pendingTab = tab;
+        requestClose();
+    }
+
+    private void finishClose() {
+        if (pendingTab != null) {
+            String tab = pendingTab;
+            pendingTab = null;
+            openLobbyTab(tab);
+        } else {
             super.onClose();
         }
     }
 
     private void requestClose() {
         if (pendingValues.isEmpty()) {
-            super.onClose();
+            finishClose();
             return;
         }
         discardConfirmation = true;
+        list.refreshVisibleItems();
         categoryFilterPopup.setVisible(false);
         updatePendingState();
         announce(Component.translatable("gui.fpsm.map_select.settings.discard.message"), true);
     }
 
     private void cancelDiscard() {
+        pendingTab = null;
         discardConfirmation = false;
+        list.refreshVisibleItems();
         updatePendingState();
-        accessibility().reconcileFocus();
     }
 
     private void discardAndClose() {
         pendingValues.clear();
         discardConfirmation = false;
-        super.onClose();
+        finishClose();
     }
 
     @Override
@@ -441,12 +491,32 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         discardConfirmation = false;
         saveFailed = false;
         saveFailureMessage = null;
+        saveSucceeded = false;
         pendingValues.clear();
         refreshContent();
     }
 
+    private boolean canEdit(MapRoomSettingInfo setting) {
+        return setting.editable() && detail.summary().currentPlayerOp() && !saveInFlight && !discardConfirmation;
+    }
+
+    private void normalizePendingValues() {
+        for (MapRoomSettingInfo setting : detail.settings()) {
+            String raw = pendingValues.get(setting.name());
+            if (raw != null && (setting.type() == MapRoomSettingInfo.SettingType.INTEGER
+                    || setting.type() == MapRoomSettingInfo.SettingType.DECIMAL)) {
+                normalizeNumericValue(setting, raw).ifPresent(value -> {
+                    if (value.equals(setting.value())) pendingValues.remove(setting.name());
+                    else pendingValues.put(setting.name(), value);
+                });
+            }
+        }
+    }
+
     private void stageSetting(MapRoomSettingInfo setting, String value) {
+        if (!canEdit(setting)) return;
         discardConfirmation = false;
+        saveSucceeded = false;
         saveFailed = false;
         saveFailureMessage = null;
         String staged = value == null ? "" : value;
@@ -460,6 +530,12 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         } else {
             pendingValues.put(setting.name(), staged);
         }
+        modularUI.ui.selectId("fpsmatch.map_settings.row.content." + setting.name(), UIElement.class)
+                .findFirst().ifPresent(row -> {
+                    setInvalid(row, !validValue(setting, staged));
+                    if (pendingValues.containsKey(setting.name())) row.addClass("__modified__");
+                    else row.removeClass("__modified__");
+                });
         updatePendingState();
     }
 
@@ -486,13 +562,32 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
     }
 
     private void prunePendingValues() {
-        Map<String, String> current = new LinkedHashMap<>();
-        detail.settings().forEach(setting -> current.put(setting.name(), setting.value()));
-        pendingValues.entrySet().removeIf(entry -> !current.containsKey(entry.getKey())
-                || Objects.equals(current.get(entry.getKey()), entry.getValue()));
+        pendingValues.entrySet().removeIf(entry -> detail.settings().stream()
+                .filter(setting -> setting.name().equals(entry.getKey()))
+                .anyMatch(setting -> sameSettingValue(setting, entry.getValue())));
+    }
+
+    private static boolean sameSettingValue(MapRoomSettingInfo setting, String value) {
+        if (Objects.equals(setting.value(), value)) return true;
+        if (setting.type() == MapRoomSettingInfo.SettingType.INTEGER
+                || setting.type() == MapRoomSettingInfo.SettingType.DECIMAL) {
+            try {
+                // DECIMAL metadata covers both Float and Double server settings.
+                if (setting.type() == MapRoomSettingInfo.SettingType.DECIMAL
+                        && (Double.compare(Double.parseDouble(setting.value()), Double.parseDouble(value)) == 0
+                        || Float.toString(Float.parseFloat(value)).equals(setting.value()))) return true;
+                return new BigDecimal(setting.value()).compareTo(new BigDecimal(value.trim())) == 0;
+            } catch (NumberFormatException ignored) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private void updatePendingState() {
+        if (!bound) {
+            return;
+        }
         boolean invalid = !allPendingValuesValid();
         if (discardConfirmation) {
             pendingLabel.setValue(Component.translatable(
@@ -503,6 +598,8 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
             pendingLabel.setValue(saveFailureMessage == null
                     ? Component.translatable("gui.fpsm.map_select.settings.save_failed")
                     : saveFailureMessage);
+        } else if (saveSucceeded && pendingValues.isEmpty()) {
+            pendingLabel.setValue(Component.translatable("gui.fpsm.map_select.settings.save_success", submittedChangeCount));
         } else if (pendingValues.isEmpty()) {
             pendingLabel.setValue(Component.translatable("gui.fpsm.map_select.settings.no_changes"));
         } else if (invalid) {
@@ -510,45 +607,67 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         } else {
             pendingLabel.setValue(Component.translatable("gui.fpsm.map_select.settings.pending", pendingValues.size()));
         }
-        pendingLabel.textStyle(style -> style.fontSize(9).textColor(
-                discardConfirmation || saveFailed
-                        ? FPSMMapSelectTheme.DANGER
-                        : invalid || saveInFlight
-                                ? FPSMMapSelectTheme.WARNING
-                                : FPSMMapSelectTheme.TEXT));
+        setPendingTone(discardConfirmation || saveFailed, invalid || saveInFlight);
 
         boolean canClear = detail.summary().currentPlayerOp()
                 && !pendingValues.isEmpty() && !saveInFlight && !discardConfirmation;
-        clearButton.setVisible(!discardConfirmation);
-        FPSMMapSelectTheme.buttonState(clearButton,
-                FPSMMapSelectTheme.ButtonKind.QUIET, canClear);
+        clearButton.setAvailability(true, canClear);
+        tabs.update(detail.summary().currentPlayerOp(), !saveInFlight && !discardConfirmation);
+        shopButton.setAvailability(true, detail.summary().currentPlayerOp()
+                && !detail.editableShops().isEmpty() && pendingValues.isEmpty()
+                && !saveInFlight && !discardConfirmation);
+        shopButton.setAccessibleHint(() -> Component.translatable(
+                !detail.summary().currentPlayerOp() ? "gui.fpsm.team_manage.more.restricted"
+                        : detail.editableShops().isEmpty() ? "gui.fpsm.map_settings.shop.unavailable"
+                        : "gui.fpsm.map_settings.shop.pending"));
 
         saveButton.setText(Component.translatable(discardConfirmation
                 ? "gui.fpsm.map_select.settings.keep_editing"
                 : "gui.fpsm.map_select.settings.save"));
-        FPSMMapSelectTheme.buttonState(saveButton,
-                discardConfirmation
-                        ? FPSMMapSelectTheme.ButtonKind.SECONDARY
-                        : FPSMMapSelectTheme.ButtonKind.PRIMARY,
-                discardConfirmation || !saveInFlight
-                        && detail.summary().currentPlayerOp()
-                        && !pendingValues.isEmpty() && !invalid);
+        setButtonKind(saveButton, discardConfirmation ? "btn-secondary" : "btn-primary");
+        setButtonEnabled(saveButton, discardConfirmation || !saveInFlight
+                && detail.summary().currentPlayerOp()
+                && !pendingValues.isEmpty() && !invalid);
 
         exitButton.setText(Component.translatable(discardConfirmation
                 ? "gui.fpsm.map_select.settings.discard"
                 : "gui.back"));
-        FPSMMapSelectTheme.buttonState(exitButton,
-                discardConfirmation
-                        ? FPSMMapSelectTheme.ButtonKind.DANGER
-                        : FPSMMapSelectTheme.ButtonKind.QUIET,
-                !saveInFlight);
+        setButtonKind(exitButton, discardConfirmation ? "btn-danger" : "btn-quiet");
+        setButtonEnabled(exitButton, !saveInFlight);
+    }
+
+    /** Toggles the XML-defined pending tone classes on the sidebar status line. */
+    private void setPendingTone(boolean danger, boolean warning) {
+        pendingLabel.removeClass("pending-warning");
+        pendingLabel.removeClass("pending-danger");
+        if (danger) {
+            pendingLabel.addClass("pending-danger");
+        } else if (warning) {
+            pendingLabel.addClass("pending-warning");
+        }
+    }
+
+    private static void setButtonEnabled(AccessibleButton button, boolean enabled) {
+        if (button != null) button.setAvailability(true, enabled);
+    }
+
+    /** Swaps the LSS button-kind class (btn-primary/btn-secondary/btn-danger/btn-quiet). */
+    private static void setButtonKind(AccessibleButton button, String kind) {
+        if (button == null) {
+            return;
+        }
+        button.removeClass("btn-primary");
+        button.removeClass("btn-secondary");
+        button.removeClass("btn-danger");
+        button.removeClass("btn-quiet");
+        button.addClass(kind);
     }
 
     private boolean allPendingValuesValid() {
         return pendingValues.entrySet().stream().allMatch(entry -> detail.settings().stream()
                 .filter(setting -> setting.name().equals(entry.getKey()))
                 .findFirst()
-                .map(setting -> validValue(setting, entry.getValue()))
+                .map(setting -> setting.editable() && validValue(setting, entry.getValue()))
                 .orElse(false));
     }
 
@@ -559,11 +678,7 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         try {
             return switch (setting.type()) {
                 case BOOLEAN -> "true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value);
-                case INTEGER -> {
-                    Long.parseLong(value);
-                    yield true;
-                }
-                case DECIMAL -> Double.isFinite(Double.parseDouble(value));
+                case INTEGER, DECIMAL -> normalizeNumericValue(setting, value).isPresent();
                 default -> true;
             };
         } catch (NumberFormatException ignored) {
@@ -571,123 +686,20 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         }
     }
 
-    private static Parts build() {
-        UIElement root = new UIElement().setId("fpsmatch.map_settings.root");
-        root.layout(layout -> layout.widthPercent(100).heightPercent(100));
-        FPSMMapSelectTheme.root(root);
+    private static Optional<String> normalizeNumericValue(MapRoomSettingInfo setting, String raw) {
+        return MapSettingNumbers.normalize(raw, setting.type() == MapRoomSettingInfo.SettingType.INTEGER,
+                setting.minValue(), setting.maxValue(), setting.step());
+    }
 
-        UIElement sidebar = new UIElement().setId("fpsmatch.map_settings.sidebar");
-        sidebar.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(14).top(12).bottom(12).width(112));
-
-        Label header = label("fpsmatch.map_settings.header", Component.translatable("gui.fpsm.map_select.settings.title"));
-        header.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(0).right(0).top(0).height(22));
-        FPSMMapSelectTheme.title(header);
-        header.textStyle(style -> style.fontSize(16).textWrap(TextWrap.HIDE));
-
-        Label subtitle = label("fpsmatch.map_settings.subtitle", Component.empty());
-        subtitle.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(0).right(0).top(22).height(14));
-        FPSMMapSelectTheme.mapIdentity(subtitle);
-        subtitle.textStyle(style -> style.fontSize(9).textWrap(TextWrap.HIDE));
-
-        Label pending = label("fpsmatch.map_settings.pending", Component.empty());
-        pending.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(0).right(0).top(40).height(28));
-        FPSMMapSelectTheme.muted(pending);
-        pending.textStyle(style -> style.fontSize(9).textWrap(TextWrap.WRAP));
-
-        AccessibleButton clear = new AccessibleButton();
-        clear.setId("fpsmatch.map_settings.clear_changes");
-        clear.setText(Component.translatable("gui.fpsm.map_select.settings.clear_changes"));
-        clear.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(0).right(0).bottom(22).height(18));
-        FPSMMapSelectTheme.button(clear, FPSMMapSelectTheme.ButtonKind.QUIET);
-        clear.textStyle(style -> style.fontSize(9));
-        clear.setActive(false);
-
-        AccessibleButton save = new AccessibleButton();
-        save.setId("fpsmatch.map_settings.save");
-        save.setText(Component.translatable("gui.fpsm.map_select.settings.save"));
-        FPSMMapSelectTheme.button(save, FPSMMapSelectTheme.ButtonKind.PRIMARY);
-        save.textStyle(style -> style.fontSize(10));
-        save.setActive(false);
-
-        AccessibleButton exit = new AccessibleButton();
-        exit.setId("fpsmatch.map_settings.exit");
-        exit.setText(Component.translatable("gui.back"));
-        exit.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(0).right(0).bottom(0).height(18));
-        FPSMMapSelectTheme.button(exit, FPSMMapSelectTheme.ButtonKind.QUIET);
-        exit.textStyle(style -> style.fontSize(9));
-
-        sidebar.addChildren(header, subtitle, pending, clear, save, exit);
-
-        UIElement panel = new UIElement().setId("fpsmatch.map_settings.panel");
-        panel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(134).right(14).top(12).bottom(12));
-        FPSMMapSelectTheme.panel(panel);
-
-        TextField search = new TextField();
-        search.setId("fpsmatch.map_settings.search");
-        search.setAnyString();
-        search.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(6).top(5).width(100).height(18));
-        FPSMMapSelectTheme.input(search, Component.translatable("gui.fpsm.map_select.settings.search"));
-        search.textFieldStyle(style -> style.fontSize(10));
-
-        AccessibleButton categoryFilter = new AccessibleButton();
-        categoryFilter.setId("fpsmatch.map_settings.category_filter");
-        categoryFilter.setText(Component.translatable("gui.fpsm.map_select.settings.category_filter"));
-        categoryFilter.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .right(6).top(5).width(88).height(18));
-        FPSMMapSelectTheme.button(categoryFilter, FPSMMapSelectTheme.ButtonKind.SECONDARY);
-        categoryFilter.textStyle(style -> style.fontSize(9));
-        categoryFilter.style(style -> style.tooltips(Component.translatable(
-                "gui.fpsm.map_select.settings.category_filter.tooltip")));
-
-        Label empty = label("fpsmatch.map_settings.empty", Component.translatable("gui.fpsm.map_select.settings.empty"));
-        empty.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(10).right(10).top(34).height(16));
-        FPSMMapSelectTheme.muted(empty);
-        empty.textStyle(style -> style.fontSize(10));
-        empty.setVisible(false);
-
-        VirtualScrollerView<SettingListEntry> list = new VirtualScrollerView<>();
-        list.setId("fpsmatch.map_settings.list");
-        list.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(6).right(6).top(27).bottom(6));
-        list.virtualScrollerViewStyle(style -> style.estimatedItemHeight(33f).overscanPixels(66));
-        FPSMMapSelectTheme.virtualScroller(list);
-
-        UIElement categoryPopup = new UIElement().setId("fpsmatch.map_settings.category_filter.popup");
-        categoryPopup.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .right(6).top(26).width(88).height(96).paddingAll(3));
-        categoryPopup.style(style -> style.zIndex(20));
-        FPSMMapSelectTheme.elevated(categoryPopup);
-        categoryPopup.setVisible(false);
-
-        VirtualScrollerView<String> categoryList = new VirtualScrollerView<>();
-        categoryList.setId("fpsmatch.map_settings.category_filter.list");
-        categoryList.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(3).right(3).top(3).bottom(19));
-        categoryList.virtualScrollerViewStyle(style -> style.estimatedItemHeight(23f).overscanPixels(46));
-        FPSMMapSelectTheme.virtualScroller(categoryList);
-
-        AccessibleButton clearCategorySelection = new AccessibleButton();
-        clearCategorySelection.setId("fpsmatch.map_settings.category_filter.clear");
-        clearCategorySelection.setText(Component.translatable(
-                "gui.fpsm.map_select.settings.category_filter.clear"));
-        clearCategorySelection.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(3).right(3).bottom(3).height(14));
-        FPSMMapSelectTheme.button(clearCategorySelection, FPSMMapSelectTheme.ButtonKind.QUIET);
-        clearCategorySelection.textStyle(style -> style.fontSize(9));
-        clearCategorySelection.setActive(false);
-
-        categoryPopup.addChildren(categoryList, clearCategorySelection);
-
-        panel.addChildren(search, categoryFilter, empty, list, categoryPopup);
-        root.addChildren(sidebar, panel);
-        return new Parts(ModularUI.of(UI.of(root, size -> Size.of(size.getWidth(), size.getHeight()))),
-                sidebar, panel, subtitle, pending, search, categoryFilter, categoryPopup,
-                categoryList, clearCategorySelection, list, empty, clear, save, exit);
+    private static void setInvalid(UIElement element, boolean invalid) {
+        if (element == null) {
+            return;
+        }
+        if (invalid) {
+            element.addClass("__invalid__");
+        } else {
+            element.removeClass("__invalid__");
+        }
     }
 
     private UIElement listRow(SettingListEntry entry) {
@@ -700,13 +712,13 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
     private UIElement categoryRow(String category) {
         UIElement row = new UIElement().setId("fpsmatch.map_settings.category." + category);
         row.layout(layout -> layout.widthPercent(100).height(22).marginTop(3).marginBottom(2));
-        FPSMMapSelectTheme.settingsCategory(row);
+        row.addClass("settings-category");
 
         Label title = label("fpsmatch.map_settings.category.label." + category,
                 Component.translatable(MapRoomSettingInfo.categoryTranslationKey(category)));
+        title.addClass("section");
         title.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(8).right(8).top(5).height(12));
-        FPSMMapSelectTheme.status(title, FPSMMapSelectTheme.SETTINGS_CATEGORY_TEXT);
         title.textStyle(style -> style.fontSize(10).textWrap(TextWrap.HIDE));
         row.addChild(title);
         return row;
@@ -721,7 +733,12 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         UIElement content = new UIElement().setId("fpsmatch.map_settings.row.content." + setting.name());
         content.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(2).right(2).top(0).bottom(0));
-        FPSMMapSelectTheme.settingsEntry(content);
+        content.addClass("settings-entry");
+        if (pendingValues.containsKey(setting.name())) {
+            content.addClass("__modified__");
+        }
+        setInvalid(content, pendingValues.containsKey(setting.name())
+                && !validValue(setting, pendingValues.get(setting.name())));
         addSettingTooltip(content, setting);
         row.addChild(content);
 
@@ -733,7 +750,7 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
             name.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                     .left(8).top(9).widthPercent(34).height(12));
         }
-        FPSMMapSelectTheme.status(name, FPSMMapSelectTheme.SETTINGS_ENTRY_TEXT);
+        name.addClass("body");
         name.textStyle(style -> style.fontSize(9).textWrap(TextWrap.HIDE));
         addSettingTooltip(name, setting);
         content.addChild(name);
@@ -750,19 +767,21 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
                 toggle.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                         .right(6).top(5).width(72).height(20));
             }
-            FPSMMapSelectTheme.button(toggle, FPSMMapSelectTheme.ButtonKind.SECONDARY);
+            toggle.addClass("btn-secondary");
+            toggle.addClass("compact-btn");
             toggle.textStyle(style -> style.fontSize(9));
             toggle.setAccessibleName(Component.translatable(setting.translationKey()));
             toggle.setAccessibleState(() -> toggleLabel(value[0]));
             addSettingTooltip(toggle, setting);
-            toggle.setActive(setting.editable());
+            toggle.setAvailability(true, canEdit(setting));
             toggle.setOnClick(e -> {
+                if (!canEdit(setting)) return;
                 value[0] = !value[0];
                 toggle.setText(toggleLabel(value[0]));
                 stageSetting(setting, String.valueOf(value[0]));
             });
             content.addChild(toggle);
-        } else if (setting.slider() && validSlider(setting)) {
+        } else if (validSlider(setting)) {
             addSliderEditor(content, setting);
         } else {
             addTextEditor(content, setting);
@@ -774,48 +793,62 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         float min = (float) setting.minValue();
         float max = (float) setting.maxValue();
         float current = clamp(parseFloat(currentValue(setting), min), min, max);
-        SteppedSlider slider = new SteppedSlider(min, max, (float) setting.step());
+        SteppedSlider slider = new SteppedSlider(min, max, (float) setting.step(),
+                Component.translatable(setting.translationKey()));
         slider.setId("fpsmatch.map_settings.slider." + setting.name());
         slider.setValue(current, false);
         slider.setScrollBarSize(14);
         slider.scrollerStyle(style -> style.scrollDelta(slider.normalizedStep()));
         if (compactEditor) {
             slider.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                    .left(8).right(60).top(31).height(5));
+                    .left(8).right(76).top(24).height(16));
         } else {
             slider.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                    .leftPercent(40).right(58).top(13).height(5));
+                    .leftPercent(38).right(76).top(7).height(16));
         }
-        slider.scrollContainer(element -> element.style(style -> style.background(
-                FPSMMapSelectTheme.panelTexture(0xFF10161D, FPSMMapSelectTheme.BORDER))));
-        slider.scrollBar(button -> FPSMMapSelectTheme.button(button, FPSMMapSelectTheme.ButtonKind.SECONDARY));
-        slider.setActive(setting.editable());
+        slider.addClass("settings-slider");
+        slider.scrollBar(button -> button.addClass("btn-secondary"));
+        slider.setActive(canEdit(setting));
+        slider.setAllowHitTest(canEdit(setting));
+        slider.setFocusable(canEdit(setting));
         addSettingTooltip(slider, setting);
 
-        Label value = label("fpsmatch.map_settings.slider.value." + setting.name(),
-                Component.literal(formatNumber(current, setting.type())));
+        AccessibleTextField value = new AccessibleTextField();
+        value.setId("fpsmatch.map_settings.slider.value." + setting.name());
+        value.setAnyString();
+        value.setText(currentValue(setting), false);
+        value.setAccessibleName(Component.translatable(setting.translationKey()));
+        value.setActive(canEdit(setting));
+        value.setAllowHitTest(canEdit(setting));
+        value.setFocusable(canEdit(setting));
+        setInvalid(value, !validValue(setting, currentValue(setting)));
         value.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .right(8).top(compactEditor ? 25 : 9).width(46).height(12));
-        FPSMMapSelectTheme.status(value, FPSMMapSelectTheme.SETTINGS_ENTRY_TEXT);
-        value.textStyle(style -> style.fontSize(9));
+                .right(8).top(compactEditor ? 22 : 5).width(64).height(20));
+        value.textFieldStyle(style -> style.fontSize(9));
         addSettingTooltip(value, setting);
         slider.setOnValueChanged(changed -> {
-            String formatted = formatNumber(changed, setting.type());
-            value.setValue(Component.literal(formatted));
+            if (!canEdit(setting)) return;
+            String formatted = normalizeNumericValue(setting, Float.toString(changed))
+                    .orElse(currentValue(setting));
+            value.setText(formatted, false);
+            setInvalid(value, false);
             stageSetting(setting, formatted);
         });
+        value.setTextResponder(raw -> {
+            setInvalid(value, !validValue(setting, raw));
+            stageSetting(setting, raw);
+        });
+        value.addEventListener(UIEvents.BLUR, event -> normalizeField(value, slider, setting));
         row.addChildren(slider, value);
     }
 
     private void addTextEditor(UIElement row, MapRoomSettingInfo setting) {
-        TextField field = new TextField();
+        AccessibleTextField field = new AccessibleTextField();
         field.setId("fpsmatch.map_settings.field." + setting.name());
-        switch (setting.type()) {
-            case INTEGER -> field.setNumbersOnlyLong(Long.MIN_VALUE, Long.MAX_VALUE);
-            case DECIMAL -> field.setNumbersOnlyDouble(-Double.MAX_VALUE, Double.MAX_VALUE);
-            default -> field.setAnyString().setTextValidator(value -> value.length() <= 1024);
-        }
-        field.setText(currentValue(setting));
+        field.setAnyString();
+        field.setText(currentValue(setting), false);
+        field.setAccessibleName(Component.translatable(setting.translationKey()));
+        setInvalid(field, !validValue(setting, currentValue(setting)));
         if (compactEditor) {
             field.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                     .left(8).right(8).top(22).height(20));
@@ -823,31 +856,52 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
             field.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                     .leftPercent(40).right(6).top(5).height(20));
         }
-        FPSMMapSelectTheme.input(field, Component.literal(setting.defaultValue()));
-        field.textFieldStyle(style -> style.fontSize(9));
-        field.setActive(setting.editable());
+        field.textFieldStyle(style -> style
+                .fontSize(9)
+                .placeholder(Component.literal(setting.defaultValue())));
+        field.setActive(canEdit(setting));
+        field.setAllowHitTest(canEdit(setting));
+        field.setFocusable(canEdit(setting));
         addSettingTooltip(field, setting);
-        field.setTextResponder(value -> stageSetting(setting, value));
+        field.setTextResponder(raw -> {
+            boolean invalid = !validValue(setting, raw);
+            setInvalid(field, invalid);
+            stageSetting(setting, raw);
+        });
+        field.addEventListener(UIEvents.BLUR, event -> normalizeField(field, null, setting));
         row.addChild(field);
     }
 
-    private static boolean validSlider(MapRoomSettingInfo setting) {
-        return Double.isFinite(setting.minValue()) && Double.isFinite(setting.maxValue())
-                && Double.isFinite(setting.step()) && setting.maxValue() > setting.minValue()
-                && setting.step() > 0.0;
+    private void normalizeField(TextField field, SteppedSlider slider, MapRoomSettingInfo setting) {
+        if (!canEdit(setting) || (setting.type() != MapRoomSettingInfo.SettingType.INTEGER
+                && setting.type() != MapRoomSettingInfo.SettingType.DECIMAL)) return;
+        normalizeNumericValue(setting, field.getValue()).ifPresent(formatted -> {
+            field.setText(formatted, false);
+            setInvalid(field, false);
+            if (slider != null) slider.setValue(Float.parseFloat(formatted), false);
+            stageSetting(setting, formatted);
+        });
     }
 
-    private static String formatNumber(float value, MapRoomSettingInfo.SettingType type) {
+    private static boolean validSlider(MapRoomSettingInfo setting) {
+        return (setting.type() == MapRoomSettingInfo.SettingType.INTEGER
+                || setting.type() == MapRoomSettingInfo.SettingType.DECIMAL)
+                && MapSettingNumbers.hasRange(setting.minValue(), setting.maxValue(), setting.step())
+                && Float.isFinite((float) setting.minValue()) && Float.isFinite((float) setting.maxValue())
+                && (float) setting.maxValue() > (float) setting.minValue() && (float) setting.step() > 0;
+    }
+
+    private static String formatNumber(double value, MapRoomSettingInfo.SettingType type) {
         if (type == MapRoomSettingInfo.SettingType.INTEGER) {
             return Long.toString(Math.round(value));
         }
-        return BigDecimal.valueOf(value).setScale(4, RoundingMode.HALF_UP)
-                .stripTrailingZeros().toPlainString();
+        return BigDecimal.valueOf(value).stripTrailingZeros().toPlainString();
     }
 
     private static float parseFloat(String value, float fallback) {
         try {
-            return Float.parseFloat(value);
+            float parsed = Float.parseFloat(value);
+            return Float.isFinite(parsed) ? parsed : fallback;
         } catch (NumberFormatException ignored) {
             return fallback;
         }
@@ -858,14 +912,14 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
     }
 
     private static void addSettingTooltip(UIElement element, MapRoomSettingInfo setting) {
-        java.util.List<Component> lines = new java.util.ArrayList<>();
+        List<Component> lines = new ArrayList<>();
         lines.add(Component.translatable(setting.descriptionKey()));
         lines.add(Component.translatable("gui.fpsm.map_select.setting.default", setting.defaultValue()));
-        if (setting.slider() && validSlider(setting)) {
+        if (validSlider(setting)) {
             lines.add(Component.translatable("gui.fpsm.map_select.setting.range",
-                    formatNumber((float) setting.minValue(), setting.type()),
-                    formatNumber((float) setting.maxValue(), setting.type()),
-                    formatNumber((float) setting.step(), setting.type())));
+                    formatNumber(setting.minValue(), setting.type()),
+                    formatNumber(setting.maxValue(), setting.type()),
+                    formatNumber(setting.step(), setting.type())));
         }
         element.style(style -> style.tooltips(lines.toArray(Component[]::new)));
     }
@@ -874,12 +928,56 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         return Component.translatable(value ? "options.on" : "options.off");
     }
 
-    private static final class SteppedSlider extends Scroller.Horizontal {
+    private static final class SteppedSlider extends Scroller.Horizontal
+            implements Ldlib2AccessibilityController.FocusTarget {
         private final float step;
+        private final Component name;
 
-        private SteppedSlider(float min, float max, float step) {
+        private SteppedSlider(float min, float max, float step, Component name) {
             this.step = step;
+            this.name = name;
             setRange(min, max);
+            addEventListener(UIEvents.MOUSE_DOWN, event -> {
+                if (event.button == 0 && isActive()) focus();
+            }, true);
+            addEventListener(UIEvents.KEY_DOWN, event -> {
+                if (!isActive() || !(isFocused() || isChildFocused())) return;
+                Float value = switch (event.keyCode) {
+                    case GLFW.GLFW_KEY_LEFT, GLFW.GLFW_KEY_DOWN -> getValue() - step;
+                    case GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_UP -> getValue() + step;
+                    case GLFW.GLFW_KEY_HOME -> getMinValue();
+                    case GLFW.GLFW_KEY_END -> getMaxValue();
+                    default -> null;
+                };
+                if (value != null) {
+                    setValue(value, true);
+                    event.stopPropagation();
+                }
+            });
+        }
+
+        @Override public UIElement element() { return this; }
+        @Override public java.util.function.Supplier<Component> accessibleName() { return () -> name; }
+        @Override public java.util.function.Supplier<Component> state() {
+            return () -> Component.literal(Float.toString(getValue()));
+        }
+        @Override public void activate() { }
+
+        @Override
+        protected void onScrollWheel(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent event) {
+            // Unfocused sliders leave wheel input to the enclosing settings list.
+            if (!isActive() || !(isFocused() || isChildFocused())) return;
+            if (event.deltaY != 0 || event.deltaX != 0) {
+                float delta = event.deltaY != 0 ? event.deltaY : event.deltaX;
+                setValue(getValue() + (delta > 0 ? step : -step), true);
+                event.stopPropagation();
+            }
+        }
+
+        @Override
+        public void drawBackgroundOverlay(GUIContext context) {
+            super.drawBackgroundOverlay(context);
+            FPSMLdlib2Theme.drawFocusRing(this, context);
         }
 
         private float normalizedStep() {
@@ -891,8 +989,9 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
             if (value == null || !Float.isFinite(value) || step <= 0f) {
                 return super.setValue(value, notify);
             }
-            float snapped = getMinValue()
-                    + Math.round((value - getMinValue()) / step) * step;
+            double lastStep = Math.floor(((double) getMaxValue() - getMinValue()) / step);
+            double index = Math.max(0, Math.min(lastStep, Math.rint(((double) value - getMinValue()) / step)));
+            float snapped = (float) (getMinValue() + index * step);
             return super.setValue(clamp(snapped, getMinValue(), getMaxValue()), notify);
         }
     }
@@ -912,11 +1011,4 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
 
     private record SettingEntry(MapRoomSettingInfo setting) implements SettingListEntry {
     }
-
-    private record Parts(ModularUI ui, UIElement sidebar, UIElement panel, Label subtitle,
-                         Label pending, TextField search, AccessibleButton categoryFilterButton,
-                         UIElement categoryFilterPopup, VirtualScrollerView<String> categoryFilterList,
-                         AccessibleButton clearCategorySelectionButton, VirtualScrollerView<SettingListEntry> list,
-                         Label empty, AccessibleButton clearButton, AccessibleButton saveButton,
-                         AccessibleButton exitButton) {}
 }

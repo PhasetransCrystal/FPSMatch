@@ -46,7 +46,27 @@ public abstract class Ldlib2MapChildScreen extends AccessibleModularUIScreen imp
 
     @Override
     public void onClose() {
+        if (parent instanceof FPSMMapDetailChildScreen screen) {
+            screen.applyDetail(detail);
+        }
         Minecraft.getInstance().setScreen(parent);
+    }
+
+    protected void openLobbyTab(String tab) {
+        if ("more".equals(tab) && !detail.summary().currentPlayerOp()) return;
+        Ldlib2TeamManageScreen lobby = this instanceof Ldlib2TeamManageScreen screen ? screen
+                : parent instanceof Ldlib2TeamManageScreen screen ? screen
+                : new Ldlib2TeamManageScreen(detail, parent);
+        lobby.applyDetail(detail);
+        Screen destination = switch (tab) {
+            case "settings" -> new Ldlib2MapSettingsScreen(detail, lobby);
+            case "more" -> new Ldlib2MapManageScreen(detail, lobby);
+            default -> {
+                lobby.showTab(tab);
+                yield lobby;
+            }
+        };
+        Minecraft.getInstance().setScreen(destination);
     }
 
     @Override

@@ -1,6 +1,9 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
+import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.UITemplate;
+import com.lowdragmc.lowdraglib2.gui.ui.data.ScrollerMode;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.VirtualScrollerView;
 import com.ptcrys.fpsmatch.FPSMatch;
@@ -12,6 +15,7 @@ import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleTextField;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2RenderGuard;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2XmlUi;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapDetailChildScreen;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
 import com.ptcrys.fpsmatch.common.packet.mapselect.CloseMapViewC2SPacket;
@@ -40,42 +44,34 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-/** LDLib2 map-room browser and detail view. */
+/**
+ * LDLib2 map-room browser. Details are owned by the unified lobby.
+ * Full-width room browser with an inline toolbar. Layout structure lives in
+ * {@code fpsmatch:ldlib2/ui/map_selection.xml}; ids mirror
+ * {@link MapSelectionWidgetCatalog}. Row fragments are cloned by {@link MapSelectionUiBinder}.
+ */
 public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         implements FPSMMapDetailChildScreen {
+    private static final String LAYOUT = "fpsmatch:ldlib2/ui/map_selection.xml";
     private static final int PANEL_HORIZONTAL_INSET = 3;
     private static final int PANEL_VERTICAL_INSET = 6;
 
     private final Screen parent;
-    private final UIElement headerPanel;
-    private final Label scopeLabel;
-    private final VirtualScrollerView<MapRoomSummary> roomList;
-    private final Label roomListHeading;
-    private final Label emptyState;
-    private final UIElement detailPanel;
-    private final MapSelectionUiView.MapPreviewElement preview;
-    private final Label previewTitle;
-    private final Label previewMeta;
-    private final Label detailLabel;
-    private final Label rulesLabel;
-    private final Label playersHeading;
-    private final VirtualScrollerView<MapRoomPlayerInfo> playerList;
-    private final AccessibleTextField search;
-    private final UIElement filters;
-    private final AccessibleSelector<String> stateSelector;
-    private final AccessibleSelector<String> modeSelector;
-    private final UIElement actions;
-    private final UIElement browserActions;
-    private final UIElement toast;
-    private final Label toastLabel;
-    private final List<AccessibleButton> actionButtons;
-    private final List<AccessibleButton> browserActionButtons;
     private final Set<MapRoomToastS2CPacket> announcedToasts =
             Collections.newSetFromMap(new IdentityHashMap<>());
-    private boolean compactLayout;
-    private boolean manageVisible;
-    private int actionPanelWidth;
-    private int actionPanelHeight;
+    private UIElement headerPanel;
+    private Label scopeLabel;
+    private VirtualScrollerView<MapRoomSummary> roomList;
+    private Label roomListHeading;
+    private Label emptyState;
+    private AccessibleTextField search;
+    private AccessibleSelector<String> stateSelector;
+    private AccessibleSelector<String> modeSelector;
+    private UIElement toast;
+    private Label toastLabel;
+    private AccessibleButton refreshButton;
+    private AccessibleButton closeButton;
+    private UITemplate roomRowTemplate;
     private MapSelectionSnapshotS2CPacket snapshot;
     private MapRoomDetail detail;
     private MapRoomSummary selected;
@@ -83,62 +79,22 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     private String stateFilter = "all";
     private String gameModeFilter = "all";
     private boolean refreshing;
-    private boolean detailLoading;
-    private String requestedDetailRoom = "";
+    private String pendingRoomFocus;
     private PendingOpen pendingOpen = PendingOpen.NONE;
     private MapRoomToastS2CPacket dismissedToast;
+    private boolean compactLayout;
+    private boolean bound;
 
     private enum PendingOpen {
         NONE,
         DETAIL,
-        MANAGE,
         TEAM
     }
 
     public Ldlib2MapSelectionScreen(MapSelectionSnapshotS2CPacket snapshot, Screen parent) {
-        this(MapSelectionUiView.build(), snapshot, parent);
-    }
-
-    private Ldlib2MapSelectionScreen(
-            MapSelectionUiView.Parts parts,
-            MapSelectionSnapshotS2CPacket snapshot,
-            Screen parent
-    ) {
-        super(parts.ui(), Component.translatable("gui.fpsm.map_select.title"));
+        super(Ldlib2XmlUi.load(LAYOUT), Component.translatable("gui.fpsm.map_select.title"));
         this.parent = parent;
         this.snapshot = Objects.requireNonNull(snapshot, "snapshot");
-        this.headerPanel = parts.headerPanel();
-        this.scopeLabel = parts.scopeLabel();
-        this.roomList = parts.roomList();
-        this.roomListHeading = parts.roomListHeading();
-        this.emptyState = parts.emptyState();
-        this.detailPanel = parts.detailPanel();
-        this.preview = parts.preview();
-        this.previewTitle = parts.previewTitle();
-        this.previewMeta = parts.previewMeta();
-        this.detailLabel = parts.detailLabel();
-        this.rulesLabel = parts.rulesLabel();
-        this.playersHeading = parts.playersHeading();
-        this.playerList = parts.playerList();
-        this.search = parts.search();
-        this.filters = parts.filters();
-        this.stateSelector = parts.stateSelector();
-        this.modeSelector = parts.modeSelector();
-        this.actions = parts.actions();
-        this.browserActions = parts.browserActions();
-        this.toast = parts.toast();
-        this.toastLabel = parts.toastLabel();
-        this.actionButtons = parts.actionButtons();
-        this.browserActionButtons = parts.browserActionButtons();
-        parts.refresh().setOnClick(event -> refresh());
-        parts.close().setOnClick(event -> onClose());
-        parts.open().setOnClick(event -> openSelectedDetail());
-        parts.manage().setOnClick(event -> openMapManage());
-        stateSelector.setOnValueChanged(value -> setStateFilter(value == null ? "all" : value));
-        modeSelector.setOnValueChanged(value -> setGameModeFilter(value == null ? "all" : value));
-        registerFocusGroup(this::focusTargets);
-        refreshFilterState();
-        refreshList();
     }
 
     @Override
@@ -146,23 +102,114 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         super.init();
         // Element IDs are registered only after ModularUI.setScreenAndInit (super.init).
         bindRequiredWidgets();
+        bind();
         applyResponsiveLayout();
-        if (selected != null && detail == null) {
-            requestDetail();
-        }
         refreshToast();
+        // The browser keeps a room as request state, but does not enter with a
+        // visual selection. Focus appears only after an explicit mouse or keyboard action.
+        modularUI.clearFocus();
+        setKeyboardFocusVisible(false);
+    }
+
+    private void bind() {
+        if (bound) return;
+        UI ui = modularUI.ui;
+        headerPanel = Ldlib2XmlUi.require(ui, MapSelectionWidgetCatalog.HEADER + ".band", UIElement.class);
+        scopeLabel = Ldlib2XmlUi.require(ui, MapSelectionWidgetCatalog.HEADER_SCOPE, Label.class);
+        @SuppressWarnings("unchecked")
+        VirtualScrollerView<MapRoomSummary> rooms = (VirtualScrollerView<MapRoomSummary>) Ldlib2XmlUi.require(
+                ui, MapSelectionWidgetCatalog.ROOM_LIST, VirtualScrollerView.class);
+        roomList = rooms;
+        roomListHeading = Ldlib2XmlUi.require(ui, MapSelectionWidgetCatalog.ROOM_LIST_HEADING, Label.class);
+        emptyState = Ldlib2XmlUi.require(ui, MapSelectionWidgetCatalog.EMPTY_STATE, Label.class);
+        search = Ldlib2XmlUi.require(ui, MapSelectionWidgetCatalog.SEARCH, AccessibleTextField.class);
+        @SuppressWarnings("unchecked")
+        AccessibleSelector<String> state = (AccessibleSelector<String>) Ldlib2XmlUi.require(
+                ui, MapSelectionWidgetCatalog.STATE_FILTER, AccessibleSelector.class);
+        stateSelector = state;
+        @SuppressWarnings("unchecked")
+        AccessibleSelector<String> mode = (AccessibleSelector<String>) Ldlib2XmlUi.require(
+                ui, MapSelectionWidgetCatalog.MODE_FILTER, AccessibleSelector.class);
+        modeSelector = mode;
+        toast = Ldlib2XmlUi.require(ui, MapSelectionWidgetCatalog.TOAST, UIElement.class);
+        toastLabel = Ldlib2XmlUi.require(ui, MapSelectionWidgetCatalog.TOAST + ".text", Label.class);
+        refreshButton = Ldlib2XmlUi.require(ui, MapSelectionWidgetCatalog.BROWSER_REFRESH, AccessibleButton.class);
+        closeButton = Ldlib2XmlUi.require(ui, MapSelectionWidgetCatalog.BROWSER_CLOSE, AccessibleButton.class);
+
+        roomRowTemplate = UITemplate.of(Ldlib2XmlUi.loadUi(MapSelectionUiBinder.ROOM_ROW_LAYOUT).rootElement);
+
+        if (headerPanel == null || scopeLabel == null || roomList == null || roomListHeading == null
+                || emptyState == null || search == null
+                || stateSelector == null || modeSelector == null || toast == null || toastLabel == null
+                || refreshButton == null || closeButton == null) {
+            FPSMatch.LOGGER.error("[FPSM UI] map_selection.xml is missing required elements; "
+                    + "binding aborted, fallback UI shown (see errors above)");
+            return;
+        }
+
+        emptyState.setAllowHitTest(false);
+        emptyState.setFocusable(false);
+        toast.setAllowHitTest(false);
+        toast.setFocusable(false);
+        roomList.viewContainer(container -> container.layout(layout -> layout
+                .paddingHorizontal(5).paddingVertical(5)));
+        roomList.scrollerStyle(style -> style.mode(ScrollerMode.VERTICAL)
+                .adaptiveWidth(false).adaptiveHeight(false));
+        roomList.setItemUIProvider(summary -> MapSelectionUiBinder.roomRow(roomRowTemplate, this, summary));
+
+        search.setAnyString();
+        search.setAccessibleName(Component.translatable("gui.fpsm.map_select.search"));
+        search.textFieldStyle(style -> style.fontSize(10)
+                .placeholder(Component.translatable("gui.fpsm.map_select.search")));
+        search.setTextResponder(this::setQuery);
+
+        stateSelector.setAccessibleName(() -> MapSelectionUiBinder.stateFilterText(stateSelector.getValue()));
+        stateSelector.setCandidateUIProvider(value ->
+                MapSelectionUiBinder.selectorLabel(MapSelectionUiBinder.stateFilterText(value)));
+        stateSelector.setCandidates(List.of("all", "waiting", "running", "open"));
+        stateSelector.setSelected("all", false);
+        stateSelector.setOnValueChanged(value -> setStateFilter(value == null ? "all" : value));
+
+        modeSelector.setAccessibleName(() -> MapSelectionUiBinder.modeFilterText(modeSelector.getValue()));
+        modeSelector.setCandidateUIProvider(value ->
+                MapSelectionUiBinder.selectorLabel(MapSelectionUiBinder.modeFilterText(value)));
+        modeSelector.setCandidates(List.of("all"));
+        modeSelector.setSelected("all", false);
+        modeSelector.setOnValueChanged(value -> setGameModeFilter(value == null ? "all" : value));
+
+        refreshButton.noText();
+        refreshButton.setAccessibleName(Component.translatable("gui.fpsm.map_select.refresh"));
+        refreshButton.style(style -> style.tooltips(Component.translatable("gui.fpsm.map_select.refresh")));
+        refreshButton.setOnClick(event -> refresh());
+        closeButton.noText();
+        closeButton.setAccessibleName(Component.translatable("gui.done"));
+        closeButton.style(style -> style.tooltips(Component.translatable("gui.done")));
+        closeButton.setOnClick(event -> onClose());
+
+        bound = true;
+        refreshFilterState();
+        refreshList();
     }
 
     @Override
     public void tick() {
         super.tick();
         modularUI.tick();
-        refreshToast();
+        if (bound) {
+            refreshToast();
+            if (pendingRoomFocus != null) {
+                modularUI.ui.rootElement.selectId(pendingRoomFocus, AccessibleButton.class)
+                        .findFirst().ifPresent(button -> {
+                            button.focus();
+                            pendingRoomFocus = null;
+                        });
+            }
+        }
     }
 
     @Override
     public void applyDetail(MapRoomDetail detail) {
-        if (detail == null) {
+        if (detail == null || !bound) {
             return;
         }
         dismissToast();
@@ -173,20 +220,25 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
             // response must not open a child for a room that is no longer selected or visible.
             pendingOpen = PendingOpen.NONE;
             updateEmptyState(rooms);
-            refreshDetail();
+
             refreshActionState();
             roomList.refreshVisibleItems();
             return;
         }
-        detailLoading = false;
-        requestedDetailRoom = roomKey(detail.summary());
         this.detail = detail;
-        refreshDetail();
+
         refreshActionState();
+    }
+
+    public boolean acceptsDetail(MapRoomDetail incoming) {
+        return incoming != null && sameRoom(selected, incoming.summary());
     }
 
     public void applySnapshot(MapSelectionSnapshotS2CPacket snapshot) {
         this.snapshot = Objects.requireNonNull(snapshot, "snapshot");
+        if (!bound) {
+            return;
+        }
         refreshing = false;
         dismissToast();
         refreshFilterState();
@@ -207,6 +259,8 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
 
     @Override
     public void renderBackground(GuiGraphics graphics) {
+        // Always paint a deterministic frame before ModularUI renders. This covers the
+        // first frame while the virtual list and XML-bound widgets are being initialized.
         FPSMLdlib2Backdrop.drawMapIndex(graphics, this.width, this.height);
     }
 
@@ -230,6 +284,9 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (!bound) {
+            return super.keyPressed(keyCode, scanCode, modifiers);
+        }
         if (keyCode == GLFW.GLFW_KEY_ESCAPE && stateSelector.isOpen()) {
             stateSelector.hide();
             return true;
@@ -238,75 +295,31 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
             modeSelector.hide();
             return true;
         }
-        if (super.keyPressed(keyCode, scanCode, modifiers)) {
-            return true;
+        if (!search.isFocused() && !search.isChildFocused() && !stateSelector.isOpen() && !modeSelector.isOpen()
+                && (keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_DOWN)) {
+            setKeyboardFocusVisible(true);
+            UIElement focused = modularUI.getFocusedElement();
+            if (focused != null) {
+                filteredRooms().stream().filter(room -> MapSelectionUiBinder.roomId(room).equals(focused.getId()))
+                        .findFirst().ifPresent(room -> selected = room);
+            }
+            return moveRoomSelection(keyCode == GLFW.GLFW_KEY_UP ? -1 : 1);
         }
-        if (search.isFocused() || stateSelector.isOpen() || modeSelector.isOpen()) {
-            return false;
-        }
-        if ((keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_DOWN)
-                && focusOutsideRoomRows()) {
-            return false;
-        }
-        if (keyCode == GLFW.GLFW_KEY_UP) {
-            return moveRoomSelection(-1);
-        }
-        if (keyCode == GLFW.GLFW_KEY_DOWN) {
-            return moveRoomSelection(1);
-        }
-        return false;
-    }
-
-    private List<Ldlib2AccessibilityController.FocusTarget> focusTargets() {
-        List<Ldlib2AccessibilityController.FocusTarget> targets = new ArrayList<>();
-        targets.add(this.search);
-        targets.add(stateSelector);
-        targets.add(modeSelector);
-        targets.addAll(visibleRoomFocusTargets());
-        if (actionButtons.get(0).isActive()) {
-            targets.add(actionButtons.get(0));
-        }
-        if (actionButtons.get(1).isVisible() && actionButtons.get(1).isActive()) {
-            targets.add(actionButtons.get(1));
-        }
-        targets.add(browserActionButtons.get(0));
-        targets.add(browserActionButtons.get(1));
-        return List.copyOf(targets);
-    }
-
-    private List<Ldlib2AccessibilityController.FocusTarget> visibleRoomFocusTargets() {
-        List<AccessibleButton> mountedRows = roomList.allChildrenStream()
-                .filter(AccessibleButton.class::isInstance)
-                .map(AccessibleButton.class::cast)
-                .toList();
-        List<Ldlib2AccessibilityController.FocusTarget> targets = new ArrayList<>();
-        for (MapRoomSummary summary : filteredRooms()) {
-            String rowId = MapSelectionUiView.roomId(summary);
-            mountedRows.stream()
-                    .filter(row -> Objects.equals(row.getId(), rowId))
-                    .findFirst()
-                    .ifPresent(targets::add);
-        }
-        return targets;
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     private void refreshList() {
         List<MapRoomSummary> rooms = filteredRooms();
-        MapRoomSummary previous = selected;
         retainSelection(rooms);
         roomList.setItems(rooms);
         roomList.virtualScrollerViewStyle(style -> style
-                .estimatedItemHeight(MapSelectionUiView.ROW_HEIGHT + MapSelectionUiView.ROW_GAP)
-                .overscanPixels(MapSelectionUiView.ROW_HEIGHT * 2));
+                .estimatedItemHeight(MapSelectionUiBinder.ROW_HEIGHT + MapSelectionUiBinder.ROW_GAP)
+                .overscanPixels(MapSelectionUiBinder.ROW_HEIGHT * 2));
         updateEmptyState(rooms);
         updateIndexLabels(rooms);
-        refreshDetail();
+
         refreshActionState();
         roomList.refreshVisibleItems();
-        if (width > 0 && selected != null && detail == null
-                && !sameRoom(previous, selected)) {
-            requestDetail();
-        }
     }
 
     private List<MapRoomSummary> filteredRooms() {
@@ -327,8 +340,6 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         selected = rooms.stream().filter(summary -> sameRoom(summary, selected)).findFirst().orElse(null);
         if (selected == null) {
             detail = null;
-            detailLoading = false;
-            requestedDetailRoom = "";
             pendingOpen = PendingOpen.NONE;
             if (!rooms.isEmpty()) {
                 selected = rooms.get(0);
@@ -356,93 +367,74 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
                 "gui.fpsm.map_select.rooms.filtered", rooms.size(), snapshot.maps().size()));
     }
 
-    private void refreshDetail() {
-        if (selected == null && detail == null) {
-            detailPanel.setVisible(!compactLayout);
-            preview.show(null, null);
-            previewTitle.setValue(Component.empty());
-            previewMeta.setValue(Component.empty());
-            detailLabel.setValue(Component.translatable("gui.fpsm.map_select.preview.none"));
-            rulesLabel.setValue(Component.empty());
-            playerList.setItems(List.of());
-            playerList.refreshVisibleItems();
+    private void applyResponsiveLayout() {
+        if (!bound) {
             return;
         }
-        MapRoomSummary summary = detail == null ? selected : detail.summary();
-        preview.show(summary, detail);
-        previewTitle.setValue(Component.literal(summary.displayName()));
-        previewMeta.setValue(Component.literal(
-                summary.gameType().toUpperCase(Locale.ROOT) + " / " + summary.mapName()));
-        String text = String.join("\n",
-                Component.translatable("gui.fpsm.map_select.info.players",
-                        summary.joinedPlayers(), maxPlayers(summary)).getString(),
-                Component.translatable("gui.fpsm.map_select.info.status", statusText(summary).getString()).getString(),
-                Component.translatable("gui.fpsm.map_select.detail.area", summary.areaText()).getString());
-        detailLabel.setValue(Component.literal(text));
-        if (detailLoading && detail == null) {
-            rulesLabel.setValue(Component.translatable("gui.fpsm.map_select.preview.loading"));
-        } else if (detail != null && !detail.rulesKey().isBlank()) {
-            rulesLabel.setValue(Component.translatable(
-                    "gui.fpsm.map_select.preview.rules",
-                    Component.translatable(detail.rulesKey())));
-        } else {
-            rulesLabel.setValue(Component.translatable("gui.fpsm.map_select.preview.open_detail"));
-        }
-        playerList.setItems(detail == null ? List.of() : detail.players());
-        playerList.refreshVisibleItems();
-    }
-
-    private void applyResponsiveLayout() {
         int horizontalMargin = Math.min(15, Math.max(2, width / 24));
         int verticalMargin = Math.min(10, Math.max(2, height / 24));
         int canvasWidth = Math.max(1, width - horizontalMargin * 2);
         int canvasHeight = Math.max(1, height - verticalMargin * 2);
         MapSelectionLayoutModel layout = MapSelectionLayoutModel.responsive(canvasWidth, canvasHeight);
         compactLayout = layout.compact();
-        detailPanel.setVisible(!compactLayout);
         int originX = horizontalMargin;
         int originY = verticalMargin;
         place(headerPanel, layout.header(), originX, originY);
         scopeLabel.setVisible(layout.header().width() >= 420);
+        Ldlib2XmlUi.require(modularUI.ui, MapSelectionWidgetCatalog.HEADER, Label.class)
+                .layout(style -> style.right(layout.header().width() >= 420 ? 180 : 56));
         place(toast, layout.toast(), originX, originY);
-        place(filters, layout.filters(), originX, originY);
-        placeRoomList(layout.roomList(), originX, originY);
-        placeRoomListHeading(layout.roomList(), originX, originY);
-        placeEmptyState(layout.roomList(), originX, originY);
-        if (!compactLayout) {
-            place(detailPanel, layout.detail(), originX, originY);
-        }
-        place(actions, layout.actions(), originX, originY);
-        place(browserActions, layout.browserActions(), originX, originY);
 
-        int filterPanelWidth = placedDimension(layout.filters().width(), PANEL_HORIZONTAL_INSET);
-        int filterPanelHeight = placedDimension(layout.filters().height(), PANEL_VERTICAL_INSET);
-        int searchPadding = Math.min(8, Math.max(2, (filterPanelWidth - 1) / 8));
-        int searchTop = Math.min(layout.compact() ? 22 : 24, Math.max(0, filterPanelHeight - 1));
-        int searchHeight = Math.max(1, Math.min(22, filterPanelHeight - searchTop));
+        // ----- list column: heading row + inline toolbar + virtual list -----
+        MapSelectionLayoutModel.Rect listRect = layout.list();
+        int listInsetX = insetFor(listRect.width(), PANEL_HORIZONTAL_INSET);
+        int listInsetY = insetFor(listRect.height(), PANEL_VERTICAL_INSET);
+        int listLeft = originX + listRect.x() + listInsetX;
+        int listTop = originY + listRect.y() + listInsetY;
+        int listWidth = placedDimension(listRect.width(), PANEL_HORIZONTAL_INSET);
+        int listHeight = placedDimension(listRect.height(), PANEL_VERTICAL_INSET);
+
+        // heading row: index counter
+        roomListHeading.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto()
+                .left(listLeft + 7).top(listTop + 3)
+                .width(Math.max(1, listWidth - 14)).height(14));
+
+        // Toolbar uses one line on normal widths and two lines on narrow windows.
+        int toolbarTop = listTop + 20;
+        int toolbarHeight = 22;
+        boolean wrappedToolbar = listWidth < 250;
+        int selectorWidth = wrappedToolbar ? Math.max(70, (listWidth - 6) / 2) : (listWidth < 300 ? 70 : 88);
+        int searchWidth = wrappedToolbar ? listWidth : Math.max(60, listWidth - selectorWidth * 2 - 12);
         search.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().bottomAuto()
-                .left(searchPadding)
-                .top(searchTop)
-                .width(Math.max(1, filterPanelWidth - searchPadding * 2))
-                .height(searchHeight));
+                .left(listLeft).top(toolbarTop)
+                .width(searchWidth).height(toolbarHeight));
+        stateSelector.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto()
+                .left(wrappedToolbar ? listLeft : listLeft + searchWidth + 6)
+                .top(wrappedToolbar ? toolbarTop + toolbarHeight + 4 : toolbarTop)
+                .width(selectorWidth).height(toolbarHeight));
+        modeSelector.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto()
+                .left(wrappedToolbar ? listLeft + selectorWidth + 6 : listLeft + searchWidth + selectorWidth + 12)
+                .top(wrappedToolbar ? toolbarTop + toolbarHeight + 4 : toolbarTop)
+                .width(selectorWidth).height(toolbarHeight));
 
-        int selectorsTop = searchTop + searchHeight + 4;
-        layoutFilterSelectors(filterPanelWidth, filterPanelHeight, selectorsTop, layout.compact());
-        actionPanelWidth = placedDimension(layout.actions().width(), PANEL_HORIZONTAL_INSET);
-        actionPanelHeight = placedDimension(layout.actions().height(), PANEL_VERTICAL_INSET);
-        layoutActionsInPanel(actionPanelWidth, actionPanelHeight);
-        layoutBrowserActionsInPanel(
-                placedDimension(layout.browserActions().width(), PANEL_HORIZONTAL_INSET),
-                placedDimension(layout.browserActions().height(), PANEL_VERTICAL_INSET));
-        if (!compactLayout) {
-            layoutDetailContents(
-                    placedDimension(layout.detail().width(), PANEL_HORIZONTAL_INSET),
-                    placedDimension(layout.detail().height(), PANEL_VERTICAL_INSET));
-        } else {
-            playersHeading.setVisible(false);
-            playerList.setVisible(false);
-        }
+        int listAreaTop = toolbarTop + toolbarHeight + (wrappedToolbar ? toolbarHeight + 10 : 6);
+        int listAreaHeight = Math.max(1, listTop + listHeight - listAreaTop);
+        roomList.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto()
+                .left(listLeft).top(listAreaTop)
+                .width(listWidth).height(listAreaHeight));
+
+        int emptyHeight = Math.min(20, listAreaHeight);
+        emptyState.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto()
+                .left(listLeft + 4)
+                .top(listAreaTop + Math.max(0, (listAreaHeight - emptyHeight) / 2))
+                .width(Math.max(1, listWidth - 8)).height(emptyHeight));
+
         roomList.refreshVisibleItems();
     }
 
@@ -457,49 +449,6 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
                 .height(placedDimension(rect.height(), PANEL_VERTICAL_INSET)));
     }
 
-    private void placeRoomList(MapSelectionLayoutModel.Rect rect, int originX, int originY) {
-        int horizontalInset = insetFor(rect.width(), PANEL_HORIZONTAL_INSET);
-        int verticalInset = insetFor(rect.height(), PANEL_VERTICAL_INSET);
-        int headerHeight = roomListHeaderHeight(rect.height());
-        int width = placedDimension(rect.width(), PANEL_HORIZONTAL_INSET);
-        int height = Math.max(1, placedDimension(rect.height(), PANEL_VERTICAL_INSET) - headerHeight);
-        roomList.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto()
-                .left(originX + rect.x() + horizontalInset)
-                .top(originY + rect.y() + verticalInset + headerHeight)
-                .width(width).height(height));
-    }
-
-    private void placeRoomListHeading(MapSelectionLayoutModel.Rect rect, int originX, int originY) {
-        int horizontalInset = insetFor(rect.width(), PANEL_HORIZONTAL_INSET);
-        int verticalInset = insetFor(rect.height(), PANEL_VERTICAL_INSET);
-        roomListHeading.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto()
-                .left(originX + rect.x() + horizontalInset + 7)
-                .top(originY + rect.y() + verticalInset + 3)
-                .width(Math.max(1, placedDimension(rect.width(), PANEL_HORIZONTAL_INSET) - 14))
-                .height(Math.min(14, roomListHeaderHeight(rect.height()) - 2)));
-    }
-
-    private static int roomListHeaderHeight(int rectHeight) {
-        return Math.min(22, Math.max(16, rectHeight / 10));
-    }
-
-    private void placeEmptyState(MapSelectionLayoutModel.Rect rect, int originX, int originY) {
-        int listWidth = placedDimension(rect.width(), PANEL_HORIZONTAL_INSET);
-        int listHeight = Math.max(1, placedDimension(rect.height(), PANEL_VERTICAL_INSET)
-                - roomListHeaderHeight(rect.height()));
-        int labelHeight = Math.min(20, Math.max(1, listHeight));
-        emptyState.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto()
-                .left(originX + rect.x() + insetFor(rect.width(), PANEL_HORIZONTAL_INSET) + 4)
-                .top(originY + rect.y() + insetFor(rect.height(), PANEL_VERTICAL_INSET)
-                        + roomListHeaderHeight(rect.height())
-                        + Math.max(0, (listHeight - labelHeight) / 2))
-                .width(Math.max(1, listWidth - 8))
-                .height(labelHeight));
-    }
-
     private static int insetFor(int dimension, int requestedInset) {
         return Math.min(requestedInset, Math.max(0, (dimension - 1) / 2));
     }
@@ -508,123 +457,34 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         return Math.max(1, dimension - insetFor(dimension, inset) * 2);
     }
 
-    private void layoutFilterSelectors(int panelWidth, int panelHeight, int selectorsTop, boolean compact) {
-        int sidePadding = compact ? 4 : Math.min(8, Math.max(2, (panelWidth - 1) / 8));
-        int gap = compact ? 3 : 6;
-        int selectorWidth = Math.max(1, panelWidth - sidePadding * 2);
-        int availableHeight = Math.max(1, panelHeight - selectorsTop - sidePadding);
-        int selectorHeight = Math.max(1, Math.min(compact ? 20 : 22,
-                Math.max(1, (availableHeight - gap) / 2)));
-        stateSelector.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto()
-                .left(sidePadding).top(selectorsTop)
-                .width(selectorWidth).height(selectorHeight));
-        modeSelector.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto()
-                .left(sidePadding).top(selectorsTop + selectorHeight + gap)
-                .width(selectorWidth).height(selectorHeight));
-    }
-
-    private void layoutActionsInPanel(int panelWidth, int panelHeight) {
-        int count = manageVisible ? actionButtons.size() : 1;
-        int columns = count > 1 && panelWidth >= 120 ? 2 : 1;
-        int rows = (count + columns - 1) / columns;
-        int horizontalPadding = Math.min(10, Math.max(2, (panelWidth - 1) / 10));
-        int verticalPadding = Math.min(8, Math.max(2, panelHeight / 12));
-        int gap = Math.min(6, Math.max(1, panelWidth / 24));
-        int availableWidth = Math.max(1, panelWidth - horizontalPadding * 2 - gap * (columns - 1));
-        int buttonWidth = Math.max(1, Math.min(88, availableWidth / columns));
-        int availableHeight = Math.max(1, panelHeight - verticalPadding * 2 - gap * (rows - 1));
-        int buttonHeight = Math.max(1, Math.min(22, availableHeight / rows));
-        int totalWidth = columns * buttonWidth + Math.max(0, columns - 1) * gap;
-        int startLeft = Math.max(0, (panelWidth - totalWidth) / 2);
-        int totalHeight = rows * buttonHeight + Math.max(0, rows - 1) * gap;
-        int startTop = Math.max(0, (panelHeight - totalHeight) / 2);
-        for (int i = 0; i < count; i++) {
-            int index = i;
-            int column = index % columns;
-            int row = index / columns;
-            actionButtons.get(i).layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                    .rightAuto().bottomAuto()
-                    .left(startLeft + column * (buttonWidth + gap))
-                    .top(startTop + row * (buttonHeight + gap))
-                    .width(buttonWidth)
-                    .height(buttonHeight));
-        }
-    }
-
-    private void layoutBrowserActionsInPanel(int panelWidth, int panelHeight) {
-        int count = browserActionButtons.size();
-        int sidePadding = compactLayout ? 4 : Math.min(8, Math.max(2, (panelWidth - 1) / 8));
-        int gap = 4;
-        int buttonWidth = Math.max(1, panelWidth - sidePadding * 2);
-        int availableHeight = Math.max(1, panelHeight - gap * Math.max(0, count - 1));
-        int buttonHeight = Math.max(1, Math.min(20, availableHeight / count));
-        int totalHeight = count * buttonHeight + gap * Math.max(0, count - 1);
-        int startTop = Math.max(0, (panelHeight - totalHeight) / 2);
-        for (int i = 0; i < count; i++) {
-            int index = i;
-            browserActionButtons.get(i).layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                    .rightAuto().bottomAuto()
-                    .left(sidePadding)
-                    .top(startTop + index * (buttonHeight + gap))
-                    .width(buttonWidth).height(buttonHeight));
-        }
-    }
-
-    private void layoutDetailContents(int panelWidth, int panelHeight) {
-        int padding = Math.min(10, Math.max(4, panelWidth / 24));
-        int contentWidth = Math.max(1, panelWidth - padding * 2);
-        int headingHeight = 17;
-        int previewHeight = Math.min(112, Math.max(62, panelHeight / 4));
-        int metaTop = headingHeight + previewHeight + 8;
-        int metaHeight = 28;
-        int summaryTop = metaTop + metaHeight + 4;
-        int summaryHeight = Math.min(58, Math.max(34, panelHeight / 7));
-        int rulesTop = summaryTop + summaryHeight + 4;
-        int rulesHeight = Math.min(44, Math.max(24, panelHeight / 9));
-        int playersTop = rulesTop + rulesHeight + 20;
-        int playersHeight = Math.max(1, panelHeight - playersTop - padding);
-        boolean showPlayers = playersHeight >= 28;
-
-        preview.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto().left(padding).top(headingHeight)
-                .width(contentWidth).height(previewHeight));
-        previewTitle.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto().left(padding).top(metaTop)
-                .width(contentWidth).height(16));
-        previewMeta.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto().left(padding).top(metaTop + 17)
-                .width(contentWidth).height(11));
-        detailLabel.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto().left(padding).top(summaryTop)
-                .width(contentWidth).height(summaryHeight));
-        rulesLabel.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto().left(padding).top(rulesTop)
-                .width(contentWidth).height(rulesHeight));
-        playersHeading.setVisible(showPlayers);
-        playersHeading.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto().left(padding).top(playersTop - 16)
-                .width(contentWidth).height(14));
-        playerList.setVisible(showPlayers);
-        playerList.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto().left(padding).top(playersTop)
-                .width(contentWidth).height(playersHeight));
-    }
-
     void select(MapRoomSummary summary) {
         dismissToast();
-        if (sameRoom(selected, summary) && detail != null) {
+        boolean alreadySelected = sameRoom(selected, summary);
+        if (alreadySelected && detail != null) {
             return;
         }
         selected = summary;
         detail = null;
-        detailLoading = false;
         pendingOpen = PendingOpen.NONE;
-        refreshDetail();
+
         refreshActionState();
         roomList.refreshVisibleItems();
-        requestDetail();
+    }
+
+    /** Opens the unified lobby for a room row. */
+    void openRoomDetail(MapRoomSummary summary) {
+        if (summary == null) {
+            return;
+        }
+        if (!sameRoom(selected, summary)) {
+            selected = summary;
+            detail = null;
+            pendingOpen = PendingOpen.NONE;
+
+            refreshActionState();
+            roomList.refreshVisibleItems();
+        }
+        openSelectedDetail();
     }
 
     private boolean moveRoomSelection(int direction) {
@@ -652,6 +512,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     }
 
     void setQuery(String value) {
+        pendingRoomFocus = null;
         query = value == null ? "" : value.trim();
         dismissToast();
         refreshList();
@@ -665,16 +526,9 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         return compactLayout;
     }
 
-    private boolean focusOutsideRoomRows() {
-        return accessibility().focusedTarget()
-                .map(Ldlib2AccessibilityController.FocusTarget::element)
-                .map(UIElement::getId)
-                .filter(Objects::nonNull)
-                .filter(id -> !id.startsWith(MapSelectionWidgetCatalog.ROOM_LIST + "."))
-                .isPresent();
-    }
-
+    /** Scrolls the room list so the given room is visible (keyboard arrows). */
     private void focusVisibleRoom(MapRoomSummary summary) {
+        pendingRoomFocus = MapSelectionUiBinder.roomId(summary);
         List<MapRoomSummary> rooms = filteredRooms();
         int index = -1;
         for (int candidate = 0; candidate < rooms.size(); candidate++) {
@@ -690,36 +544,10 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
                 (float) normalizedRoomPosition(index, rooms.size())
         );
         roomList.refreshVisibleItems();
-        String rowId = MapSelectionUiView.roomId(summary);
-        roomList.allChildrenStream()
-                .filter(AccessibleButton.class::isInstance)
-                .map(AccessibleButton.class::cast)
-                .filter(row -> Objects.equals(row.getId(), rowId))
-                .findFirst()
-                .ifPresent(row -> {
-                    modularUI.requestFocus(row);
-                    accessibility().reconcileFocus();
-                });
     }
 
     private static double normalizedRoomPosition(int index, int size) {
         return size <= 1 ? 0.0 : index / (double) (size - 1);
-    }
-
-    private void requestDetail() {
-        if (selected == null) {
-            return;
-        }
-        String requestRoom = roomKey(selected);
-        if (detailLoading && requestRoom.equals(requestedDetailRoom)) {
-            return;
-        }
-        pendingOpen = PendingOpen.NONE;
-        detailLoading = true;
-        requestedDetailRoom = requestRoom;
-        refreshDetail();
-        FPSMatch.sendToServer(new MapRoomActionC2SPacket(MapRoomActionC2SPacket.Action.REQUEST_DETAIL,
-                selected.gameType(), selected.mapName(), new UUID(0L, 0L)));
     }
 
     private void requestDetailFor(PendingOpen next) {
@@ -727,19 +555,9 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
             return;
         }
         pendingOpen = next;
-        detailLoading = true;
-        requestedDetailRoom = roomKey(selected);
-        refreshDetail();
+
         FPSMatch.sendToServer(new MapRoomActionC2SPacket(MapRoomActionC2SPacket.Action.REQUEST_DETAIL,
                 selected.gameType(), selected.mapName(), new UUID(0L, 0L)));
-    }
-
-    public boolean consumePendingManageOpen() {
-        if (pendingOpen != PendingOpen.MANAGE) {
-            return false;
-        }
-        pendingOpen = PendingOpen.NONE;
-        return true;
     }
 
     public boolean consumePendingDetailOpen() {
@@ -776,10 +594,10 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
 
     private boolean matchesQuery(MapRoomSummary summary) {
         if (query.isBlank()) return true;
-        String normalized = query.toLowerCase(java.util.Locale.ROOT);
-        return summary.displayName().toLowerCase(java.util.Locale.ROOT).contains(normalized)
-                || summary.mapName().toLowerCase(java.util.Locale.ROOT).contains(normalized)
-                || summary.gameType().toLowerCase(java.util.Locale.ROOT).contains(normalized);
+        String normalized = query.toLowerCase(Locale.ROOT);
+        return summary.displayName().toLowerCase(Locale.ROOT).contains(normalized)
+                || summary.mapName().toLowerCase(Locale.ROOT).contains(normalized)
+                || summary.gameType().toLowerCase(Locale.ROOT).contains(normalized);
     }
 
     private boolean matchesStateFilter(MapRoomSummary summary) {
@@ -839,33 +657,12 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     }
 
     private void refreshActionState() {
-        MapRoomSummary summary = selected == null ? null : summaryFor(selected);
-        boolean hasSelection = summary != null;
-        // 浏览页只负责选择与进入详情；加入、队伍和管理动作均在详情/子页面完成。
-        boolean canOpenDetail = hasSelection;
-        FPSMMapSelectTheme.buttonState(
-                actionButtons.get(0), FPSMMapSelectTheme.ButtonKind.PRIMARY,
-                canOpenDetail
-        );
-        manageVisible = false;
-        actionButtons.get(1).setDisplay(manageVisible);
-        actionButtons.get(1).setVisible(manageVisible);
-        FPSMMapSelectTheme.buttonState(
-                actionButtons.get(1), FPSMMapSelectTheme.ButtonKind.SECONDARY,
-                manageVisible
-        );
-        browserActionButtons.get(0).setText(Component.translatable(refreshing
-                ? "gui.fpsm.map_select.refreshing"
-                : "gui.fpsm.map_select.refresh"));
-        FPSMMapSelectTheme.buttonState(
-                browserActionButtons.get(0), FPSMMapSelectTheme.ButtonKind.QUIET, !refreshing
-        );
-        FPSMMapSelectTheme.buttonState(
-                browserActionButtons.get(1), FPSMMapSelectTheme.ButtonKind.QUIET, true
-        );
-        if (actionPanelWidth > 0 && actionPanelHeight > 0) {
-            layoutActionsInPanel(actionPanelWidth, actionPanelHeight);
+        if (!bound) {
+            return;
         }
+        // 浏览页只负责选择；进入详情通过房间卡片双击或详情栏卡片点击完成。
+        MapSelectionUiBinder.setButtonEnabled(refreshButton, !refreshing);
+        MapSelectionUiBinder.setButtonEnabled(closeButton, true);
     }
 
     public void applyToast() {
@@ -874,6 +671,9 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     }
 
     private void refreshToast() {
+        if (!bound) {
+            return;
+        }
         FPSMClient.getGlobalData().getMapRoomToast().ifPresentOrElse(packet -> {
             if (packet == dismissedToast) {
                 toast.setVisible(false);
@@ -881,13 +681,13 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
             }
             toast.setVisible(true);
             toastLabel.setValue(packet.message());
-            FPSMMapSelectTheme.statusSurface(
-                    toast, packet.error() ? FPSMMapSelectTheme.DANGER : FPSMMapSelectTheme.SUCCESS
-            );
-            FPSMMapSelectTheme.status(
-                    toastLabel,
-                    packet.error() ? FPSMMapSelectTheme.DANGER : FPSMMapSelectTheme.SUCCESS
-            );
+            if (packet.error()) {
+                toast.addClass("__error__");
+                toastLabel.textStyle(style -> style.textColor(FPSMMapSelectTheme.DANGER));
+            } else {
+                toast.removeClass("__error__");
+                toastLabel.textStyle(style -> style.textColor(FPSMMapSelectTheme.SUCCESS));
+            }
             if (announcedToasts.add(packet)) {
                 accessibility().announce(packet.message(), packet.error());
             }
@@ -895,36 +695,13 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     }
 
     private void dismissToast() {
+        if (!bound) {
+            return;
+        }
         FPSMClient.getGlobalData().getMapRoomToast().ifPresent(packet ->
                 dismissedToast = packet
         );
         toast.setVisible(false);
-    }
-
-    private void openTeamManage() {
-        if (selected == null) {
-            return;
-        }
-        MapRoomSummary summary = summaryFor(selected);
-        if (summary != null && "csdm".equalsIgnoreCase(summary.gameType())) {
-            return;
-        }
-        if (detail != null && sameRoom(detail.summary(), selected) && !"csdm".equalsIgnoreCase(detail.summary().gameType())) {
-            FPSMMapSelectScreens.openChild(new Ldlib2TeamManageScreen(detail, this));
-            return;
-        }
-        requestDetailFor(PendingOpen.TEAM);
-    }
-
-    private void openMapManage() {
-        if (selected == null) {
-            return;
-        }
-        if (detail != null && sameRoom(detail.summary(), selected)) {
-            FPSMMapSelectScreens.openChild(new Ldlib2MapManageScreen(detail, this));
-            return;
-        }
-        requestDetailFor(PendingOpen.MANAGE);
     }
 
     private MapRoomSummary summaryFor(MapRoomSummary source) {
@@ -958,18 +735,22 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         return Component.translatable("gui.fpsm.map_select.status.waiting");
     }
 
+    /** Catalog id self-check: log every id the binder expects before binding. */
     private void bindRequiredWidgets() {
-        if (!modularUI.hasElementWithId(MapSelectionWidgetCatalog.ROOT)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.ROOM_LIST)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.EMPTY_STATE)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.ROOM_DETAIL)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.PLAYERS)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.FILTERS)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.STATE_FILTER)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.MODE_FILTER)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.BROWSER_ACTIONS)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.TOAST)) {
-            throw new IllegalStateException("Incomplete LDLib2 map selection UI");
+        List<Ldlib2XmlUi.Binding<?>> bindings = new ArrayList<>();
+        for (String id : MapSelectionWidgetCatalog.ids()) {
+            Class<? extends UIElement> type = switch (id) {
+                case MapSelectionWidgetCatalog.ROOM_LIST ->
+                        VirtualScrollerView.class;
+                case MapSelectionWidgetCatalog.SEARCH -> AccessibleTextField.class;
+                case MapSelectionWidgetCatalog.STATE_FILTER, MapSelectionWidgetCatalog.MODE_FILTER ->
+                        AccessibleSelector.class;
+                case MapSelectionWidgetCatalog.BROWSER_REFRESH, MapSelectionWidgetCatalog.BROWSER_CLOSE ->
+                        AccessibleButton.class;
+                default -> UIElement.class;
+            };
+            bindings.add(Ldlib2XmlUi.Binding.of(id, type));
         }
+        Ldlib2XmlUi.verify(modularUI.ui, bindings);
     }
 }

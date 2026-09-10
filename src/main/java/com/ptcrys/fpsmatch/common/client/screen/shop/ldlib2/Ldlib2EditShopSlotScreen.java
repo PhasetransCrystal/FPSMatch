@@ -64,10 +64,12 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
         }
         view = Ldlib2EditShopSlotUi.create(
                 menu, this::requestSave, this::returnToShop, this::copyHeldItem);
-        view.restoreDraft(resizeDraft);
-        resizeDraft = null;
         modularUI = view.modularUI();
         modularUI.setScreenAndInit(this);
+        // XML element ids are queryable only after the UI is attached to the screen.
+        view.bind();
+        view.restoreDraft(resizeDraft);
+        resizeDraft = null;
         ModularMenuUiSupport.attach(modularUI, menu);
         imageWidth = Math.max(1, Math.round(modularUI.getWidth()));
         imageHeight = Math.max(1, Math.round(modularUI.getHeight()));
@@ -79,8 +81,6 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
         statusLabel = view.statusLabel();
         closeButton = view.closeButton();
         accessibility = new Ldlib2AccessibilityController(modularUI, title);
-        accessibility.registerGroup(view::focusTargets);
-        accessibility.reconcileFocus();
         refreshEditState();
     }
 
@@ -146,20 +146,6 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (accessibility != null && accessibility.keyPressed(keyCode, scanCode, modifiers)) {
-            return true;
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
-    }
-
-    @Override
-    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return accessibility != null && accessibility.keyReleased(keyCode, scanCode, modifiers)
-                || super.keyReleased(keyCode, scanCode, modifiers);
-    }
-
-    @Override
     protected void updateNarrationState(NarrationElementOutput output) {
         if (accessibility != null) {
             accessibility.updateNarrationState(output);
@@ -188,11 +174,10 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
         returningTicks = 0;
         failureVisible = true;
         statusLabel.setValue(message);
-        FPSMLdlib2Theme.status(statusLabel, FPSMLdlib2Theme.DANGER);
+        statusLabel.textStyle(style -> style.textColor(FPSMLdlib2Theme.DANGER));
         refreshButtons();
         if (accessibility != null) {
             accessibility.announce(message, true);
-            accessibility.reconcileFocus();
         }
     }
 
@@ -206,7 +191,7 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
         if (result.error()) {
             failureVisible = true;
             statusLabel.setValue(result.message());
-            FPSMLdlib2Theme.status(statusLabel, FPSMLdlib2Theme.DANGER);
+            statusLabel.textStyle(style -> style.textColor(FPSMLdlib2Theme.DANGER));
             refreshButtons();
             return;
         }
@@ -214,7 +199,7 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
         discardConfirmation = null;
         captureBaseline();
         statusLabel.setValue(result.message());
-        FPSMLdlib2Theme.status(statusLabel, FPSMLdlib2Theme.SUCCESS);
+        statusLabel.textStyle(style -> style.textColor(FPSMLdlib2Theme.SUCCESS));
         refreshButtons();
         openShopEditor();
     }
@@ -307,12 +292,9 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
         if (saveButton == null) {
             return;
         }
-        FPSMLdlib2Theme.buttonState(
-                saveButton,
-                FPSMLdlib2Theme.ButtonKind.PRIMARY,
+        setButtonEnabled(saveButton,
                 !saving && !returningToShop && isDirty()
-                        && view != null && view.inputValid()
-        );
+                        && view != null && view.inputValid());
     }
 
     private void refreshButtons() {
@@ -321,10 +303,23 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
             if (discardConfirmation == null) {
                 closeButton.setText(Component.translatable("gui.back"));
             }
-            FPSMLdlib2Theme.buttonState(
-                    closeButton, FPSMLdlib2Theme.ButtonKind.QUIET,
-                    !saving && !returningToShop);
+            setButtonEnabled(closeButton, !saving && !returningToShop);
         }
+    }
+
+    /** Replaces the old procedural disabled-texture swap with the LSS __disabled__ class. */
+    private static void setButtonEnabled(Button button, boolean enabled) {
+        button.setActive(enabled);
+        button.setAllowHitTest(enabled);
+        button.setFocusable(enabled);
+        if (enabled) {
+            button.removeClass("__disabled__");
+            return;
+        }
+        if (button.isFocused()) {
+            button.blur();
+        }
+        button.addClass("__disabled__");
     }
 
     private void setStatus(String translationKey, int color) {
@@ -332,7 +327,7 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
             return;
         }
         statusLabel.setValue(Component.translatable(translationKey));
-        FPSMLdlib2Theme.status(statusLabel, color);
+        statusLabel.textStyle(style -> style.textColor(color));
     }
 
     @Override

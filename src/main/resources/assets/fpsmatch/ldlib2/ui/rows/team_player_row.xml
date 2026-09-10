@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Team roster player row. Cloned per player via UITemplate by TeamRowBinder;
+     ids are re-scoped per row and data-bound from Java after cloning.
+     Java binds readiness, online state, and context actions. -->
+<ldlib2-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Low-Drag-MC/LDLib2/refs/heads/1.21/ldlib2-ui.xsd">
+    <root class="team-player-row" style="width: 100%; height: 33; margin-bottom: 3">
+        <fpsm-button id="select" class="row-hit" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; height: auto"/>
+        <element id="signal" class="team-player-signal" focusable="false"/>
+        <player-avatar id="avatar" class="team-player-avatar" focusable="false"/>
+        <label id="name" class="team-player-name" focusable="false"/>
+        <label id="state" class="team-player-state" focusable="false"/>
+    </root>
+</ldlib2-ui>

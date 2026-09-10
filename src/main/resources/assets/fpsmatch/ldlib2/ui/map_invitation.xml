@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- FPSMatch incoming-invitation confirmation — competitive tactical HUD skin.
+     Shell geometry is applied from Java (Ldlib2MapInvitationScreen.applyResponsiveLayout);
+     this file owns structure, visuals and static text. -->
+<ldlib2-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Low-Drag-MC/LDLib2/refs/heads/1.21/ldlib2-ui.xsd">
+    <stylesheet location="fpsmatch:lss/rhodes.lss"/>
+    <root id="fpsmatch.map_invitation.root" class="rhodes-root" style="width: 100%; height: 100%">
+        <label id="fpsmatch.map_invitation.system" class="eyebrow" focusable="false"><lang key="gui.fpsm.map_select.title"/></label>
+        <element id="fpsmatch.map_invitation.panel" class="panel" focusable="false">
+            <label id="fpsmatch.map_invitation.title" class="title" focusable="false"><lang key="gui.fpsm.map_select.invitation.title"/></label>
+            <label id="fpsmatch.map_invitation.message" class="body" focusable="false" style="text-wrap: wrap"/>
+            <label id="fpsmatch.map_invitation.room" class="identity" focusable="false"/>
+            <fpsm-button id="fpsmatch.map_invitation.accept" class="btn-primary" text-key="gui.fpsm.map_select.invitation.accept"/>
+            <fpsm-button id="fpsmatch.map_invitation.reject" class="btn-secondary" text-key="gui.fpsm.map_select.invitation.reject"/>
+        </element>
+    </root>
+</ldlib2-ui>

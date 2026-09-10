@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Room row fragment for the map selection list. Cloned per room via UITemplate;
+     ids are re-scoped per row and data-bound from Java. The status bar fill and
+     the state label color are data-driven and applied procedurally. -->
+<ldlib2-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Low-Drag-MC/LDLib2/refs/heads/1.21/ldlib2-ui.xsd">
+    <root style="width: 100%; height: 56">
+        <fpsm-button id="row" class="room-row" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; height: auto">
+            <element id="status" class="room-row-status" focusable="false"/>
+            <map-thumbnail id="preview" class="room-row-preview" focusable="false"/>
+            <label id="name" class="room-row-name" focusable="false"/>
+            <label id="meta" class="room-row-meta" focusable="false"/>
+            <label id="players" class="room-row-players" focusable="false"/>
+            <label id="state" class="room-row-state" focusable="false"/>
+        </fpsm-button>
+    </root>
+</ldlib2-ui>

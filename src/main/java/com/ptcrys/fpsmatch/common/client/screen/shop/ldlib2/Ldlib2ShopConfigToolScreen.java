@@ -1,18 +1,16 @@
 package com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2;
 
-import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.VirtualScrollerView;
-import com.lowdragmc.lowdraglib2.math.Size;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleButton;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleModularUIScreen;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleSelector;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2XmlUi;
 import com.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorNavigation;
 import com.ptcrys.fpsmatch.common.packet.mapselect.EditableShopInfo;
 import com.ptcrys.fpsmatch.common.packet.shop.OpenShopConfigToolScreenS2CPacket;
@@ -26,50 +24,87 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/** LDLib2 overview for the handheld shop configuration tool. */
+/**
+ * LDLib2 overview for the handheld shop configuration tool.
+ * Layout structure lives in {@code fpsmatch:ldlib2/ui/shop_config_tool.xml}; this class binds data.
+ */
 public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen {
+    private static final String LAYOUT = "fpsmatch:ldlib2/ui/shop_config_tool.xml";
     private static final int OPEN_TIMEOUT_TICKS = 200;
 
-    private final UIElement filters;
-    private final AccessibleSelector<String> typeSelector;
-    private final AccessibleSelector<String> mapSelector;
-    private final VirtualScrollerView<EditableShopInfo> shopList;
-    private final Label emptyLabel;
-    private final Label statusLabel;
-    private final AccessibleButton refreshButton;
-    private final AccessibleButton closeButton;
+    private UIElement filters;
+    private AccessibleSelector<String> typeSelector;
+    private AccessibleSelector<String> mapSelector;
+    private VirtualScrollerView<EditableShopInfo> shopList;
+    private Label emptyLabel;
+    private Label statusLabel;
+    private AccessibleButton refreshButton;
+    private AccessibleButton closeButton;
     private OpenShopConfigToolScreenS2CPacket data;
     private boolean openingEditor;
     private int openingTicks;
+    private boolean bound;
 
     public Ldlib2ShopConfigToolScreen(OpenShopConfigToolScreenS2CPacket data) {
-        this(build(), data);
-    }
-
-    private Ldlib2ShopConfigToolScreen(Parts parts, OpenShopConfigToolScreenS2CPacket data) {
-        super(parts.ui(), Component.translatable("gui.fpsm.shop_config.title"));
-        this.filters = parts.filters();
-        this.typeSelector = parts.typeSelector();
-        this.mapSelector = parts.mapSelector();
-        this.shopList = parts.shopList();
-        this.emptyLabel = parts.emptyLabel();
-        this.statusLabel = parts.statusLabel();
-        this.refreshButton = parts.refreshButton();
-        this.closeButton = parts.closeButton();
+        super(Ldlib2XmlUi.load(LAYOUT), Component.translatable("gui.fpsm.shop_config.title"));
         this.data = Objects.requireNonNull(data, "data");
-        typeSelector.setOnValueChanged(value -> selectType(value));
-        mapSelector.setOnValueChanged(value -> selectMap(value));
-        refreshButton.setOnClick(event -> refresh());
-        closeButton.setOnClick(event -> onClose());
-        shopList.setItemUIProvider(this::shopRow);
-        registerFocusGroup(this::focusTargets);
-        applyData(data);
     }
 
     @Override
     public void init() {
         super.init();
+        bind();
         applyResponsiveLayout();
+        applyData(data);
+    }
+
+    private void bind() {
+        UI ui = modularUI.ui;
+        filters = Ldlib2XmlUi.require(ui, "fpsmatch.shop_config.filters", UIElement.class);
+        @SuppressWarnings("unchecked")
+        AccessibleSelector<String> type = (AccessibleSelector<String>) Ldlib2XmlUi.require(
+                ui, "fpsmatch.shop_config.type", AccessibleSelector.class);
+        typeSelector = type;
+        @SuppressWarnings("unchecked")
+        AccessibleSelector<String> map = (AccessibleSelector<String>) Ldlib2XmlUi.require(
+                ui, "fpsmatch.shop_config.map", AccessibleSelector.class);
+        mapSelector = map;
+        @SuppressWarnings("unchecked")
+        VirtualScrollerView<EditableShopInfo> list = (VirtualScrollerView<EditableShopInfo>) Ldlib2XmlUi.require(
+                ui, "fpsmatch.shop_config.list", VirtualScrollerView.class);
+        shopList = list;
+        emptyLabel = Ldlib2XmlUi.require(ui, "fpsmatch.shop_config.empty", Label.class);
+        statusLabel = Ldlib2XmlUi.require(ui, "fpsmatch.shop_config.status", Label.class);
+        refreshButton = Ldlib2XmlUi.require(ui, "fpsmatch.shop_config.refresh", AccessibleButton.class);
+        closeButton = Ldlib2XmlUi.require(ui, "fpsmatch.shop_config.close", AccessibleButton.class);
+
+        if (filters == null || typeSelector == null || mapSelector == null || shopList == null
+                || emptyLabel == null || statusLabel == null || refreshButton == null
+                || closeButton == null) {
+            FPSMatch.LOGGER.error("[FPSM UI] shop_config_tool.xml is missing required elements; "
+                    + "binding aborted, fallback UI shown (see errors above)");
+            return;
+        }
+
+        bindSelector(typeSelector, "fpsmatch.shop_config.type");
+        bindSelector(mapSelector, "fpsmatch.shop_config.map");
+        typeSelector.setOnValueChanged(value -> selectType(value));
+        mapSelector.setOnValueChanged(value -> selectMap(value));
+        refreshButton.setOnClick(event -> refresh());
+        closeButton.setOnClick(event -> onClose());
+        shopList.setItemUIProvider(this::shopRow);
+        bound = true;
+    }
+
+    private static void bindSelector(AccessibleSelector<String> selector, String id) {
+        selector.setCandidateUIProvider(value -> {
+            Label option = new Label();
+            option.setId(id + ".option." + value);
+            option.setValue(Component.literal(value == null || value.isBlank() ? "-" : value));
+            option.addClass("selector-candidate");
+            return option;
+        });
+        selector.setAccessibleName(Component.literal(id));
     }
 
     @Override
@@ -82,6 +117,9 @@ public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen 
 
     public void applyData(OpenShopConfigToolScreenS2CPacket data) {
         this.data = Objects.requireNonNull(data, "data");
+        if (!bound) {
+            return;
+        }
         List<String> types = data.maps().stream().map(OpenShopConfigToolScreenS2CPacket.MapEntry::gameType)
                 .distinct().toList();
         typeSelector.setCandidates(types);
@@ -102,8 +140,8 @@ public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen 
         if (!openingEditor) {
             statusLabel.setValue(Component.translatable(data.shops().isEmpty()
                     ? "gui.fpsm.shop_config.empty" : "gui.fpsm.shop_config.edit"));
-            FPSMLdlib2Theme.status(statusLabel,
-                    data.shops().isEmpty() ? FPSMLdlib2Theme.MUTED : FPSMLdlib2Theme.SUCCESS);
+            statusLabel.textStyle(style -> style.textColor(data.shops().isEmpty()
+                    ? FPSMLdlib2Theme.MUTED : FPSMLdlib2Theme.SUCCESS));
         }
         refreshButtons();
     }
@@ -119,7 +157,7 @@ public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen 
         openingEditor = false;
         openingTicks = 0;
         statusLabel.setValue(message);
-        FPSMLdlib2Theme.status(statusLabel, FPSMLdlib2Theme.DANGER);
+        statusLabel.textStyle(style -> style.textColor(FPSMLdlib2Theme.DANGER));
         refreshButtons();
         announce(message, true);
     }
@@ -138,20 +176,6 @@ public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen 
         minecraft.setScreen(null);
     }
 
-    private List<Ldlib2AccessibilityController.FocusTarget> focusTargets() {
-        List<Ldlib2AccessibilityController.FocusTarget> targets = new ArrayList<>();
-        targets.add(typeSelector);
-        targets.add(mapSelector);
-        shopList.allChildrenStream()
-                .filter(AccessibleButton.class::isInstance)
-                .map(AccessibleButton.class::cast)
-                .filter(AccessibleButton::isActive)
-                .forEach(targets::add);
-        targets.add(refreshButton);
-        targets.add(closeButton);
-        return List.copyOf(targets);
-    }
-
     private UIElement shopRow(EditableShopInfo shop) {
         AccessibleButton row = new AccessibleButton();
         row.setId("fpsmatch.shop_config.row." + shop.gameType() + "." + shop.mapName()
@@ -162,8 +186,8 @@ public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen 
         row.setAccessibleHint(() -> Component.translatable("gui.fpsm.shop_config.edit"));
         row.setOnClick(event -> openEditor(shop));
         row.layout(layout -> layout.widthPercent(100).height(30).marginBottom(4));
-        FPSMLdlib2Theme.button(row, FPSMLdlib2Theme.ButtonKind.SECONDARY);
-        row.textStyle(style -> style.fontSize(9));
+        row.addClass("btn-secondary");
+        row.addClass("compact-btn");
         row.setActive(!openingEditor);
         return row;
     }
@@ -175,7 +199,7 @@ public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen 
         openingEditor = true;
         openingTicks = 0;
         statusLabel.setValue(Component.translatable("gui.fpsm.shop_editor.state.opening"));
-        FPSMLdlib2Theme.status(statusLabel, FPSMLdlib2Theme.WARNING);
+        statusLabel.textStyle(style -> style.textColor(FPSMLdlib2Theme.WARNING));
         refreshButtons();
         ShopEditorNavigation.beginConfigTool(shop.gameType(), shop.mapName(), shop.teamName());
         FPSMatch.sendToServer(new OpenShopEditorC2SPacket(
@@ -225,8 +249,8 @@ public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen 
 
     private void refreshButtons() {
         boolean enabled = !openingEditor;
-        FPSMLdlib2Theme.buttonState(refreshButton, FPSMLdlib2Theme.ButtonKind.SECONDARY, enabled);
-        FPSMLdlib2Theme.buttonState(closeButton, FPSMLdlib2Theme.ButtonKind.QUIET, enabled);
+        setButtonEnabled(refreshButton, enabled);
+        setButtonEnabled(closeButton, enabled);
         typeSelector.setActive(enabled && data.maps().stream()
                 .anyMatch(map -> !map.gameType().isBlank()));
         mapSelector.setActive(enabled && data.maps().stream()
@@ -235,7 +259,28 @@ public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen 
                 .map(AccessibleButton.class::cast).forEach(row -> row.setActive(enabled));
     }
 
+    /** Replaces the old procedural disabled-texture swap with the LSS __disabled__ class. */
+    private static void setButtonEnabled(AccessibleButton button, boolean enabled) {
+        if (button == null) {
+            return;
+        }
+        button.setActive(enabled);
+        button.setAllowHitTest(enabled);
+        button.setFocusable(enabled);
+        if (enabled) {
+            button.removeClass("__disabled__");
+            return;
+        }
+        if (button.isFocused()) {
+            button.blur();
+        }
+        button.addClass("__disabled__");
+    }
+
     private void applyResponsiveLayout() {
+        if (!bound) {
+            return;
+        }
         int margin = Math.min(16, Math.max(8, width / 32));
         int headerHeight = 54;
         int footerHeight = 38;
@@ -256,89 +301,11 @@ public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen 
     }
 
     private static void absolute(UIElement element, int left, int top, int width, int height) {
+        if (element == null) {
+            return;
+        }
         element.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().bottomAuto().left(left).top(top)
                 .width(Math.max(1, width)).height(Math.max(1, height)));
-    }
-
-    private static Parts build() {
-        UIElement root = new UIElement().setId("fpsmatch.shop_config.root");
-        root.layout(layout -> layout.widthPercent(100).heightPercent(100));
-        FPSMLdlib2Theme.root(root);
-        Label system = label("fpsmatch.shop_config.system",
-                Component.literal("FPSM // MAP SYSTEM  ·  SHOP INDEX"));
-        FPSMLdlib2Theme.systemLabel(system);
-        system.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(18).right(18).top(2).height(10));
-        Label title = label("fpsmatch.shop_config.title",
-                Component.translatable("gui.fpsm.shop_config.title"));
-        FPSMLdlib2Theme.title(title);
-        title.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(18).right(18).top(13).height(20));
-        UIElement filters = new UIElement().setId("fpsmatch.shop_config.filters");
-        FPSMLdlib2Theme.panel(filters);
-        Label typeLabel = label("fpsmatch.shop_config.type.label",
-                Component.translatable("gui.fpsm.shop_config.type"));
-        Label mapLabel = label("fpsmatch.shop_config.map.label",
-                Component.translatable("gui.fpsm.shop_config.map"));
-        FPSMLdlib2Theme.muted(typeLabel);
-        FPSMLdlib2Theme.muted(mapLabel);
-        typeLabel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(8).top(5).width(140).height(12));
-        mapLabel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .leftPercent(50).top(5).width(140).height(12));
-        AccessibleSelector<String> typeSelector = selector("fpsmatch.shop_config.type");
-        AccessibleSelector<String> mapSelector = selector("fpsmatch.shop_config.map");
-        filters.addChildren(typeLabel, mapLabel, typeSelector, mapSelector);
-        VirtualScrollerView<EditableShopInfo> list = new VirtualScrollerView<>();
-        list.setId("fpsmatch.shop_config.list");
-        FPSMLdlib2Theme.virtualScroller(list);
-        Label empty = label("fpsmatch.shop_config.empty", Component.empty());
-        FPSMLdlib2Theme.muted(empty);
-        Label status = label("fpsmatch.shop_config.status", Component.empty());
-        FPSMLdlib2Theme.status(status, FPSMLdlib2Theme.MUTED);
-        AccessibleButton refresh = button("fpsmatch.shop_config.refresh", "gui.fpsm.shop_config.refresh",
-                FPSMLdlib2Theme.ButtonKind.SECONDARY);
-        AccessibleButton close = button("fpsmatch.shop_config.close", "gui.back",
-                FPSMLdlib2Theme.ButtonKind.QUIET);
-        root.addChildren(system, title, filters, list, empty, status, refresh, close);
-        return new Parts(ModularUI.of(UI.of(root,
-                size -> Size.of(Math.max(280, size.getWidth()), Math.max(200, size.getHeight())))),
-                filters, typeSelector, mapSelector, list, empty, status, refresh, close);
-    }
-
-    private static AccessibleSelector<String> selector(String id) {
-        AccessibleSelector<String> selector = new AccessibleSelector<>();
-        selector.setId(id);
-        selector.setCandidateUIProvider(value -> label(id + ".option." + value,
-                Component.literal(value == null || value.isBlank() ? "-" : value)));
-        selector.setAccessibleName(Component.literal(id));
-        FPSMLdlib2Theme.selector(selector);
-        return selector;
-    }
-
-    private static AccessibleButton button(String id, String key, FPSMLdlib2Theme.ButtonKind kind) {
-        AccessibleButton button = new AccessibleButton();
-        button.setId(id);
-        button.setText(Component.translatable(key));
-        FPSMLdlib2Theme.button(button, kind);
-        return button;
-    }
-
-    private static Label label(String id, Component text) {
-        Label label = new Label();
-        label.setId(id);
-        label.setValue(text);
-        label.setAllowHitTest(false);
-        label.setFocusable(false);
-        return label;
-    }
-
-    private record Parts(
-            ModularUI ui, UIElement filters, AccessibleSelector<String> typeSelector,
-            AccessibleSelector<String> mapSelector, VirtualScrollerView<EditableShopInfo> shopList,
-            Label emptyLabel, Label statusLabel, AccessibleButton refreshButton,
-            AccessibleButton closeButton
-    ) {
     }
 }

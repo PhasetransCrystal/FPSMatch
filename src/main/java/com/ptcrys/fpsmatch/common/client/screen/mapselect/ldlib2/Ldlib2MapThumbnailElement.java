@@ -2,22 +2,33 @@ package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
+import com.lowdragmc.lowdraglib2.registry.annotation.LDLRegister;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.MapThumbnailRenderer;
 
-/** LDLib2 bridge for the existing map preview renderer. */
-final class Ldlib2MapThumbnailElement extends UIElement {
-    private final String texture;
-    private final String mapName;
-    private final String gameType;
-    private final String displayName;
+/** LDLib2 bridge for the existing map preview renderer. Data is bound post-construction. */
+@LDLRegister(name = "map-thumbnail", group = "fpsm", registry = "ldlib2:ui_element")
+public class Ldlib2MapThumbnailElement extends UIElement {
+    private String texture = "";
+    private String mapName = "";
+    private String gameType = "";
+    private String displayName = "";
+
+    public Ldlib2MapThumbnailElement() {
+        setAllowHitTest(false);
+    }
 
     Ldlib2MapThumbnailElement(String id, String texture, String mapName, String gameType, String displayName) {
+        this();
         setId(id);
-        setAllowHitTest(false);
+        setThumbnailData(texture, mapName, gameType, displayName);
+    }
+
+    public Ldlib2MapThumbnailElement setThumbnailData(String texture, String mapName, String gameType, String displayName) {
         this.texture = texture == null ? "" : texture;
-        this.mapName = mapName;
-        this.gameType = gameType;
-        this.displayName = displayName;
+        this.mapName = mapName == null ? "" : mapName;
+        this.gameType = gameType == null ? "" : gameType;
+        this.displayName = displayName == null ? "" : displayName;
+        return this;
     }
 
     @Override

@@ -8,11 +8,13 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.ItemSlot;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView;
 import com.lowdragmc.lowdraglib2.math.Size;
+import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.screen.EditorShopContainer;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleButton;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessiblePanel;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2XmlUi;
 import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
 import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
 import net.minecraft.network.chat.Component;
@@ -24,8 +26,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.IntConsumer;
 
-/** Responsive LDLib2 work surface for selecting and opening one fixed shop slot. */
+/**
+ * Responsive LDLib2 work surface for selecting and opening one fixed shop slot.
+ * Layout structure lives in {@code fpsmatch:ldlib2/ui/editor_shop.xml}; call
+ * {@link View#bind()} after the ModularUI has been attached to its screen.
+ */
 public final class Ldlib2ShopEditorUi {
+    private static final String LAYOUT = "fpsmatch:ldlib2/ui/editor_shop.xml";
     private static final int CARD_WIDTH = 80;
     private static final int CARD_HEIGHT = 64;
     private static final int GAP = 6;
@@ -40,92 +47,12 @@ public final class Ldlib2ShopEditorUi {
             IntConsumer editAction,
             Runnable closeAction
     ) {
-        UIElement root = element(ShopEditorWidgetCatalog.ROOT);
-        root.layout(layout -> layout.widthPercent(100).heightPercent(100));
-        FPSMLdlib2Theme.root(root);
-
-        UIElement header = element(ShopEditorWidgetCatalog.HEADER);
-        UIElement categories = panel(ShopEditorWidgetCatalog.CATEGORIES);
-        UIElement slots = panel(ShopEditorWidgetCatalog.SLOT_LIST);
-        UIElement properties = panel(ShopEditorWidgetCatalog.PROPERTIES);
-        UIElement actions = panel(ShopEditorWidgetCatalog.ACTIONS);
-
-        Label system = label(ShopEditorWidgetCatalog.HEADER + ".system",
-                Component.literal("FPSM // MAP SYSTEM  ·  SHOP CONFIGURATION"));
-        FPSMLdlib2Theme.systemLabel(system);
-        Label title = label(ShopEditorWidgetCatalog.HEADER + ".title",
-                Component.translatable("gui.fpsm.shop_editor.title"));
-        FPSMLdlib2Theme.title(title);
-        Label identity = label(ShopEditorWidgetCatalog.SUBTITLE, Component.literal(
-                menu.getGameType() + " / " + menu.getMapName() + " / " + menu.getTeamName()));
-        FPSMLdlib2Theme.mapIdentity(identity);
-        Label mode = label(ShopEditorWidgetCatalog.HEADER + ".mode",
-                Component.translatable("gui.fpsm.shop_editor.edit_mode"));
-        FPSMLdlib2Theme.status(mode, FPSMLdlib2Theme.ACCENT);
-        header.addChildren(system, title, identity, mode);
-
-        Label categoryTitle = section(ShopEditorWidgetCatalog.CATEGORIES + ".title",
-                "gui.fpsm.shop_editor.categories");
-        ScrollerView categoryScroller = new ScrollerView();
-        categoryScroller.setId(ShopEditorWidgetCatalog.CATEGORY_TABS);
-        FPSMLdlib2Theme.settingsScroller(categoryScroller);
-        UIElement categoryList = element(ShopEditorWidgetCatalog.CATEGORY_TABS + ".content");
-        categoryScroller.addScrollViewChild(categoryList);
-        categories.addChildren(categoryTitle, categoryScroller);
-
-        Label slotTitle = section(ShopEditorWidgetCatalog.SLOT_LIST + ".title",
-                "gui.fpsm.shop_editor.slots");
-        slots.addChild(slotTitle);
-
-        Label propertyTitle = section(ShopEditorWidgetCatalog.PROPERTIES + ".title",
-                "gui.fpsm.shop_editor.properties");
-        Label selectedName = label(ShopEditorWidgetCatalog.PROPERTIES + ".name",
-                Component.translatable("gui.fpsm.shop_editor.selection.none"));
-        FPSMLdlib2Theme.body(selectedName);
-        Label selectedType = muted(ShopEditorWidgetCatalog.PROPERTIES + ".type");
-        Label selectedSlot = muted(ShopEditorWidgetCatalog.PROPERTIES + ".slot");
-        Label selectedPrice = muted(ShopEditorWidgetCatalog.PROPERTIES + ".price");
-        Label selectedQuantity = muted(ShopEditorWidgetCatalog.PROPERTIES + ".quantity");
-        Label selectedGroup = muted(ShopEditorWidgetCatalog.PROPERTIES + ".group");
-        properties.addChildren(propertyTitle, selectedName, selectedType, selectedSlot,
-                selectedPrice, selectedQuantity, selectedGroup);
-
-        Label actionStatus = label(ShopEditorWidgetCatalog.STATUS,
-                Component.translatable("gui.fpsm.shop_editor.selection.none"));
-        FPSMLdlib2Theme.status(actionStatus, FPSMLdlib2Theme.MUTED);
-        AccessibleButton edit = new AccessibleButton();
-        edit.setId(ShopEditorWidgetCatalog.EDIT_SELECTED);
-        edit.setText(Component.translatable("gui.fpsm.shop_editor.edit_selected"));
-        edit.setAccessibleHint(() -> Component.translatable("gui.fpsm.shop_editor.edit_selected.hint"));
-        AccessibleButton close = new AccessibleButton();
-        close.setId(ShopEditorWidgetCatalog.CLOSE);
-        close.setText(Component.translatable("gui.back"));
-        close.setOnClick(event -> closeAction.run());
-        actions.addChildren(actionStatus, edit, close);
-
-        root.addChildren(header, categories, slots, properties, actions);
-        ModularUI ui = ModularUI.of(UI.of(root, size -> Size.of(
+        UI ui = Ldlib2XmlUi.loadUi(LAYOUT, size -> Size.of(
                 Math.max(280, size.getWidth() - 12),
-                Math.max(200, size.getHeight() - 12))));
-        ui.setMenu(menu);
-        View view = new View(ui, menu, header, categories, slots, properties, actions,
-                system, title, identity, mode, categoryTitle, categoryScroller, categoryList,
-                slotTitle, propertyTitle, selectedName, selectedType, selectedSlot, selectedPrice,
-                selectedQuantity, selectedGroup, actionStatus, edit, close,
-                selectionChanged, editAction);
-        view.buildCategories();
-        view.restoreSelection(initialSelection);
-        return view;
-    }
-
-    private static UIElement element(String id) {
-        return new UIElement().setId(id);
-    }
-
-    private static UIElement panel(String id) {
-        UIElement panel = element(id);
-        FPSMLdlib2Theme.panel(panel);
-        return panel;
+                Math.max(200, size.getHeight() - 12)));
+        ModularUI modularUI = ModularUI.of(ui);
+        modularUI.setMenu(menu);
+        return new View(modularUI, menu, initialSelection, selectionChanged, editAction, closeAction);
     }
 
     private static Label label(String id, Component value) {
@@ -137,46 +64,36 @@ public final class Ldlib2ShopEditorUi {
         return label;
     }
 
-    private static Label section(String id, String key) {
-        Label label = label(id, Component.translatable(key));
-        FPSMLdlib2Theme.sectionTitle(label);
-        return label;
-    }
-
-    private static Label muted(String id) {
-        Label label = label(id, Component.empty());
-        FPSMLdlib2Theme.muted(label);
-        return label;
-    }
-
     public static final class View {
         private final ModularUI ui;
         private final EditorShopContainer menu;
-        private final UIElement header;
-        private final UIElement categories;
-        private final UIElement slots;
-        private final UIElement properties;
-        private final UIElement actions;
-        private final Label system;
-        private final Label title;
-        private final Label identity;
-        private final Label mode;
-        private final Label categoryTitle;
-        private final ScrollerView categoryScroller;
-        private final UIElement categoryList;
-        private final Label slotTitle;
-        private final Label propertyTitle;
-        private final Label selectedName;
-        private final Label selectedTypeLabel;
-        private final Label selectedSlotLabel;
-        private final Label selectedPrice;
-        private final Label selectedQuantity;
-        private final Label selectedGroup;
-        private final Label actionStatus;
-        private final AccessibleButton edit;
-        private final AccessibleButton close;
         private final IntConsumer selectionChanged;
         private final IntConsumer editAction;
+        private final Runnable closeAction;
+        private final int initialSelection;
+        private UIElement header;
+        private UIElement categories;
+        private UIElement slots;
+        private UIElement properties;
+        private UIElement actions;
+        private Label system;
+        private Label title;
+        private Label identity;
+        private Label mode;
+        private Label categoryTitle;
+        private ScrollerView categoryScroller;
+        private UIElement categoryList;
+        private Label slotTitle;
+        private Label propertyTitle;
+        private Label selectedName;
+        private Label selectedTypeLabel;
+        private Label selectedSlotLabel;
+        private Label selectedPrice;
+        private Label selectedQuantity;
+        private Label selectedGroup;
+        private Label actionStatus;
+        private AccessibleButton edit;
+        private AccessibleButton close;
         private final Map<String, AccessibleButton> categoryButtons = new LinkedHashMap<>();
         private final Map<String, CategoryView> categoryViews = new LinkedHashMap<>();
         private final Map<Integer, AccessiblePanel> slotCards = new LinkedHashMap<>();
@@ -184,53 +101,89 @@ public final class Ldlib2ShopEditorUi {
         private int selectedSlotIndex = -1;
         private boolean opening;
         private boolean openTimedOut;
+        private boolean bound;
 
         private View(
-                ModularUI ui, EditorShopContainer menu, UIElement header, UIElement categories,
-                UIElement slots, UIElement properties, UIElement actions, Label system, Label title,
-                Label identity, Label mode, Label categoryTitle, ScrollerView categoryScroller,
-                UIElement categoryList, Label slotTitle, Label propertyTitle, Label selectedName,
-                Label selectedTypeLabel, Label selectedSlotLabel, Label selectedPrice,
-                Label selectedQuantity, Label selectedGroup, Label actionStatus,
-                AccessibleButton edit, AccessibleButton close, IntConsumer selectionChanged,
-                IntConsumer editAction
+                ModularUI ui, EditorShopContainer menu, int initialSelection,
+                IntConsumer selectionChanged, IntConsumer editAction, Runnable closeAction
         ) {
             this.ui = ui;
             this.menu = menu;
-            this.header = header;
-            this.categories = categories;
-            this.slots = slots;
-            this.properties = properties;
-            this.actions = actions;
-            this.system = system;
-            this.title = title;
-            this.identity = identity;
-            this.mode = mode;
-            this.categoryTitle = categoryTitle;
-            this.categoryScroller = categoryScroller;
-            this.categoryList = categoryList;
-            this.slotTitle = slotTitle;
-            this.propertyTitle = propertyTitle;
-            this.selectedName = selectedName;
-            this.selectedTypeLabel = selectedTypeLabel;
-            this.selectedSlotLabel = selectedSlotLabel;
-            this.selectedPrice = selectedPrice;
-            this.selectedQuantity = selectedQuantity;
-            this.selectedGroup = selectedGroup;
-            this.actionStatus = actionStatus;
-            this.edit = edit;
-            this.close = close;
+            this.initialSelection = initialSelection;
             this.selectionChanged = selectionChanged;
             this.editAction = editAction;
-            edit.setOnClick(event -> openSelected());
+            this.closeAction = closeAction;
         }
 
         public ModularUI modularUI() {
             return ui;
         }
 
+        /** Resolves XML elements and wires callbacks; call after {@code setScreenAndInit}. */
+        public void bind() {
+            if (bound) {
+                return;
+            }
+            UI uiDoc = this.ui.ui;
+            header = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.HEADER, UIElement.class);
+            categories = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.CATEGORIES, UIElement.class);
+            slots = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.SLOT_LIST, UIElement.class);
+            properties = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.PROPERTIES, UIElement.class);
+            actions = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.ACTIONS, UIElement.class);
+            system = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.HEADER + ".system", Label.class);
+            title = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.HEADER + ".title", Label.class);
+            identity = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.SUBTITLE, Label.class);
+            mode = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.HEADER + ".mode", Label.class);
+            categoryTitle = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.CATEGORIES + ".title", Label.class);
+            categoryScroller = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.CATEGORY_TABS, ScrollerView.class);
+            slotTitle = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.SLOT_LIST + ".title", Label.class);
+            propertyTitle = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.PROPERTIES + ".title", Label.class);
+            selectedName = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.PROPERTIES + ".name", Label.class);
+            selectedTypeLabel = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.PROPERTIES + ".type", Label.class);
+            selectedSlotLabel = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.PROPERTIES + ".slot", Label.class);
+            selectedPrice = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.PROPERTIES + ".price", Label.class);
+            selectedQuantity = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.PROPERTIES + ".quantity", Label.class);
+            selectedGroup = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.PROPERTIES + ".group", Label.class);
+            actionStatus = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.STATUS, Label.class);
+            edit = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.EDIT_SELECTED, AccessibleButton.class);
+            close = Ldlib2XmlUi.require(uiDoc, ShopEditorWidgetCatalog.CLOSE, AccessibleButton.class);
+
+            if (header == null || categories == null || slots == null || properties == null
+                    || actions == null || system == null || title == null || identity == null
+                    || mode == null || categoryTitle == null || categoryScroller == null
+                    || slotTitle == null || propertyTitle == null || selectedName == null
+                    || selectedTypeLabel == null || selectedSlotLabel == null || selectedPrice == null
+                    || selectedQuantity == null || selectedGroup == null || actionStatus == null
+                    || edit == null || close == null) {
+                FPSMatch.LOGGER.error("[FPSM UI] editor_shop.xml is missing required elements; "
+                        + "binding aborted (see errors above)");
+                return;
+            }
+
+            identity.setValue(Component.literal(
+                    menu.getGameType() + " / " + menu.getMapName() + " / " + menu.getTeamName()));
+
+            categoryList = new UIElement().setId(ShopEditorWidgetCatalog.CATEGORY_TABS + ".content");
+            categoryScroller.addScrollViewChild(categoryList);
+
+            edit.setAccessibleHint(() -> Component.translatable("gui.fpsm.shop_editor.edit_selected.hint"));
+            edit.setOnClick(event -> openSelected());
+            close.setOnClick(event -> {
+                if (closeAction != null) {
+                    closeAction.run();
+                }
+            });
+
+            bound = true;
+            buildCategories();
+            restoreSelection(initialSelection);
+        }
+
         public List<Ldlib2AccessibilityController.FocusTarget> focusTargets() {
             List<Ldlib2AccessibilityController.FocusTarget> targets = new ArrayList<>();
+            if (!bound) {
+                return targets;
+            }
             targets.addAll(categoryButtons.values());
             CategoryView category = categoryViews.get(selectedType);
             if (category != null) {
@@ -242,6 +195,9 @@ public final class Ldlib2ShopEditorUi {
         }
 
         public void applyResponsiveLayout(int width, int height) {
+            if (!bound) {
+                return;
+            }
             ShopEditorLayoutModel model = ShopEditorLayoutModel.responsive(width, height);
             place(header, model.header());
             place(categories, model.categories());
@@ -273,6 +229,7 @@ public final class Ldlib2ShopEditorUi {
                         ? Component.translatable("gui.fpsm.shop_editor.category.selected")
                         : Component.empty());
                 button.setOnClick(event -> selectCategory(type));
+                button.addClass("compact-btn");
                 categoryButtons.put(type, button);
                 categoryList.addChild(button);
                 CategoryView category = buildCategory(type);
@@ -284,12 +241,12 @@ public final class Ldlib2ShopEditorUi {
 
         private CategoryView buildCategory(String type) {
             EditorShopContainer.TypeInfo info = menu.getTypes().get(type);
-            UIElement root = element(ShopEditorWidgetCatalog.GROUP + "." + type);
+            UIElement root = new UIElement().setId(ShopEditorWidgetCatalog.GROUP + "." + type);
             ScrollerView scroller = new ScrollerView();
             scroller.setId(ShopEditorWidgetCatalog.SLOT_LIST + "." + type);
             scroller.scrollerStyle(style -> style.mode(ScrollerMode.VERTICAL));
-            FPSMLdlib2Theme.settingsScroller(scroller);
-            UIElement content = element(ShopEditorWidgetCatalog.SLOT_LIST + "." + type + ".content");
+            scroller.addClass("rhodes-scroller");
+            UIElement content = new UIElement().setId(ShopEditorWidgetCatalog.SLOT_LIST + "." + type + ".content");
             List<AccessiblePanel> cards = new ArrayList<>();
             List<ShopSlot> all = menu.getAllSlots();
             for (int localIndex = 0; localIndex < info.slotCount(); localIndex++) {
@@ -300,6 +257,8 @@ public final class Ldlib2ShopEditorUi {
                         : shopSlot.process().getHoverName();
                 AccessiblePanel card = new AccessiblePanel();
                 card.setId(ShopEditorWidgetCatalog.ITEM + "." + type + "." + localIndex + ".card");
+                card.addClass("slot-card");
+                card.addClass("panel-elevated");
                 card.setAccessibleName(Component.translatable(
                         "gui.fpsm.shop_editor.slot.accessible", localIndex + 1, itemName));
                 card.setAccessibleState(() -> selectedSlotIndex == slotIndex
@@ -309,22 +268,21 @@ public final class Ldlib2ShopEditorUi {
                     card.setActive(false);
                     card.setAllowHitTest(false);
                     card.setFocusable(false);
+                    card.addClass("__disabled__");
                 } else {
                     card.setOnActivate(() -> selectSlot(type, slotIndex));
                 }
-                FPSMLdlib2Theme.elevated(card);
                 Label name = label(card.getId() + ".name", itemName);
-                FPSMLdlib2Theme.muted(name);
+                name.addClass("muted");
                 ItemSlot item = new ItemSlot(menu.slots.get(slotIndex));
                 item.setId(ShopEditorWidgetCatalog.ITEM + "." + type + "." + localIndex);
                 item.setAllowHitTest(false);
                 item.setFocusable(false);
-                FPSMLdlib2Theme.slot(item);
                 Label price = label(card.getId() + ".price", shopSlot == null
                         ? Component.literal("-")
                         : Component.literal("$" + shopSlot.getDefaultCost()));
-                FPSMLdlib2Theme.status(price, shopSlot == null
-                        ? FPSMLdlib2Theme.DISABLED : FPSMLdlib2Theme.WARNING);
+                price.textStyle(style -> style.fontSize(9).textColor(shopSlot == null
+                        ? FPSMLdlib2Theme.DISABLED : FPSMLdlib2Theme.WARNING));
                 absolute(name, 4, 4, CARD_WIDTH - 8, 12);
                 absolute(item, 24, 15, 32, 32);
                 absolute(price, 4, 50, CARD_WIDTH - 8, 12);
@@ -389,14 +347,18 @@ public final class Ldlib2ShopEditorUi {
         }
 
         private void refreshCategory() {
-            categoryButtons.forEach((type, button) -> FPSMLdlib2Theme.button(button,
-                    type.equals(selectedType)
-                            ? FPSMLdlib2Theme.ButtonKind.PRIMARY
-                            : FPSMLdlib2Theme.ButtonKind.QUIET));
+            categoryButtons.forEach((type, button) -> {
+                button.removeClass("btn-primary");
+                button.removeClass("btn-quiet");
+                button.addClass(type.equals(selectedType) ? "btn-primary" : "btn-quiet");
+            });
             categoryViews.forEach((type, view) -> view.root().setDisplay(type.equals(selectedType)));
         }
 
         private void refreshSelection() {
+            if (!bound) {
+                return;
+            }
             ShopSlot selected = selectedSlotIndex >= 0 && selectedSlotIndex < menu.getAllSlots().size()
                     ? menu.getAllSlots().get(selectedSlotIndex) : null;
             EditorShopContainer.TypeInfo info = selectedType == null ? null : menu.getTypes().get(selectedType);
@@ -425,28 +387,27 @@ public final class Ldlib2ShopEditorUi {
             slotCards.forEach((index, card) -> {
                 if (card.isActive()) {
                     if (index == selectedSlotIndex) {
-                        FPSMLdlib2Theme.statusSurface(card, FPSMLdlib2Theme.ACCENT);
+                        card.addClass("__selected__");
                     } else {
-                        FPSMLdlib2Theme.elevated(card);
+                        card.removeClass("__selected__");
                     }
                 }
             });
             if (opening) {
                 actionStatus.setValue(Component.translatable("gui.fpsm.shop_editor.state.opening"));
-                FPSMLdlib2Theme.status(actionStatus, FPSMLdlib2Theme.WARNING);
+                actionStatus.textStyle(style -> style.textColor(FPSMLdlib2Theme.WARNING));
             } else if (openTimedOut) {
                 actionStatus.setValue(Component.translatable("gui.fpsm.shop_editor.open.timeout"));
-                FPSMLdlib2Theme.status(actionStatus, FPSMLdlib2Theme.DANGER);
+                actionStatus.textStyle(style -> style.textColor(FPSMLdlib2Theme.DANGER));
             } else if (selected == null) {
                 actionStatus.setValue(Component.translatable("gui.fpsm.shop_editor.selection.none"));
-                FPSMLdlib2Theme.status(actionStatus, FPSMLdlib2Theme.MUTED);
+                actionStatus.textStyle(style -> style.textColor(FPSMLdlib2Theme.MUTED));
             } else {
                 actionStatus.setValue(Component.translatable("gui.fpsm.shop_editor.selection.ready"));
-                FPSMLdlib2Theme.status(actionStatus, FPSMLdlib2Theme.SUCCESS);
+                actionStatus.textStyle(style -> style.textColor(FPSMLdlib2Theme.SUCCESS));
             }
-            FPSMLdlib2Theme.buttonState(edit, FPSMLdlib2Theme.ButtonKind.PRIMARY,
-                    selected != null && !opening);
-            FPSMLdlib2Theme.buttonState(close, FPSMLdlib2Theme.ButtonKind.QUIET, !opening);
+            setButtonEnabled(edit, selected != null && !opening);
+            setButtonEnabled(close, !opening);
         }
 
         private void layoutHeader(int width, int height) {
@@ -568,6 +529,24 @@ public final class Ldlib2ShopEditorUi {
         private static void place(UIElement element, ShopEditorLayoutModel.Rect rect) {
             absolute(element, rect.x() + 2, rect.y() + 2,
                     Math.max(1, rect.width() - 4), Math.max(1, rect.height() - 4));
+        }
+
+        /** Replaces the old procedural disabled-texture swap with the LSS __disabled__ class. */
+        private static void setButtonEnabled(AccessibleButton button, boolean enabled) {
+            if (button == null) {
+                return;
+            }
+            button.setActive(enabled);
+            button.setAllowHitTest(enabled);
+            button.setFocusable(enabled);
+            if (enabled) {
+                button.removeClass("__disabled__");
+                return;
+            }
+            if (button.isFocused()) {
+                button.blur();
+            }
+            button.addClass("__disabled__");
         }
     }
 
