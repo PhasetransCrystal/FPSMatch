@@ -35,6 +35,8 @@
             <label id="fpsmatch.map_settings.subtitle" class="identity" focusable="false"/>
             <label id="fpsmatch.map_settings.pending" class="muted" focusable="false" style="text-wrap: wrap"/>
             <fpsm-button id="fpsmatch.map_settings.shop" class="btn-secondary" text-key="gui.fpsm.map_settings.shop"/>
+            <fpsm-button id="fpsmatch.map_settings.regions" class="btn-secondary" text-key="gui.fpsm.map_settings.regions"/>
+            <fpsm-button id="fpsmatch.map_settings.import" class="btn-secondary" text-key="gui.fpsm.map_settings.import"/>
             <fpsm-button id="fpsmatch.map_settings.clear_changes" class="btn-quiet" text-key="gui.fpsm.map_select.settings.clear_changes"/>
             <fpsm-button id="fpsmatch.map_settings.save" class="btn-primary" text-key="gui.fpsm.map_select.settings.save"/>
             <fpsm-button id="fpsmatch.map_settings.exit" class="btn-quiet" text-key="gui.back"/>

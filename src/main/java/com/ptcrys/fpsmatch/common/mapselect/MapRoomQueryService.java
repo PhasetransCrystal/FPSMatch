@@ -1,6 +1,7 @@
 package com.ptcrys.fpsmatch.common.mapselect;
 
 import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
+import com.ptcrys.fpsmatch.common.capability.map.DemolitionModeCapability;
 import com.ptcrys.fpsmatch.common.packet.mapselect.EditableShopInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
@@ -78,6 +79,11 @@ public final class MapRoomQueryService {
                 viewer != null && isMapOperator(viewer) ? editableShops(map) : List.of(),
                 teams(map),
                 map.getReadyPlayers(),
+                map.getMapArea(),
+                map.getCapabilityMap().get(DemolitionModeCapability.class)
+                        .map(capability -> List.copyOf(capability.getBombAreaData()))
+                        .orElseGet(List::of),
+                map.getCapabilityMap().get(DemolitionModeCapability.class).isPresent(),
                 "gui.fpsm.map_select.rules." + map.getGameType(),
                 map.getIconTexture(),
                 map.getBackgroundTexture()

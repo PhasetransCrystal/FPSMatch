@@ -1,5 +1,6 @@
 package com.ptcrys.fpsmatch.common.packet.mapselect;
 
+import com.ptcrys.fpsmatch.core.data.AreaData;
 import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.ArrayList;
@@ -16,6 +17,9 @@ public record MapRoomDetail(
         List<EditableShopInfo> editableShops,
         List<MapRoomTeamInfo> teams,
         Set<UUID> readyPlayers,
+        AreaData mapArea,
+        List<AreaData> bombAreas,
+        boolean demolitionRegionsSupported,
         String rulesKey,
         String iconTexture,
         String backgroundTexture
@@ -30,6 +34,9 @@ public record MapRoomDetail(
         buf.writeCollection(detail.editableShops(), (buffer, info) -> info.encode(buffer));
         buf.writeCollection(detail.teams(), (buffer, info) -> MapRoomTeamInfo.encode(info, buffer));
         buf.writeCollection(detail.readyPlayers(), FriendlyByteBuf::writeUUID);
+        writeArea(buf, detail.mapArea());
+        buf.writeCollection(detail.bombAreas(), MapRoomDetail::writeArea);
+        buf.writeBoolean(detail.demolitionRegionsSupported());
         buf.writeUtf(detail.rulesKey(), RESOURCE_MAX_LENGTH);
         buf.writeUtf(detail.iconTexture(), RESOURCE_MAX_LENGTH);
         buf.writeUtf(detail.backgroundTexture(), RESOURCE_MAX_LENGTH);
@@ -43,6 +50,19 @@ public record MapRoomDetail(
         List<EditableShopInfo> editableShops = buf.readCollection(ArrayList::new, EditableShopInfo::decode);
         List<MapRoomTeamInfo> teams = buf.readCollection(ArrayList::new, MapRoomTeamInfo::decode);
         Set<UUID> readyPlayers = buf.readCollection(HashSet::new, FriendlyByteBuf::readUUID);
-        return new MapRoomDetail(summary, players, settings, availableInviteTargets, editableShops, teams, readyPlayers, buf.readUtf(RESOURCE_MAX_LENGTH), buf.readUtf(RESOURCE_MAX_LENGTH), buf.readUtf(RESOURCE_MAX_LENGTH));
+        AreaData mapArea = readArea(buf);
+        List<AreaData> bombAreas = buf.readCollection(ArrayList::new, MapRoomDetail::readArea);
+        return new MapRoomDetail(summary, players, settings, availableInviteTargets, editableShops,
+                teams, readyPlayers, mapArea, bombAreas, buf.readBoolean(),
+                buf.readUtf(RESOURCE_MAX_LENGTH), buf.readUtf(RESOURCE_MAX_LENGTH), buf.readUtf(RESOURCE_MAX_LENGTH));
+    }
+
+    private static void writeArea(FriendlyByteBuf buf, AreaData area) {
+        buf.writeBlockPos(area.pos1());
+        buf.writeBlockPos(area.pos2());
+    }
+
+    private static AreaData readArea(FriendlyByteBuf buf) {
+        return new AreaData(buf.readBlockPos(), buf.readBlockPos());
     }
 }

@@ -8,6 +8,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.Team;
+import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -81,8 +82,20 @@ public final class PlayerOutlineRenderer {
     }
 
     private static Optional<Boolean> isSameVisibleTeam(FPSMClientGlobalData data, LocalPlayer localPlayer, Player player) {
+        if (isFreeForAllRosterTeammate(data, localPlayer, player)) {
+            return Optional.of(false);
+        }
         return isSameCurrentMatchClientTeam(data, localPlayer, player)
                 .or(() -> isSameCurrentMatchScoreboardTeam(data, localPlayer, player));
+    }
+
+    private static boolean isFreeForAllRosterTeammate(FPSMClientGlobalData data, Player localPlayer, Player player) {
+        if (!data.isCurrentGameType("csdm")) return false;
+        Team localTeam = localPlayer.getTeam();
+        Team targetTeam = player.getTeam();
+        return localTeam instanceof PlayerTeam playerTeam
+                && localTeam == targetTeam
+                && playerTeam.isAllowFriendlyFire();
     }
 
     static Optional<Boolean> isSameCurrentMatchClientTeam(FPSMClientGlobalData data, Player localPlayer, Player player) {

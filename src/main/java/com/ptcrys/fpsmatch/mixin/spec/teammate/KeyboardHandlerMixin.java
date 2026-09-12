@@ -41,6 +41,10 @@ public class KeyboardHandlerMixin {
 
         boolean allowEscape = keyCode == GLFW.GLFW_KEY_ESCAPE;
         boolean allowTeamSwitch = SpecKeyHandler.switchKeyMatches(keyCode, scanCode);
+        // Chat is a UI action, not a spectator-world action.  Check the
+        // configured mapping instead of hard-coding T so users who rebound
+        // chat can still open it while attached to a teammate/C4/death spot.
+        boolean allowChat = mc.options.keyChat.matches(keyCode, scanCode);
 
         if (keyCode == GLFW.GLFW_KEY_SPACE
                 && action == GLFW.GLFW_PRESS
@@ -50,7 +54,7 @@ public class KeyboardHandlerMixin {
             return;
         }
 
-        if (!(allowEscape || allowTeamSwitch)) {
+        if (!(allowEscape || allowTeamSwitch || allowChat)) {
             ci.cancel();
         }
     }

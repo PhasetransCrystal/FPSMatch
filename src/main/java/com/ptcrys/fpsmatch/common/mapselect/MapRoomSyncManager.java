@@ -7,6 +7,7 @@ import com.ptcrys.fpsmatch.config.FPSMConfig;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.data.PlayerData;
 import com.ptcrys.fpsmatch.core.data.Setting;
+import com.ptcrys.fpsmatch.common.capability.map.DemolitionModeCapability;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import net.minecraft.server.MinecraftServer;
@@ -207,6 +208,13 @@ public final class MapRoomSyncManager {
             sig = mix(sig, setting.getConfigName().hashCode());
             Object value = setting.get();
             sig = mix(sig, value == null ? 0 : value.hashCode());
+        }
+        sig = mix(sig, map.getMapArea().pos1().hashCode());
+        sig = mix(sig, map.getMapArea().pos2().hashCode());
+        for (var area : map.getCapabilityMap().get(DemolitionModeCapability.class)
+                .map(DemolitionModeCapability::getBombAreaData).orElseGet(java.util.List::of)) {
+            sig = mix(sig, area.pos1().hashCode());
+            sig = mix(sig, area.pos2().hashCode());
         }
         sig = mix(sig, MapRoomQueryService.computeInviteTargetSignature(map));
         return sig;

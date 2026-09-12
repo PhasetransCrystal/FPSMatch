@@ -19,7 +19,9 @@ public class PlayerHurtSelfMixin {
         Optional<BaseMap> otherMap = FPSMCore.getInstance().getMapByPlayer(other);
         Optional<BaseMap> selfMap = FPSMCore.getInstance().getMapByPlayer(self);
         if (otherMap.isPresent() && otherMap.equals(selfMap) && "csdm".equals(otherMap.get().getGameType())) {
-            cir.setReturnValue(true);
+            if (!otherMap.get().getMapTeams().isSameTeam(self, other)) {
+                cir.setReturnValue(true);
+            }
             return;
         }
         if(otherMap.isPresent()){

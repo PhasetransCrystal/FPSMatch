@@ -1,14 +1,17 @@
 package com.ptcrys.fpsmatch.common.mapselect;
 
 import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.capability.map.DemolitionModeCapability;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
 import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.data.AreaData;
 import com.ptcrys.fpsmatch.core.data.Setting;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.team.MapTeams;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Map;
@@ -18,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class MapRoomActionService {
     private static final long INVITE_TTL_MILLIS = 60_000L;
+    private static final int MAX_BOMB_AREAS = 256;
     private static final Map<UUID, PendingInvite> PENDING_INVITES = new ConcurrentHashMap<>();
 
     private MapRoomActionService() {
@@ -220,6 +224,120 @@ public final class MapRoomActionService {
             }
         }
         return Result.failure(Component.translatable("gui.fpsm.map_select.action.setting.not_found", settingName));
+    }
+
+    public static Result setMapArea(ServerPlayer player, String gameType, String mapName, AreaData area) {
+        return MapRoomQueryService.findMap(gameType, mapName)
+                .map(map -> editMapArea(player, map, area))
+                .orElseGet(() -> Result.failure(Component.translatable("gui.fpsm.map_select.action.map_not_found")));
+    }
+
+    private static Result editMapArea(ServerPlayer player, BaseMap map, AreaData area) {
+        Result validation = validateAreaEdit(player, area);
+        if (validation != null) {
+            return validation;
+        }
+        map.setMapArea(area);
+        map.displayAreas(player);
+        FPSMCore.getInstance().getFPSMDataManager().saveAllData();
+        return Result.success(Component.translatable("gui.fpsm.map_regions.action.map_updated"), map, player);
+    }
+
+    public static Result addBombArea(ServerPlayer player, String gameType, String mapName, AreaData area) {
+        return withDemolitionCapability(player, gameType, mapName, area, (map, capability) -> {
+            if (capability.getBombAreaData().size() >= MAX_BOMB_AREAS) {
+                return Result.failure(Component.translatable("gui.fpsm.map_regions.action.limit"));
+            }
+            capability.addBombArea(area);
+            capability.syncBombAreasToClient(player);
+            FPSMCore.getInstance().getFPSMDataManager().saveAllData();
+            return Result.success(Component.translatable("gui.fpsm.map_regions.action.bomb_added"), map, player);
+        });
+    }
+
+    public static Result updateBombArea(ServerPlayer player, String gameType, String mapName, int index, AreaData area) {
+        return withDemolitionCapability(player, gameType, mapName, area, (map, capability) -> {
+            if (!capability.updateBombArea(index, area)) {
+                return Result.failure(Component.translatable("gui.fpsm.map_regions.action.not_found"));
+            }
+            capability.syncBombAreasToClient(player);
+            FPSMCore.getInstance().getFPSMDataManager().saveAllData();
+            return Result.success(Component.translatable("gui.fpsm.map_regions.action.bomb_updated", index + 1), map, player);
+        });
+    }
+
+    public static Result removeBombArea(ServerPlayer player, String gameType, String mapName, int index) {
+        if (!MapRoomQueryService.isMapOperator(player)) {
+            return Result.failure(Component.translatable("gui.fpsm.map_select.action.no_permission"));
+        }
+        return MapRoomQueryService.findMap(gameType, mapName)
+                .map(map -> map.getCapabilityMap().get(DemolitionModeCapability.class)
+                        .map(capability -> {
+                            if (!capability.removeBombArea(index)) {
+                                return Result.failure(Component.translatable("gui.fpsm.map_regions.action.not_found"));
+                            }
+                            capability.syncBombAreasToClient(player);
+                            FPSMCore.getInstance().getFPSMDataManager().saveAllData();
+                            return Result.success(Component.translatable(
+                                    "gui.fpsm.map_regions.action.bomb_removed", index + 1), map, player);
+                        })
+                        .orElseGet(() -> Result.failure(Component.translatable(
+                                "gui.fpsm.map_regions.action.unsupported"))))
+                .orElseGet(() -> Result.failure(Component.translatable("gui.fpsm.map_select.action.map_not_found")));
+    }
+
+    public static Result previewAreas(ServerPlayer player, String gameType, String mapName) {
+        if (!MapRoomQueryService.isMapOperator(player)) {
+            return Result.failure(Component.translatable("gui.fpsm.map_select.action.no_permission"));
+        }
+        return MapRoomQueryService.findMap(gameType, mapName)
+                .map(map -> {
+                    map.displayAreas(player);
+                    map.getCapabilityMap().get(DemolitionModeCapability.class)
+                            .ifPresent(capability -> capability.syncBombAreasToClient(player));
+                    return Result.success(Component.translatable("gui.fpsm.map_regions.action.preview"), map, player);
+                })
+                .orElseGet(() -> Result.failure(Component.translatable("gui.fpsm.map_select.action.map_not_found")));
+    }
+
+    private static Result withDemolitionCapability(
+            ServerPlayer player,
+            String gameType,
+            String mapName,
+            AreaData area,
+            DemolitionEdit edit
+    ) {
+        Result validation = validateAreaEdit(player, area);
+        if (validation != null) {
+            return validation;
+        }
+        return MapRoomQueryService.findMap(gameType, mapName)
+                .map(map -> map.getCapabilityMap().get(DemolitionModeCapability.class)
+                        .map(capability -> edit.apply(map, capability))
+                        .orElseGet(() -> Result.failure(Component.translatable(
+                                "gui.fpsm.map_regions.action.unsupported"))))
+                .orElseGet(() -> Result.failure(Component.translatable("gui.fpsm.map_select.action.map_not_found")));
+    }
+
+    private static Result validateAreaEdit(ServerPlayer player, AreaData area) {
+        if (!MapRoomQueryService.isMapOperator(player)) {
+            return Result.failure(Component.translatable("gui.fpsm.map_select.action.no_permission"));
+        }
+        if (area == null || !validPosition(area.pos1()) || !validPosition(area.pos2())) {
+            return Result.failure(Component.translatable("gui.fpsm.map_regions.action.invalid"));
+        }
+        return null;
+    }
+
+    private static boolean validPosition(BlockPos pos) {
+        return pos != null && Math.abs((long) pos.getX()) <= 30_000_000L
+                && Math.abs((long) pos.getZ()) <= 30_000_000L
+                && pos.getY() >= -2048 && pos.getY() <= 2047;
+    }
+
+    @FunctionalInterface
+    private interface DemolitionEdit {
+        Result apply(BaseMap map, DemolitionModeCapability capability);
     }
 
     public static Result invite(ServerPlayer player, String gameType, String mapName, UUID target) {

@@ -162,9 +162,7 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
         entry.setId(id);
         entry.setAccessibleName(Component.literal(shop.displayName()));
         entry.setAccessibleState(() -> Component.literal(shop.teamName()));
-        entry.setAccessibleHint(() -> Component.translatable("gui.fpsm.map_shop.edit.hint"));
-        entry.setOnActivate(() -> openEditor(shop));
-        entry.setActive(!openingEditor);
+        entry.setFocusable(false);
         if (compact) {
             entry.addClass("compact");
         } else {
@@ -180,10 +178,17 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
         if (team != null) {
             team.setId(id + ".team");
             team.setValue(Component.literal(shop.teamName()));
+            team.setVisible(false);
         }
-        Label action = row.selectId("action", Label.class).findFirst().orElse(null);
-        if (action != null) {
-            action.setId(id + ".action");
+        AccessibleButton edit = row.selectId("edit", AccessibleButton.class).findFirst().orElse(null);
+        if (edit != null) {
+            edit.setId(id + ".edit");
+            edit.setAccessibleHint(() -> Component.translatable("gui.fpsm.map_shop.edit.hint"));
+            edit.setOnClick(event -> openEditor(shop));
+            edit.setActive(!openingEditor);
+            edit.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
+                    .leftAuto().bottomAuto().right(compact ? 7 : 8).top(compact ? 12 : 7)
+                    .width(compact ? 64 : 86).height(26));
         }
         return row;
     }

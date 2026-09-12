@@ -34,6 +34,7 @@ public final class FPSMClientPacketRegistrar {
         ClientPacketRegistry.register(ShopDataSlotS2CPacket.class, FPSMClientPacketHandlers::handleShopDataSlot);
         ClientPacketRegistry.register(ShopActionResultS2CPacket.class, FPSMClientPacketHandlers::handleShopActionResult);
         ClientPacketRegistry.register(ShopMoneyS2CPacket.class, FPSMClientPacketHandlers::handleShopMoney);
+        ClientPacketRegistry.register(MapImportSourcesS2CPacket.class, FPSMClientPacketHandlers::handleMapImportSources);
         ClientPacketRegistry.register(FPSMAddTeamS2CPacket.class, FPSMClientPacketHandlers::handleAddTeam);
         ClientPacketRegistry.register(TeamCapabilitiesS2CPacket.class, FPSMClientPacketHandlers::handleTeamCapabilities);
         ClientPacketRegistry.register(TeamPlayerLeaveS2CPacket.class, FPSMClientPacketHandlers::handleTeamPlayerLeave);

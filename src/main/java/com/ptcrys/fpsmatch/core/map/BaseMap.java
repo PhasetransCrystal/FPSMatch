@@ -458,6 +458,23 @@ public abstract class BaseMap {
         return getServerLevel().getRandom();
     }
 
+    /**
+     * Resolves the combat relationship between two players whose runtime teams
+     * have already been found. Game modes such as free-for-all deathmatch can
+     * keep normal roster teams while treating every other player as an enemy.
+     */
+    public boolean areCombatTeammates(Player first, Player second, ServerTeam firstTeam, ServerTeam secondTeam) {
+        return firstTeam.equals(secondTeam);
+    }
+
+    /**
+     * Credits an assist. Modes with assist score rewards can extend this hook
+     * without duplicating the common death pipeline.
+     */
+    public void creditAssist(PlayerData playerData) {
+        playerData.addAssist();
+    }
+
     public void leave(ServerPlayer player) {
         if (MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerEvent.LeaveEvent(this, player))) return;
         this.sendPacketToJoinedPlayer(player, new FPSMatchStatsResetS2CPacket(), true);

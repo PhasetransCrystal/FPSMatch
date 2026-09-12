@@ -88,6 +88,9 @@ public class FPSMDeathPipelineEventHook {
 
     @SubscribeEvent
     public static void onGunDamage(FPSMGunDamageEvent event) {
+        if (event.getBaseAmount() <= 0.0F) {
+            return;
+        }
         if (!(event.getHurtEntity() instanceof ServerPlayer hurt)) {
             return;
         }
@@ -237,33 +240,8 @@ public class FPSMDeathPipelineEventHook {
             dueDeaths.add(pending);
         }
 
-        // Map this deferred batch's dead player -> the UUID that killed them (used to detect
-        // mutual-kill pairs where each traded a lethal hit on the other in the same tick).
-        Map<UUID, UUID> batchAttackers = new HashMap<>();
         for (PendingDeath pending : dueDeaths) {
-            ServerPlayer dead = pending.context().getDeadPlayer();
-            ServerPlayer killer = pending.context().getAttacker();
-            if (dead != null && killer != null) {
-                batchAttackers.put(dead.getUUID(), killer.getUUID());
-            }
-        }
-
-        // Detect "mutual kill" pairs within this same deferred batch: when a dead player's
-        // killer was themselves killed by that same victim in the same tick (e.g. two players
-        // trading lethal shots), we must not credit both with a kill. Deaths still finalize
-        // and respawn normally, only the kill/assist credit is suppressed for such pair.
-        Set<UUID> mutualTrades = new HashSet<>();
-        for (PendingDeath pending : dueDeaths) {
-            ServerPlayer dead = pending.context().getDeadPlayer();
-            ServerPlayer killer = pending.context().getAttacker();
-            if (dead != null && killer != null
-                    && dead.getUUID().equals(batchAttackers.get(killer.getUUID()))) {
-                mutualTrades.add(dead.getUUID());
-            }
-        }
-
-        for (PendingDeath pending : dueDeaths) {
-            finalizeDeath(pending.map(), pending.context(), mutualTrades);
+            finalizeDeath(pending.map(), pending.context());
         }
 
         if (readyDeaths.isEmpty()) {
@@ -277,7 +255,7 @@ public class FPSMDeathPipelineEventHook {
         return DeathFinalizationTiming.isReady(createdTick, currentTick);
     }
 
-    private static void finalizeDeath(BaseMap map, DeathContext context, Set<UUID> mutualTrades) {
+    private static void finalizeDeath(BaseMap map, DeathContext context) {
         ServerPlayer player = context.getDeadPlayer();
         MapTeams mapTeams = map.getMapTeams();
 
@@ -294,11 +272,7 @@ public class FPSMDeathPipelineEventHook {
 
         map.handleDeath(context);
 
-        // A mutual-trade death (killer and victim killed each other in the same tick) still
-        // finalizes/respawns, but neither side's kill/assist is credited to avoid counting
-        // both players as having scored a kill on each other.
-        boolean mutualTrade = mutualTrades.contains(player.getUUID());
-        if (killer != null && !mutualTrade) {
+        if (killer != null) {
             boolean enemyKill = !mapTeams.isSameTeam(player, killer);
             if (enemyKill) {
                 if (!MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerEvent.KillRecordEvent(map, killer, player, context.getDamageSource()))) {
@@ -311,7 +285,7 @@ public class FPSMDeathPipelineEventHook {
 
             FPSMUtil.calculateAssistPlayer(map, player, map.getMinAssistDamageRatio()).ifPresent(assistData -> {
                 if (!killer.getUUID().equals(assistData.getOwner())) {
-                    assistData.addAssist();
+                    map.creditAssist(assistData);
                 }
             });
 

@@ -53,6 +53,8 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
     private Label subtitleLabel;
     private Label pendingLabel;
     private AccessibleButton shopButton;
+    private AccessibleButton regionsButton;
+    private AccessibleButton importButton;
     private TextField searchField;
     private AccessibleButton categoryFilterButton;
     private UIElement categoryFilterPopup;
@@ -103,6 +105,8 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         subtitleLabel = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.subtitle", Label.class);
         pendingLabel = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.pending", Label.class);
         shopButton = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.shop", AccessibleButton.class);
+        regionsButton = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.regions", AccessibleButton.class);
+        importButton = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.import", AccessibleButton.class);
         searchField = Ldlib2XmlUi.require(ui, "fpsmatch.map_settings.search", TextField.class);
         categoryFilterButton = Ldlib2XmlUi.require(
                 ui, "fpsmatch.map_settings.category_filter", AccessibleButton.class);
@@ -150,6 +154,14 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         if (shopButton != null) {
             shopButton.setOnClick(e -> FPSMMapSelectScreens.openChild(
                     new Ldlib2MapShopScreen(detail, this)));
+        }
+        if (regionsButton != null) {
+            regionsButton.setOnClick(e -> FPSMMapSelectScreens.openChild(
+                    new Ldlib2MapRegionsScreen(detail, this)));
+        }
+        if (importButton != null) {
+            importButton.setOnClick(e -> FPSMMapSelectScreens.openChild(
+                    new Ldlib2MapImportScreen(detail, this)));
         }
         if (saveButton != null) {
             saveButton.setOnClick(e -> {
@@ -280,6 +292,10 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         setButtonEnabled(clearCategorySelectionButton, !selectedCategories.isEmpty());
         shopButton.setAvailability(true, detail.summary().currentPlayerOp()
                 && !detail.editableShops().isEmpty() && pendingValues.isEmpty() && !saveInFlight);
+        regionsButton.setAvailability(true, detail.summary().currentPlayerOp()
+                && pendingValues.isEmpty() && !saveInFlight);
+        importButton.setAvailability(true, detail.summary().currentPlayerOp()
+                && pendingValues.isEmpty() && !saveInFlight);
         categoryFilterList.refreshVisibleItems();
     }
 
@@ -336,8 +352,9 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         }
         int margin = Math.min(16, Math.max(8, width / 32));
         int contentWidth = Math.max(1, width - margin * 2);
-        int actionColumns = contentWidth < 300 ? 2 : 4;
-        int footerHeight = actionColumns == 2 ? 105 : 74;
+        int actionColumns = contentWidth < 280 ? 2 : contentWidth < 500 ? 3 : 6;
+        int actionRows = (6 + actionColumns - 1) / actionColumns;
+        int footerHeight = 43 + actionRows * 31;
         int contentTop = height < 300 ? 61 : 76;
         int contentHeight = Math.max(1, height - contentTop - footerHeight);
         tabs.layout(width, height);
@@ -346,10 +363,10 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         absolute(panel, margin, contentTop, contentWidth, contentHeight);
         absolute(pendingLabel, margin, height - footerHeight + 3, contentWidth, 30);
         int buttonWidth = Math.max(1, (contentWidth - (actionColumns - 1) * 5) / actionColumns);
-        AccessibleButton[] actions = {shopButton, clearButton, saveButton, exitButton};
+        AccessibleButton[] actions = {shopButton, regionsButton, importButton, clearButton, saveButton, exitButton};
         for (int i = 0; i < actions.length; i++) {
             absolute(actions[i], margin + i % actionColumns * (buttonWidth + 5),
-                    height - 34 - (actionColumns == 2 ? 31 : 0) + i / actionColumns * 31, buttonWidth, 26);
+                    height - 34 - (actionRows - 1 - i / actionColumns) * 31, buttonWidth, 26);
             actions[i].textStyle(style -> style.fontSize(9));
         }
 

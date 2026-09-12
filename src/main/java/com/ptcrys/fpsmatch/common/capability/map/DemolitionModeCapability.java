@@ -69,6 +69,24 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
         syncBombAreasToAllClients();
     }
 
+    public boolean updateBombArea(int index, AreaData area) {
+        if (index < 0 || index >= data.getBombAreaData().size() || area == null) {
+            return false;
+        }
+        data.getBombAreaData().set(index, area);
+        syncBombAreasToAllClients();
+        return true;
+    }
+
+    public boolean removeBombArea(int index) {
+        if (index < 0 || index >= data.getBombAreaData().size()) {
+            return false;
+        }
+        data.getBombAreaData().remove(index);
+        syncBombAreasToAllClients();
+        return true;
+    }
+
     /**
      * 获取所有炸弹区域的数据。
      * <p>

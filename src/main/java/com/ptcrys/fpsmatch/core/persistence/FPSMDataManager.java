@@ -113,6 +113,10 @@ public class FPSMDataManager {
         return new File(entry.holder.isGlobal() ? globalDataPath.toString() : levelDataPath.toString(), entry.folderName);
     }
 
+    public Path getLevelDataPath() {
+        return levelDataPath;
+    }
+
     private File getSaveFolder(DataEntry<?> entry) {
         return new File(entry.holder.isGlobal() ? globalDataPath.toString() : levelDataPath.toString(), entry.folderName);
     }

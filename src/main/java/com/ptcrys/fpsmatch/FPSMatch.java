@@ -4,6 +4,7 @@ import com.ptcrys.fpsmatch.bukkit.FPSMBukkit;
 import com.ptcrys.fpsmatch.common.capability.FPSMCapabilityRegister;
 import com.ptcrys.fpsmatch.common.client.screen.VanillaGuiRegister;
 import com.ptcrys.fpsmatch.common.command.FPSMCommand;
+import com.ptcrys.fpsmatch.common.client.net.FPSMClientNetwork;
 import com.ptcrys.fpsmatch.common.client.net.FPSMClientPacketRegistrar;
 import com.ptcrys.fpsmatch.common.drop.ThrowableRegistry;
 import com.ptcrys.fpsmatch.common.packet.*;
@@ -186,6 +187,9 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(TeamPlayerStatsS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamPlayerLeaveS2CPacket.class);
         PACKET_REGISTER.registerPacket(OpenShopEditorC2SPacket.class);
+        PACKET_REGISTER.registerPacket(RequestMapImportSourcesC2SPacket.class);
+        PACKET_REGISTER.registerPacket(MapImportSourcesS2CPacket.class);
+        PACKET_REGISTER.registerPacket(ImportMapConfigC2SPacket.class);
         PACKET_REGISTER.registerPacket(BulletproofArmorAttributeS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMAddTeamS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamCapabilitiesS2CPacket.class);
@@ -214,6 +218,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(MapRoomDetailS2CPacket.class);
         PACKET_REGISTER.registerPacket(MapRoomReadyStateS2CPacket.class);
         PACKET_REGISTER.registerPacket(MapRoomSettingsC2SPacket.class);
+        PACKET_REGISTER.registerPacket(MapRegionActionC2SPacket.class);
         PACKET_REGISTER.registerPacket(MapRoomToastS2CPacket.class);
         PACKET_REGISTER.registerPacket(MapRoomInvitationS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamManageActionC2SPacket.class);
@@ -234,6 +239,9 @@ public class FPSMatch {
     }
 
     public static <M> void sendToServer(M message){
+        if (FMLEnvironment.dist != Dist.CLIENT || !FPSMClientNetwork.canSendToServer()) {
+            return;
+        }
         NetworkPacketRegister.getChannelFromCache(message.getClass()).sendToServer(message);
     }
 
@@ -256,6 +264,6 @@ public class FPSMatch {
 
     @OnlyIn(Dist.CLIENT)
     public static void pullGameInfo(){
-        INSTANCE.sendToServer(new PullGameInfoC2SPacket());
+        sendToServer(new PullGameInfoC2SPacket());
     }
 }

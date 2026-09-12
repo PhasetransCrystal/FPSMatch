@@ -568,6 +568,47 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         this.startMoney = money;
     }
 
+    public int getStartMoney() {
+        return startMoney;
+    }
+
+    /** Replaces this shop's editable configuration while preserving its identity and enum type. */
+    public boolean isConfigurationCompatible(FPSMShop<?> source) {
+        if (source == null) return false;
+        for (T type : getEnums()) {
+            try {
+                if (source.getDefaultShopSlotListByType(type.name()) == null) return false;
+            } catch (IllegalArgumentException incompatibleType) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void copyConfigurationFrom(FPSMShop<?> source) {
+        Objects.requireNonNull(source, "source");
+        Map<T, ArrayList<ShopSlot>> replacement = new HashMap<>();
+        for (T type : getEnums()) {
+            List<ShopSlot> sourceSlots;
+            try {
+                sourceSlots = source.getDefaultShopSlotListByType(type.name());
+            } catch (IllegalArgumentException incompatibleType) {
+                throw new IllegalArgumentException("Incompatible shop type: " + type.name(), incompatibleType);
+            }
+            if (sourceSlots == null) {
+                throw new IllegalArgumentException("Missing shop type: " + type.name());
+            }
+            ArrayList<ShopSlot> copiedSlots = new ArrayList<>(sourceSlots.size());
+            sourceSlots.forEach(slot -> copiedSlots.add(slot.copy()));
+            replacement.put(type, copiedSlots);
+        }
+
+        clearPlayerShopData();
+        defaultShopData.clear();
+        defaultShopData.putAll(replacement);
+        startMoney = source.getStartMoney();
+    }
+
     public Codec<FPSMShop<T>> getCodec() {
         return codec;
     }

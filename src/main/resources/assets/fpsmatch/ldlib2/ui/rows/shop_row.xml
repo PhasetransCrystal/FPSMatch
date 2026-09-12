@@ -7,7 +7,7 @@
         <fpsm-panel id="row" class="panel-elevated" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0">
             <label id="name" class="body shop-row-name" focusable="false"/>
             <label id="team" class="muted ok shop-row-team" focusable="false"/>
-            <label id="action" class="body accent-text shop-row-action" focusable="false"><lang key="gui.fpsm.map_shop.edit"/></label>
+            <fpsm-button id="edit" class="btn-secondary" text-key="gui.fpsm.map_shop.edit"/>
         </fpsm-panel>
     </root>
 </ldlib2-ui>

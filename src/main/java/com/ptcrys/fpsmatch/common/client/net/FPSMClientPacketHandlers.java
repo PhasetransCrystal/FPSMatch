@@ -14,6 +14,8 @@ import com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2.Ldlib2ShopConfigTool
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapShopScreen;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSettingsScreen;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapRegionsScreen;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapImportScreen;
 import com.ptcrys.fpsmatch.common.packet.AddAreaDataS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.AddPointDataS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.FPSMInventorySelectedS2CPacket;
@@ -31,6 +33,7 @@ import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomReadyStateS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapImportSourcesS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionAccessS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
 import com.ptcrys.fpsmatch.common.client.music.FPSClientMusicManager;
@@ -241,6 +244,13 @@ public final class FPSMClientPacketHandlers {
         }
     }
 
+    public static void handleMapImportSources(MapImportSourcesS2CPacket packet) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof Ldlib2MapImportScreen screen && screen.acceptsSources(packet)) {
+            screen.applySources(packet);
+        }
+    }
+
     public static void handleMapRoomToast(MapRoomToastS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
         String toastKey = packet.message().getContents() instanceof TranslatableContents contents
@@ -252,6 +262,12 @@ public final class FPSMClientPacketHandlers {
                 || toastKey.equals("gui.fpsm.map_select.action.map_not_found")
                 || toastKey.equals("gui.fpsm.map_select.action.setting.invalid")
                 || toastKey.equals("gui.fpsm.map_select.action.setting.not_found");
+        boolean isRegionToast = toastKey.startsWith("gui.fpsm.map_regions.action.")
+                || toastKey.equals("gui.fpsm.map_select.action.no_permission")
+                || toastKey.equals("gui.fpsm.map_select.action.map_not_found");
+        boolean isMapImportToast = toastKey.startsWith("gui.fpsm.map_import.")
+                || toastKey.equals("gui.fpsm.map_select.action.no_permission")
+                || toastKey.equals("gui.fpsm.map_select.action.map_not_found");
         if (isShopSaveToast && minecraft.screen instanceof Ldlib2EditShopSlotScreen screen
                 && screen.isSaveResultRelevant()) {
             screen.applySaveResult(packet);
@@ -295,6 +311,22 @@ public final class FPSMClientPacketHandlers {
         if (isMapSettingToast && minecraft.screen instanceof Ldlib2MapSettingsScreen screen
                 && screen.isSavePending()) {
             screen.applySaveFailure(packet);
+            if (minecraft.player != null) {
+                minecraft.player.displayClientMessage(packet.message(), packet.error());
+            }
+            return;
+        }
+        if (isRegionToast && minecraft.screen instanceof Ldlib2MapRegionsScreen screen
+                && screen.isActionPending()) {
+            screen.applyActionResult(packet);
+            if (minecraft.player != null) {
+                minecraft.player.displayClientMessage(packet.message(), packet.error());
+            }
+            return;
+        }
+        if (isMapImportToast && minecraft.screen instanceof Ldlib2MapImportScreen screen
+                && screen.isActionPending()) {
+            screen.applyActionResult(packet);
             if (minecraft.player != null) {
                 minecraft.player.displayClientMessage(packet.message(), packet.error());
             }

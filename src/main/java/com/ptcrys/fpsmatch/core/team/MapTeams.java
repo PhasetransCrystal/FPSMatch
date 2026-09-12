@@ -888,6 +888,9 @@ public class MapTeams {
     }
 
     public boolean isSameTeam(Player p1, Player p2){
+        if (p1.getUUID().equals(p2.getUUID())) {
+            return true;
+        }
         Optional<ServerTeam> t1 = getTeamByPlayer(p1);
         Optional<ServerTeam> t2 = getTeamByPlayer(p2);
         if (t1.isEmpty() || t2.isEmpty()) {
@@ -897,7 +900,7 @@ public class MapTeams {
         if ("spectator".equals(t1.get().getName()) || "spectator".equals(t2.get().getName())) {
             return false;
         }
-        return t1.equals(t2);
+        return map.areCombatTeammates(p1, p2, t1.get(), t2.get());
     }
 
     /**

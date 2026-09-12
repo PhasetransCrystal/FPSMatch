@@ -244,6 +244,26 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         this.shop = shop;
     }
 
+    public boolean importConfigurationFrom(FPSMShop<?> source) {
+        if (!isInitialized() || source == null) {
+            return false;
+        }
+        try {
+            shop.copyConfigurationFrom(source);
+            startMoney = shop.getStartMoney();
+            shop.resetPlayerData(team.getPlayerList());
+            shop.syncShopData();
+            shop.syncShopMoneyData();
+            return true;
+        } catch (IllegalArgumentException incompatible) {
+            return false;
+        }
+    }
+
+    public boolean canImportConfigurationFrom(FPSMShop<?> source) {
+        return isInitialized() && source != null && shop.isConfigurationCompatible(source);
+    }
+
     /**
      * 安全获取商店实例
      */

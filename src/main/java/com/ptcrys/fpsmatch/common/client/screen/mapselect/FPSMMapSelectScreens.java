@@ -9,6 +9,8 @@ import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapManage
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSelectionScreen;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSettingsScreen;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapShopScreen;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapRegionsScreen;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapImportScreen;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2TeamManageScreen;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
@@ -165,6 +167,14 @@ public final class FPSMMapSelectScreens {
             return;
         }
         if (current instanceof Ldlib2MapShopScreen screen) {
+            screen.applyDetail(packet.detail());
+            return;
+        }
+        if (current instanceof Ldlib2MapRegionsScreen screen) {
+            screen.applyDetail(packet.detail());
+            return;
+        }
+        if (current instanceof Ldlib2MapImportScreen screen) {
             screen.applyDetail(packet.detail());
             return;
         }

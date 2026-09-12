@@ -15,18 +15,12 @@
             position: absolute;
             right: 106; top: 13; width: 96; height: 14;
         }
-        .shop-row-action {
-            position: absolute;
-            right: 12; top: 12; width: 78; height: 14;
-        }
+        .shop-row-name { right: 194; }
         .compact .shop-row-name {
-            left: 9; right: 76; top: 7; height: 14;
+            left: 9; right: 148; top: 18; height: 14;
         }
         .compact .shop-row-team {
             left: 9; right: 76; top: 27; width: auto; height: 12;
-        }
-        .compact .shop-row-action {
-            right: 9; top: 18; width: 60; height: 14;
         }
         .ok {
             text-color: #FF66B77B;
