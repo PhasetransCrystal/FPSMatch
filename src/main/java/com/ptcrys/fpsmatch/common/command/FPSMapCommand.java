@@ -11,6 +11,7 @@ import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
 import com.ptcrys.fpsmatch.core.data.AreaData;
 import com.ptcrys.fpsmatch.core.data.Setting;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
+import com.ptcrys.fpsmatch.util.MapId;
 import com.ptcrys.fpsmatch.core.team.BaseTeam;
 import com.ptcrys.fpsmatch.core.team.MapTeams;
 import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
@@ -180,10 +181,16 @@ public class FPSMapCommand {
         BlockPos pos1 = BlockPosArgument.getBlockPos(context, "from");
         BlockPos pos2 = BlockPosArgument.getBlockPos(context, "to");
 
+        if (!MapId.isValid(mapName)) {
+            FPSMCommand.sendFailure(context.getSource(), Component.translatable("message.fpsm.map_creator_tool.invalid_name"));
+            return 0;
+        }
+
         Function3<ServerLevel, String, AreaData, BaseMap> game = FPSMCore.getInstance().getPreBuildGame(type);
         if (game != null) {
             BaseMap newMap = game.apply(context.getSource().getLevel(), mapName, new AreaData(pos1, pos2));
             if (FPSMCore.getInstance().registerMap(type, newMap)) {
+                FPSMCore.getInstance().getFPSMDataManager().saveAllData();
                 FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.create.success", mapName));
                 return 1;
             }

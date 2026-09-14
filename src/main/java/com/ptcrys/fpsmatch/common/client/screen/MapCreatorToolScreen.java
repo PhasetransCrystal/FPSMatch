@@ -7,6 +7,7 @@ import com.ptcrys.fpsmatch.common.item.tool.ToolInteractionAction;
 import com.ptcrys.fpsmatch.common.packet.MapCreatorToolActionC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.OpenMapCreatorToolScreenS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.ToolInteractionC2SPacket;
+import com.ptcrys.fpsmatch.util.MapId;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -74,7 +75,7 @@ public class MapCreatorToolScreen extends Screen {
                 .size(172, 20)
                 .build());
 
-        this.mapNameField = addTextField(left + 110, top + 80, 172, 18, 64, s -> true);
+        this.mapNameField = addTextField(left + 110, top + 80, 172, 18, MapId.MAX_LENGTH, MapId::isValidPrefix);
         this.pos1XField = addIntField(left + 110, top + 118);
         this.pos1YField = addIntField(left + 166, top + 118);
         this.pos1ZField = addIntField(left + 222, top + 118);

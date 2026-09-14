@@ -10,8 +10,6 @@ import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSummary;
 import net.minecraft.network.chat.Component;
 
-import java.util.Locale;
-
 /**
  * Data-binding layer for the XML-defined map selection page. Row fragments are cloned from
  * {@code fpsmatch:ldlib2/ui/rows/*.xml}; per-status colors remain procedural because they are data.
@@ -58,7 +56,7 @@ final class MapSelectionUiBinder {
         });
         host.selectId("preview", Ldlib2MapThumbnailElement.class).findFirst().ifPresent(preview -> {
             preview.setId(rowId + ".preview");
-            preview.setThumbnailData("", summary.mapName(), summary.gameType(), summary.displayName());
+            preview.setThumbnailData(summary.iconTexture(), summary.mapName(), summary.gameType(), summary.displayName());
         });
         host.selectId("name", Label.class).findFirst().ifPresent(name -> {
             name.setId(rowId + ".name");
@@ -67,7 +65,7 @@ final class MapSelectionUiBinder {
         host.selectId("meta", Label.class).findFirst().ifPresent(meta -> {
             meta.setId(rowId + ".meta");
             meta.setValue(Component.literal(
-                    summary.gameType().toUpperCase(Locale.ROOT) + " / " + summary.mapName()));
+                    Ldlib2MapSelectionScreen.gameTypeText(summary.gameType()).getString() + " / " + summary.mapName()));
         });
         host.selectId("players", Label.class).findFirst().ifPresent(players -> {
             players.setId(rowId + ".players");
@@ -110,7 +108,7 @@ final class MapSelectionUiBinder {
         String normalized = Ldlib2MapSelectionScreen.normalizeMode(mode);
         Component value = "all".equals(normalized)
                 ? Component.translatable("gui.fpsm.map_select.filter.mode.all")
-                : Component.literal(normalized.toUpperCase(Locale.ROOT));
+                : Ldlib2MapSelectionScreen.gameTypeText(normalized);
         return Component.translatable("gui.fpsm.map_select.filter.mode_selector", value);
     }
 

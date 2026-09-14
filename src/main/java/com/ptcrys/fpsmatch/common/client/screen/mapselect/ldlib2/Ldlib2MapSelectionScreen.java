@@ -656,6 +656,13 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         return mode == null ? "" : mode.trim().toLowerCase(Locale.ROOT);
     }
 
+    static Component gameTypeText(String gameType) {
+        return switch (normalizeMode(gameType)) {
+            case "cs", "csdm" -> Component.translatable("fpsm.game_type." + normalizeMode(gameType));
+            default -> Component.literal(gameType == null ? "" : gameType.toUpperCase(Locale.ROOT));
+        };
+    }
+
     private void refreshActionState() {
         if (!bound) {
             return;

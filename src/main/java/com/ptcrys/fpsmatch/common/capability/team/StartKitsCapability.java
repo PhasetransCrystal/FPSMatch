@@ -7,6 +7,7 @@ import com.mojang.serialization.Codec;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.command.FPSMCommand;
 import com.ptcrys.fpsmatch.common.command.FPSMHelpManager;
+import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
 import com.ptcrys.fpsmatch.core.data.PlayerData;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
@@ -233,6 +234,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
 
             return FPSMCommand.getTeamCapability(context, StartKitsCapability.class).map(capability -> {
                 capability.addKit(itemStack);
+                FPSMCore.getInstance().getFPSMDataManager().saveAllData();
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success",
                         itemStack.getDisplayName(), capability.team.name), true);
                 return 1;
@@ -247,6 +249,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
                 ItemStack itemStack = ItemArgument.getItem(context, "item").createItemStack(count, false);
                 return FPSMCommand.getTeamCapability(context, StartKitsCapability.class).map(capability -> {
                     capability.addKit(itemStack);
+                    FPSMCore.getInstance().getFPSMDataManager().saveAllData();
                     context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success",
                             itemStack.getDisplayName(), capability.team.name), true);
                     return 1;
@@ -266,6 +269,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
         private static int handleClearKits(CommandContext<CommandSourceStack> context) {
             return FPSMCommand.getTeamCapability(context, StartKitsCapability.class).map(capability -> {
                 capability.clearTeamKits();
+                FPSMCore.getInstance().getFPSMDataManager().saveAllData();
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.clear.success",
                         capability.team.name), true);
                 return 1;

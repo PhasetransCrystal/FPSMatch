@@ -63,14 +63,17 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
      *
      * @param area 炸弹区域数据
      */
-    public void addBombArea(AreaData area) {
+    public boolean addBombArea(AreaData area) {
+        if (!canEditBombAreas() || !isBombAreaInsideMap(area)) {
+            return false;
+        }
         this.data.getBombAreaData().add(area);
-        // 同步到所有客户端
         syncBombAreasToAllClients();
+        return true;
     }
 
     public boolean updateBombArea(int index, AreaData area) {
-        if (index < 0 || index >= data.getBombAreaData().size() || area == null) {
+        if (!canEditBombAreas() || index < 0 || index >= data.getBombAreaData().size() || !isBombAreaInsideMap(area)) {
             return false;
         }
         data.getBombAreaData().set(index, area);
@@ -79,7 +82,7 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
     }
 
     public boolean removeBombArea(int index) {
-        if (index < 0 || index >= data.getBombAreaData().size()) {
+        if (!canEditBombAreas() || index < 0 || index >= data.getBombAreaData().size()) {
             return false;
         }
         data.getBombAreaData().remove(index);
@@ -96,6 +99,16 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
      */
     public List<AreaData> getBombAreaData() {
         return this.data.getBombAreaData();
+    }
+
+    public boolean canEditBombAreas() {
+        return !map.isStart();
+    }
+
+    public boolean isBombAreaInsideMap(AreaData area) {
+        return area != null
+                && map.getMapArea().isBlockPosInArea(area.pos1())
+                && map.getMapArea().isBlockPosInArea(area.pos2());
     }
 
     /**
@@ -297,7 +310,16 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
 
             return FPSMCommand.getMapCapability(context, DemolitionModeCapability.class)
                     .map(cap -> {
-                        cap.addBombArea(new AreaData(pos1, pos2));
+                        AreaData area = new AreaData(pos1, pos2);
+                        if (!cap.canEditBombAreas()) {
+                            FPSMCommand.sendFailure(context.getSource(), Component.translatable("gui.fpsm.map_regions.action.in_progress"));
+                            return 0;
+                        }
+                        if (!cap.isBombAreaInsideMap(area)) {
+                            FPSMCommand.sendFailure(context.getSource(), Component.translatable("gui.fpsm.map_regions.action.outside_map"));
+                            return 0;
+                        }
+                        cap.addBombArea(area);
                         FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.bombarea.success"));
                         return 1;
                     })

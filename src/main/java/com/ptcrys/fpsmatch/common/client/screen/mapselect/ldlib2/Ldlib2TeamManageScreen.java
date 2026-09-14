@@ -15,6 +15,7 @@ import com.ptcrys.fpsmatch.common.client.screen.team.TeamActionModel;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSummary;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomTeamInfo;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -158,7 +159,8 @@ public class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen implements Team
     private void refreshContent() {
         var summary = detail.summary();
         header.setValue(Component.literal(summary.displayName()));
-        subtitle.setValue(Component.literal(summary.gameType() + " / " + summary.mapName()));
+        subtitle.setValue(Component.literal(Ldlib2MapSelectionScreen.gameTypeText(summary.gameType()).getString()
+                + " / " + summary.mapName()));
         long total = detail.players().stream().filter(player -> !player.spectator()).count();
         long readyCount = detail.players().stream().filter(player -> !player.spectator() && isReady(player.uuid())).count();
         Component readiness = Component.translatable("gui.fpsm.team_manage.ready_summary", readyCount, total);
@@ -170,7 +172,8 @@ public class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen implements Team
         detailsPreview.setThumbnailData(detail.backgroundTexture().isBlank() ? detail.iconTexture() : detail.backgroundTexture(),
                 summary.mapName(), summary.gameType(), summary.displayName());
         show(detailsPreview, !detail.backgroundTexture().isBlank() || !detail.iconTexture().isBlank());
-        require("details.mode", Label.class).setValue(Component.translatable("gui.fpsm.map_select.info.mode", summary.gameType()));
+        require("details.mode", Label.class).setValue(Component.translatable("gui.fpsm.map_select.info.mode",
+                Ldlib2MapSelectionScreen.gameTypeText(summary.gameType())));
         require("details.status", Label.class).setValue(Component.translatable("gui.fpsm.map_select.info.status",
                 Ldlib2MapSelectionScreen.statusText(summary)));
         require("details.players", Label.class).setValue(Component.translatable("gui.fpsm.map_select.detail.players",
@@ -183,12 +186,16 @@ public class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen implements Team
         require("details.ready", Label.class).setValue(readiness);
         rebuildRoster();
         boolean joined = summary.currentPlayerJoined() || summary.currentPlayerSpectating();
-        join.setAvailability(!joined, !summary.full() && (!summary.started() || summary.allowJoinInProgress()));
+        boolean canJoin = !summary.full() && (!summary.started() || summary.allowJoinInProgress());
+        join.setAvailability(!joined, canJoin);
         leave.setAvailability(joined, joined);
         ready.setText(Component.translatable(isReady(selfId())
                 ? "gui.fpsm.team_manage.ready.off" : "gui.fpsm.team_manage.ready.on"));
-        ready.setAvailability(true, summary.currentPlayerJoined() && !summary.started());
-        switchTeam.setAvailability(true, !TeamActionModel.availableTargetTeams(detail, selfId()).isEmpty());
+        boolean canReady = summary.currentPlayerJoined() && !summary.started();
+        ready.setAvailability(true, canReady);
+        boolean canSwitchTeam = !TeamActionModel.availableTargetTeams(detail, selfId()).isEmpty();
+        switchTeam.setAvailability(true, canSwitchTeam);
+        updateActionHints(summary, joined, canJoin, canReady, canSwitchTeam);
         tabs.update(summary.currentPlayerOp(), true);
         updatePanels();
         if (menuTarget != null) {
@@ -388,6 +395,30 @@ public class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen implements Team
         for (int i = 0; i < actions.size(); i++) {
             place(actions.get(i), margin + i * (buttonWidth + 6), height - 34, buttonWidth, 26);
         }
+    }
+
+    private void updateActionHints(MapRoomSummary summary, boolean joined, boolean canJoin,
+                                   boolean canReady, boolean canSwitchTeam) {
+        setActionHint(join, !joined && !canJoin
+                ? summary.full()
+                ? Component.translatable("gui.fpsm.team_manage.join.unavailable.full")
+                : Component.translatable("gui.fpsm.team_manage.join.unavailable.in_progress")
+                : Component.empty());
+        setActionHint(ready, !canReady
+                ? summary.currentPlayerSpectating()
+                ? Component.translatable("gui.fpsm.team_manage.ready.unavailable.spectator")
+                : summary.started()
+                ? Component.translatable("gui.fpsm.team_manage.ready.unavailable.in_progress")
+                : Component.translatable("gui.fpsm.team_manage.ready.unavailable.join_first")
+                : Component.empty());
+        setActionHint(switchTeam, !canSwitchTeam
+                ? Component.translatable("gui.fpsm.team_manage.switch.unavailable")
+                : Component.empty());
+    }
+
+    private static void setActionHint(AccessibleButton button, Component hint) {
+        button.setAccessibleHint(() -> hint);
+        button.style(style -> style.tooltips(hint));
     }
 
     private static void place(UIElement element, int x, int y, int width, int height) {

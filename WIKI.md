@@ -4,6 +4,8 @@ FPSMatch 是一个面向 Minecraft 1.20.1 Forge 的团队 FPS 竞技框架模组
 
 需要注意的是，FPSMatch 本身更接近“玩法底座”或“库模组”，并不等同于一个完整开箱即玩的游戏模式。具体的 `cs`、`csdm` 等模式、地图规则和胜利条件通常需要由其他模组、KubeJS 脚本或服务器插件注册到 FPSMatch 中。
 
+当前组合工作区中的 [BlockOffensive](../README_ZH-CN.md) 已经注册并提供了 `cs`（回合制爆破）和 `csdm`（死斗）两种完整玩法；单独安装 FPSMatch 时，仍需要安装该模组或其他玩法提供者，才会在创建地图时看到这些类型。
+
 ## 基本信息
 
 | 项目 | 内容 |
@@ -11,7 +13,7 @@ FPSMatch 是一个面向 Minecraft 1.20.1 Forge 的团队 FPS 竞技框架模组
 | 模组名称 | FPSMatch |
 | Mod ID | `fpsmatch` |
 | Minecraft | `1.20.1` |
-| Forge | `47.3.11+` |
+| Forge | `47.4.10+` |
 | Java | 17 |
 | 当前源码版本 | `1.3.0` snapshot |
 | 许可证 | GPL v3 |
@@ -39,8 +41,10 @@ FPSMatch 不适合以下用途：
 ### 必需环境
 
 - Minecraft `1.20.1`
-- Forge `47.3.11` 或更高的 1.20.1 Forge 版本
+- Forge `47.4.10` 或更高的 1.20.1 Forge 版本
 - Java 17
+- LDLib2 `2.2.27+1.20.1`
+- Kotlin for Forge `4.11.0+`
 
 ### 常见兼容模组
 
@@ -185,7 +189,9 @@ gui.fpsm.map_shop.*
 - 右键方块：设置 `Pos2`。
 - `Ctrl + 右键`：打开地图创建界面。
 
-创建地图时需要选择已注册的游戏类型，并填写地图名称。
+创建地图时需要选择已注册的游戏类型，并填写稳定的地图内部 ID。地图 ID 会作为持久化文件名和命令参数使用，必须为 1-48 个字符，且只允许小写字母 `a-z`、数字 `0-9`、下划线 `_` 和连字符 `-`；例如 `dust2`、`metro_a`。显示给玩家的名称可在地图设置中的 `displayName` 单独填写。
+
+地图创建工具要求 OP 2 级权限。对局已开始时，地图边界编辑会被拒绝，以避免破坏正在进行的比赛。
 
 ### 出生点工具
 
@@ -193,10 +199,10 @@ gui.fpsm.map_shop.*
 
 常见操作：
 
-- 左键方块：添加出生点。
+- 右键方块：添加出生点。
 - `Ctrl + 右键`：打开出生点工具界面。
 
-普通出生点必须位于地图区域内。
+普通出生点必须位于地图区域内且与地图位于同一维度。系统还会检查脚下是否有可碰撞支撑、玩家脚部和头部两格是否无碰撞体、两格是否没有流体，以及是否为重复点。出生点工具要求 OP 2 级权限；对局进行时不能编辑出生点。
 
 ### 商店编辑
 
@@ -275,7 +281,7 @@ FPSMatch 提供商店槽位、价格、分组、弹药数量和监听模块等�
 | 参数 | 说明 |
 | --- | --- |
 | `game_type` | 已注册的游戏类型 |
-| `map_name` | 地图唯一名称 |
+| `map_name` | 地图唯一内部 ID；长度 1-48，仅限小写 `a-z`、数字 `0-9`、`_`、`-` |
 | `from` | 地图区域第一个角点 |
 | `to` | 地图区域第二个角点 |
 
@@ -387,6 +393,65 @@ FPSMatch 提供商店槽位、价格、分组、弹药数量和监听模块等�
 | `autoStartTime` | `6000` | 自动开始倒计时 tick |
 | `readyStartEnabled` | `true` | 是否启用全员准备开始 |
 | `readyStartTime` | `200` | 全员准备后的开始倒计时 tick |
+
+#### 地图缩略图与图标填写教程
+
+`iconTexture` 和 `backgroundTexture` 填写的是 **Minecraft 客户端资源位置**，不是服务器上的绝对文件路径，也不能填写 `C:\\...`、URL 或世界存档内图片路径。图片必须存在于模组资源或每位玩家已启用的资源包中，否则界面会自动显示色块兜底。
+
+| 设置 | 出现位置 | 建议用途 |
+| --- | --- | --- |
+| `iconTexture` | 地图列表卡片；详情页未设置背景时也会使用 | 地图总览、俯视图或最容易识别的场景 |
+| `backgroundTexture` | 地图详情页的大图；优先于 `iconTexture` | 更完整的宣传图、路线概览或比赛场景 |
+
+推荐使用 PNG。渲染器会将图片铺满控件，不会自动裁剪，因此请使用 `16:9` 图片以避免拉伸：图标建议 `320x180` 或 `640x360`，详情背景建议至少 `1280x720`。图片中应保留地图辨识元素；不要把细小文字、规则说明或重要标记贴在边缘，以免在小尺寸列表中无法阅读。
+
+**1. 放入客户端可加载的资源路径**
+
+以资源命名空间 `fpsmatch`、地图内部名 `dust2` 为例，图片在资源包或模组中的目录应为：
+
+```text
+assets/
+└── fpsmatch/
+    └── textures/
+        └── gui/
+            └── maps/
+                ├── dust2_icon.png
+                └── dust2_bg.png
+```
+
+对应填写值必须包含命名空间和 `textures/` 目录：
+
+```text
+fpsmatch:textures/gui/maps/dust2_icon.png
+fpsmatch:textures/gui/maps/dust2_bg.png
+```
+
+若图片属于自己的模组或资源包，也可以使用自己的命名空间。例如文件位于 `assets/myserver/textures/gui/maps/metro_icon.png`，则填写：
+
+```text
+myserver:textures/gui/maps/metro_icon.png
+```
+
+多人服务器必须通过模组包、服务器资源包或其他已约定的分发方式，让所有玩家拥有同一份图片资源；只把 PNG 放到服务器文件夹不会让客户端加载到它。
+
+**2. 写入地图设置**
+
+可在地图选择 GUI 的“设置”页填写 `iconTexture`、`backgroundTexture` 并保存；也可以使用命令：
+
+```text
+/fpsm map modify cs dust2 settings set iconTexture fpsmatch:textures/gui/maps/dust2_icon.png
+/fpsm map modify cs dust2 settings set backgroundTexture fpsmatch:textures/gui/maps/dust2_bg.png
+/fpsm map modify cs dust2 settings save
+```
+
+将 `cs` 和 `dust2` 替换为实际的游戏类型与地图内部名。只设置 `iconTexture` 时，列表和详情页都有可用图片；同时设置背景后，列表继续使用图标，详情页使用背景图。
+
+**3. 验证与排错**
+
+1. 打开地图选择界面，确认列表卡片已显示 `iconTexture`。
+2. 进入房间详情，确认显示 `backgroundTexture`；未填写背景时应显示图标。
+3. 若仍显示模式色块，依次检查文件名大小写、命名空间、是否包含 `textures/`、PNG 是否已随客户端资源加载。
+4. 修改贴图路径后刷新地图列表；已打开列表会随设置变化同步更新，但资源包本身的新增图片仍需客户端重新加载资源包或重启游戏。
 
 ### 爆破能力命令
 
@@ -523,7 +588,7 @@ KubeJS 兼容层将 FPSMatch 的 Forge 事件转换为脚本事件，便于服�
 
 ## 数据保存
 
-FPSMatch 在服务器启动时创建核心实例，并读取所有数据。服务器停止时会保存数据。
+FPSMatch 在服务器启动时创建核心实例并读取所有数据，服务器停止时会保存数据。创建地图以及修改地图设置、出生点、开局套件和商店时，会立即持久化对应数据；`/fpsm save` 仍可用于在测试或批量编辑后手动执行一次全局保存。
 
 主要流程：
 
@@ -544,14 +609,15 @@ FPSMatch 在服务器启动时创建核心实例，并读取所有数据。服�
 1. 安装 Forge 1.20.1。
 2. 安装 FPSMatch 和需要的枪械/玩法扩展模组。
 3. 启动服务器，确认 `/fpsm help` 可用。
-4. 确认有外部模组注册了游戏类型，例如 `cs` 或 `csdm`。
-5. 使用 `map_creator_tool` 或 `/fpsm map create` 创建地图区域。
-6. 为各队伍设置出生点。
+4. 确认有外部模组注册了游戏类型，例如 `cs` 或 `csdm`；本工作区安装 BlockOffensive 后会提供两者。
+5. 使用 `map_creator_tool` 或 `/fpsm map create` 创建地图区域，并使用符合规则的稳定地图 ID。
+6. 为各队伍设置安全出生点：地图内、同维度、有支撑、两格净空且无流体。
 7. 配置商店和开局装备。
-8. 配置炸弹区、结束传送点等能力。
-9. 使用地图选择 GUI 或命令让玩家加入地图。
-10. 测试开始、死亡、回合、胜利、重置流程。
-11. 保存数据。
+8. 配置炸弹区、结束传送点等能力；炸弹区必须完整位于地图边界内。
+9. 在地图设置中填写 `displayName`、`iconTexture` 和可选的 `backgroundTexture`。贴图资源的目录、命名空间与排错步骤见[地图缩略图与图标填写教程](#地图缩略图与图标填写教程)。
+10. 使用地图选择 GUI 或命令让玩家加入地图，并在开赛前检查房间、队伍和准备流程。
+11. 测试开始、死亡、回合、胜利、重置流程；确认编辑锁会在对局期间生效。
+12. 执行 `/fpsm save`，并保留一份数据文件备份。
 
 ### 管理员测试命令示例
 
@@ -565,7 +631,7 @@ FPSMatch 在服务器启动时创建核心实例，并读取所有数据。服�
 /fpsm save
 ```
 
-如果 `cs` 游戏类型不存在，说明当前整合包没有注册该玩法，需要安装或编写额外的玩法模块。
+如果 `cs` 游戏类型不存在，说明当前整合包没有注册该玩法，需要安装或编写额外的玩法模块。在本组合工作区中，安装 BlockOffensive 即可提供 `cs` 和 `csdm`。
 
 ## 开发者快速接入
 
@@ -651,6 +717,8 @@ public static void onPlayerKill(FPSMapEvent.PlayerEvent.KillEvent event) {
 
 因为 FPSMatch 是框架模组。它提供地图、队伍、商店、投掷物、事件和 GUI，但具体游戏类型需要外部注册。
 
+当前工作区可同时安装 BlockOffensive，它已经提供 `cs` 和 `csdm`；若只安装 FPSMatch，则仍需另行提供玩法实现。
+
 ### `/fpsm map create cs ...` 提示无效或没有补全怎么办？
 
 说明 `cs` 游戏类型没有被注册。需要安装提供 `cs` 模式的模组，或通过自己的模组监听 `RegisterFPSMapEvent` 注册。
@@ -678,8 +746,10 @@ public static void onPlayerKill(FPSMapEvent.PlayerEvent.KillEvent event) {
 - 地图不存在。
 - 当前维度和地图维度不一致。
 - 出生点不在地图区域内。
+- 脚下没有可碰撞支撑，或脚部/头部两格被方块、流体占用。
 - 该队伍不存在。
 - 出生点重复。
+- 地图正在进行比赛，编辑被锁定。
 
 ### 为什么旁观视角下枪械表现特殊？
 
@@ -689,7 +759,7 @@ FPSMatch 对 TaCZ 和 LR Tactical 做了旁观兼容，包括枪械动画、换�
 
 | 路径 | 说明 |
 | --- | --- |
-| `src/main/java/com/phasetranscrystal/fpsmatch/FPSMatch.java` | 模组主入口 |
+| `src/main/java/com/ptcrys/fpsmatch/FPSMatch.java` | 模组主入口 |
 | `core/FPSMCore.java` | 核心运行时、地图注册、数据加载、tick |
 | `core/map/BaseMap.java` | 地图基类 |
 | `core/team/` | 队伍系统 |

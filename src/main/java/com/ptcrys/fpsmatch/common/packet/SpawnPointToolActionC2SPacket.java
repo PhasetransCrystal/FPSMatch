@@ -74,6 +74,10 @@ public record SpawnPointToolActionC2SPacket(
             if (!(stack.getItem() instanceof SpawnPointTool)) {
                 return;
             }
+            if (!player.hasPermissions(2)) {
+                player.displayClientMessage(Component.literal("需要管理员(OP)权限才能修改复活点"), false);
+                return;
+            }
 
             switch (action()) {
                 case REFRESH -> sendScreen(player, stack, selectedType(), selectedMap(), selectedTeam(), selectedIndex());
@@ -91,6 +95,10 @@ public record SpawnPointToolActionC2SPacket(
             player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.team_not_found", snapshot.selectedTeam()), false);
             return;
         }
+        if (snapshot.map().map(BaseMap::isStart).orElse(false)) {
+            player.displayClientMessage(Component.translatable("gui.fpsm.map_regions.action.in_progress"), false);
+            return;
+        }
         if (snapshot.selectedIndex() < 0 || snapshot.selectedIndex() >= snapshot.spawnPoints().size()) {
             sendScreen(player, stack, snapshot.selectedType(), snapshot.selectedMap(), snapshot.selectedTeam(), -1);
             return;
@@ -101,6 +109,7 @@ public record SpawnPointToolActionC2SPacket(
         if (!snapshot.capability().get().getSpawnPointsData().isEmpty()) {
             snapshot.capability().get().assignNextSpawnPoints();
         }
+        FPSMCore.getInstance().getFPSMDataManager().saveAllData();
         sendScreen(player, stack, snapshot.selectedType(), snapshot.selectedMap(), snapshot.selectedTeam(), snapshot.selectedIndex());
     }
 
@@ -110,9 +119,14 @@ public record SpawnPointToolActionC2SPacket(
             player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.team_not_found", snapshot.selectedTeam()), false);
             return;
         }
+        if (snapshot.map().map(BaseMap::isStart).orElse(false)) {
+            player.displayClientMessage(Component.translatable("gui.fpsm.map_regions.action.in_progress"), false);
+            return;
+        }
 
         snapshot.capability().get().clearSpawnPointsData();
         snapshot.capability().get().clearPlayerSpawnPointAssignments();
+        FPSMCore.getInstance().getFPSMDataManager().saveAllData();
         sendScreen(player, stack, snapshot.selectedType(), snapshot.selectedMap(), snapshot.selectedTeam(), -1);
     }
 

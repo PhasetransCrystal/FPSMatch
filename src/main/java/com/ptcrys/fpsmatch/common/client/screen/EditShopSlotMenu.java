@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
+import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
@@ -194,6 +195,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         replacement.setGroupId(groupId);
         shop.replaceDefaultShopData(shopType, slotNum, replacement);
         shop.syncShopData();
+        FPSMCore.getInstance().getFPSMDataManager().saveAllData();
         this.shopSlot = replacement;
         this.itemHandler.setStackInSlot(0, savedStack.copy());
         setAmmo(ammoCount);

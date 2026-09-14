@@ -174,6 +174,8 @@ public final class MapRoomSyncManager {
             for (BaseMap map : entry.getValue()) {
                 long h = map.getGameType().hashCode();
                 h = h * 31 + map.getMapName().hashCode();
+                h = h * 31 + map.getDisplayName().hashCode();
+                h = h * 31 + map.getIconTexture().hashCode();
                 h = h * 31 + map.getMapTeams().getJoinedUUID().size();
                 h = h * 31 + (map.isStart() ? 1 : 0);
                 h = h * 31 + (map.isDebug() ? 1 : 0);

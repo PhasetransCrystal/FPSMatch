@@ -218,6 +218,7 @@ public final class MapRoomActionService {
         for (Setting<?> setting : map.settings()) {
             if (setting.getConfigName().equals(settingName)) {
                 if (setting.parse(value)) {
+                    FPSMCore.getInstance().getFPSMDataManager().saveAllData();
                     return Result.success(Component.translatable("gui.fpsm.map_select.action.setting.success", settingName), map, player);
                 }
                 return Result.failure(Component.translatable("gui.fpsm.map_select.action.setting.invalid", settingName));
@@ -237,6 +238,15 @@ public final class MapRoomActionService {
         if (validation != null) {
             return validation;
         }
+        if (map.isStart()) {
+            return Result.failure(Component.translatable("gui.fpsm.map_regions.action.in_progress"));
+        }
+        boolean containsBombAreas = map.getCapabilityMap().get(DemolitionModeCapability.class)
+                .map(capability -> capability.getBombAreaData().stream().allMatch(bombArea -> isAreaInside(area, bombArea)))
+                .orElse(true);
+        if (!containsBombAreas) {
+            return Result.failure(Component.translatable("gui.fpsm.map_regions.action.bombs_outside_map"));
+        }
         map.setMapArea(area);
         map.displayAreas(player);
         FPSMCore.getInstance().getFPSMDataManager().saveAllData();
@@ -248,7 +258,9 @@ public final class MapRoomActionService {
             if (capability.getBombAreaData().size() >= MAX_BOMB_AREAS) {
                 return Result.failure(Component.translatable("gui.fpsm.map_regions.action.limit"));
             }
-            capability.addBombArea(area);
+            if (!capability.addBombArea(area)) {
+                return Result.failure(Component.translatable("gui.fpsm.map_regions.action.outside_map"));
+            }
             capability.syncBombAreasToClient(player);
             FPSMCore.getInstance().getFPSMDataManager().saveAllData();
             return Result.success(Component.translatable("gui.fpsm.map_regions.action.bomb_added"), map, player);
@@ -271,18 +283,23 @@ public final class MapRoomActionService {
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.no_permission"));
         }
         return MapRoomQueryService.findMap(gameType, mapName)
-                .map(map -> map.getCapabilityMap().get(DemolitionModeCapability.class)
-                        .map(capability -> {
-                            if (!capability.removeBombArea(index)) {
-                                return Result.failure(Component.translatable("gui.fpsm.map_regions.action.not_found"));
-                            }
-                            capability.syncBombAreasToClient(player);
-                            FPSMCore.getInstance().getFPSMDataManager().saveAllData();
-                            return Result.success(Component.translatable(
-                                    "gui.fpsm.map_regions.action.bomb_removed", index + 1), map, player);
-                        })
-                        .orElseGet(() -> Result.failure(Component.translatable(
-                                "gui.fpsm.map_regions.action.unsupported"))))
+                .map(map -> {
+                    if (map.isStart()) {
+                        return Result.failure(Component.translatable("gui.fpsm.map_regions.action.in_progress"));
+                    }
+                    return map.getCapabilityMap().get(DemolitionModeCapability.class)
+                            .map(capability -> {
+                                if (!capability.removeBombArea(index)) {
+                                    return Result.failure(Component.translatable("gui.fpsm.map_regions.action.not_found"));
+                                }
+                                capability.syncBombAreasToClient(player);
+                                FPSMCore.getInstance().getFPSMDataManager().saveAllData();
+                                return Result.success(Component.translatable(
+                                        "gui.fpsm.map_regions.action.bomb_removed", index + 1), map, player);
+                            })
+                            .orElseGet(() -> Result.failure(Component.translatable(
+                                    "gui.fpsm.map_regions.action.unsupported")));
+                })
                 .orElseGet(() -> Result.failure(Component.translatable("gui.fpsm.map_select.action.map_not_found")));
     }
 
@@ -312,10 +329,18 @@ public final class MapRoomActionService {
             return validation;
         }
         return MapRoomQueryService.findMap(gameType, mapName)
-                .map(map -> map.getCapabilityMap().get(DemolitionModeCapability.class)
-                        .map(capability -> edit.apply(map, capability))
-                        .orElseGet(() -> Result.failure(Component.translatable(
-                                "gui.fpsm.map_regions.action.unsupported"))))
+                .map(map -> {
+                    if (map.isStart()) {
+                        return Result.failure(Component.translatable("gui.fpsm.map_regions.action.in_progress"));
+                    }
+                    if (!isAreaInside(map.getMapArea(), area)) {
+                        return Result.failure(Component.translatable("gui.fpsm.map_regions.action.outside_map"));
+                    }
+                    return map.getCapabilityMap().get(DemolitionModeCapability.class)
+                            .map(capability -> edit.apply(map, capability))
+                            .orElseGet(() -> Result.failure(Component.translatable(
+                                    "gui.fpsm.map_regions.action.unsupported")));
+                })
                 .orElseGet(() -> Result.failure(Component.translatable("gui.fpsm.map_select.action.map_not_found")));
     }
 
@@ -333,6 +358,10 @@ public final class MapRoomActionService {
         return pos != null && Math.abs((long) pos.getX()) <= 30_000_000L
                 && Math.abs((long) pos.getZ()) <= 30_000_000L
                 && pos.getY() >= -2048 && pos.getY() <= 2047;
+    }
+
+    private static boolean isAreaInside(AreaData container, AreaData candidate) {
+        return container.isBlockPosInArea(candidate.pos1()) && container.isBlockPosInArea(candidate.pos2());
     }
 
     @FunctionalInterface

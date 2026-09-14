@@ -11,10 +11,12 @@ import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
 import com.ptcrys.fpsmatch.core.data.PlayerData;
 import com.ptcrys.fpsmatch.core.data.SpawnPointData;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.team.BaseTeam;
 import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
+import com.ptcrys.fpsmatch.util.SpawnPointSafety;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -239,6 +241,10 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
             return FPSMCommand.getMap(context).flatMap(map ->
                     getNormalTeam(context).flatMap(team ->
                             team.getCapabilityMap().get(SpawnPointCapability.class).map(spawnCap -> {
+                                if (map.isStart()) {
+                                    FPSMCommand.sendFailure(context.getSource(), Component.translatable("gui.fpsm.map_regions.action.in_progress"));
+                                    return 0;
+                                }
                                 if (!map.getServerLevel().dimension().equals(spawnPointData.getDimension())) {
                                     FPSMCommand.sendFailure(context.getSource(), Component.translatable("message.fpsm.spawn_point_tool.dimension_mismatch"));
                                     return 0;
@@ -249,13 +255,15 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
                                     FPSMCommand.sendFailure(context.getSource(), Component.translatable("message.fpsm.spawn_point_tool.outside_map"));
                                     return 0;
                                 }
+                                if (!SpawnPointSafety.isSafe(map.getServerLevel(), spawnBlockPos)) {
+                                    FPSMCommand.sendFailure(context.getSource(), Component.translatable("message.fpsm.spawn_point_tool.unsafe"));
+                                    return 0;
+                                }
                                 if (!spawnCap.addSpawnPointDataIfAbsent(spawnPointData)) {
                                     FPSMCommand.sendFailure(context.getSource(), Component.translatable("message.fpsm.spawn_point_tool.duplicate"));
                                     return 0;
                                 }
-                                if (map.isStart()) {
-                                    spawnCap.assignNextSpawnPoints();
-                                }
+                                FPSMCore.getInstance().getFPSMDataManager().saveAllData();
                                 FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.add.success", teamName));
                                 return 1;
                             })
@@ -268,11 +276,21 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
 
         private static int handleSpawnClear(CommandContext<CommandSourceStack> context) {
             String teamName = StringArgumentType.getString(context, FPSMCommandSuggests.TEAM_NAME_ARG);
+            Optional<BaseMap> map = FPSMCommand.getMap(context);
+            if (map.isEmpty()) {
+                FPSMCommand.sendFailure(context.getSource(), Component.translatable("message.fpsm.spawn_point_tool.team_not_found", teamName));
+                return 0;
+            }
+            if (map.get().isStart()) {
+                FPSMCommand.sendFailure(context.getSource(), Component.translatable("gui.fpsm.map_regions.action.in_progress"));
+                return 0;
+            }
 
             return getNormalTeam(context)
                     .flatMap(team -> team.getCapabilityMap().get(SpawnPointCapability.class).map(spawnCap -> {
                         spawnCap.clearSpawnPointsData();
                         spawnCap.clearPlayerSpawnPointAssignments();
+                        FPSMCore.getInstance().getFPSMDataManager().saveAllData();
                         FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.clear.success", teamName));
                         return 1;
                     }))

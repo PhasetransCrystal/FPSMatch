@@ -104,6 +104,7 @@ public final class MapRoomQueryService {
                 map.getGameType(),
                 map.getMapName(),
                 map.getDisplayName(),
+                map.getIconTexture(),
                 map.getServerLevel().dimension().location().toString(),
                 areaText(map.getMapArea().pos1(), map.getMapArea().pos2()),
                 map.isStart(),

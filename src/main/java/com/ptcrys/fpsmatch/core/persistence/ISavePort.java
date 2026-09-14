@@ -221,7 +221,7 @@ public interface    ISavePort<T> {
                 if (!directory.mkdirs()) throw new RuntimeException("error : can't create " + directory.getName() + " data folder.");
             }
             if (directory.isDirectory()) {
-                File file = new File(directory, fileName + "." + this.getFileType());
+                File file = new File(directory, PersistenceUtils.fixFileName(fileName) + "." + this.getFileType());
                 try {
                     if (!file.exists()) {
                         if (!file.createNewFile()) throw new RuntimeException("error : can't create " + fileName + " data file.");

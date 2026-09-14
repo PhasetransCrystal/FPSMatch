@@ -6,6 +6,7 @@ public record MapRoomSummary(
         String gameType,
         String mapName,
         String displayName,
+        String iconTexture,
         String dimension,
         String areaText,
         boolean started,
@@ -26,6 +27,7 @@ public record MapRoomSummary(
         buf.writeUtf(summary.gameType(), ID_MAX_LENGTH);
         buf.writeUtf(summary.mapName(), ID_MAX_LENGTH);
         buf.writeUtf(summary.displayName(), TEXT_MAX_LENGTH);
+        buf.writeUtf(summary.iconTexture(), TEXT_MAX_LENGTH);
         buf.writeUtf(summary.dimension(), ID_MAX_LENGTH);
         buf.writeUtf(summary.areaText(), TEXT_MAX_LENGTH);
         buf.writeBoolean(summary.started());
@@ -43,6 +45,7 @@ public record MapRoomSummary(
         return new MapRoomSummary(
                 buf.readUtf(ID_MAX_LENGTH),
                 buf.readUtf(ID_MAX_LENGTH),
+                buf.readUtf(TEXT_MAX_LENGTH),
                 buf.readUtf(TEXT_MAX_LENGTH),
                 buf.readUtf(ID_MAX_LENGTH),
                 buf.readUtf(TEXT_MAX_LENGTH),

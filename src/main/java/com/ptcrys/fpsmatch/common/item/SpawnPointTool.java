@@ -15,6 +15,7 @@ import com.ptcrys.fpsmatch.core.data.SpawnPointData;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import com.ptcrys.fpsmatch.util.PreviewColorUtil;
+import com.ptcrys.fpsmatch.util.SpawnPointSafety;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -176,6 +177,10 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
         }
 
         BaseMap map = mapOptional.get();
+        if (map.isStart()) {
+            player.displayClientMessage(Component.translatable("gui.fpsm.map_regions.action.in_progress"), false);
+            return;
+        }
         if (!map.getServerLevel().dimension().equals(player.serverLevel().dimension())) {
             player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.dimension_mismatch"), false);
             return;
@@ -185,6 +190,10 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
                 && !map.getMapArea().isBlockPosInPlacementArea(spawnBlockPos)
                 && !map.getMapArea().isBlockPosInPlacementArea(player.blockPosition())) {
             player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.outside_map"), false);
+            return;
+        }
+        if (!SpawnPointSafety.isSafe(player.serverLevel(), spawnBlockPos)) {
+            player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.unsafe"), false);
             return;
         }
 
@@ -210,9 +219,7 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
             player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.duplicate"), false);
             return;
         }
-        if (map.isStart()) {
-            capability.assignNextSpawnPoints();
-        }
+        FPSMCore.getInstance().getFPSMDataManager().saveAllData();
 
         player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.added",
                 MapCreatorTool.formatPos(spawnBlockPos)).withStyle(ChatFormatting.GREEN), true);

@@ -3,9 +3,11 @@ package com.ptcrys.fpsmatch.common.packet;
 import com.mojang.datafixers.util.Function3;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.item.MapCreatorTool;
+import com.ptcrys.fpsmatch.common.capability.map.DemolitionModeCapability;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.data.AreaData;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
+import com.ptcrys.fpsmatch.util.MapId;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -98,7 +100,7 @@ public record MapCreatorToolActionC2SPacket(
         }
 
         String mapName = draftMapName().trim();
-        if (mapName.isEmpty()) {
+        if (!MapId.isValid(mapName)) {
             player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.invalid_name"), false);
             return;
         }
@@ -127,6 +129,7 @@ public record MapCreatorToolActionC2SPacket(
                     "message.fpsm.map_creator_tool.duplicate_map", mapName), false);
             return;
         }
+        FPSMCore.getInstance().getFPSMDataManager().saveAllData();
 
         MapCreatorTool.setSelectedType(stack, type);
         MapCreatorTool.setSelectedMap(stack, mapName);
@@ -164,8 +167,21 @@ public record MapCreatorToolActionC2SPacket(
         }
 
         BaseMap map = mapOptional.get();
+        if (map.isStart()) {
+            player.displayClientMessage(Component.translatable("gui.fpsm.map_regions.action.in_progress"), false);
+            return;
+        }
         if (!map.getServerLevel().dimension().equals(player.serverLevel().dimension())) {
             player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.dimension_mismatch"), false);
+            return;
+        }
+        boolean containsBombAreas = map.getCapabilityMap().get(DemolitionModeCapability.class)
+                .map(capability -> capability.getBombAreaData().stream().allMatch(bombArea ->
+                        areaData.get().isBlockPosInArea(bombArea.pos1())
+                                && areaData.get().isBlockPosInArea(bombArea.pos2())))
+                .orElse(true);
+        if (!containsBombAreas) {
+            player.displayClientMessage(Component.translatable("gui.fpsm.map_regions.action.bombs_outside_map"), false);
             return;
         }
 
