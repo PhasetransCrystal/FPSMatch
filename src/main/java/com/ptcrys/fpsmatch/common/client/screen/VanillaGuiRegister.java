@@ -1,8 +1,8 @@
 package com.ptcrys.fpsmatch.common.client.screen;
 
 import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2.Ldlib2EditShopSlotScreen;
-import com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2.Ldlib2EditorShopScreen;
+import com.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernEditShopSlotScreen;
+import com.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernEditorShopScreen;
 
 
 import net.minecraft.client.gui.screens.MenuScreens;
@@ -25,7 +25,7 @@ public class VanillaGuiRegister {
             "edit_shop_slot_menu", () -> IForgeMenuType.create(EditShopSlotMenu::new));
 
     public static void register(){
-        MenuScreens.register(EDITOR_SHOP_CONTAINER.get(), Ldlib2EditorShopScreen::new);
-        MenuScreens.register(EDIT_SHOP_SLOT_MENU.get(), Ldlib2EditShopSlotScreen::new);
+        MenuScreens.register(EDITOR_SHOP_CONTAINER.get(), ModernEditorShopScreen::new);
+        MenuScreens.register(EDIT_SHOP_SLOT_MENU.get(), ModernEditShopSlotScreen::new);
     }
 }

@@ -208,6 +208,7 @@ public final class ServerTeam extends BaseTeam {
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
             }
         }
+        for (Class<T> cap : caps) getCapabilityMap().get(cap).ifPresent(FPSMCapability.CapabilitySynchronizable::onBroadcast);
     }
 
     public void setEnableRounds(boolean enableRounds) {

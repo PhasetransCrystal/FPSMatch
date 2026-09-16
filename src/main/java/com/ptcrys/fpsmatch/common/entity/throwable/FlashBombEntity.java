@@ -25,6 +25,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
+    private final java.util.Set<java.util.UUID> countedTargets = new java.util.HashSet<>();
     private final int radius;
     private static final double MAX_EFFECTIVE_DISTANCE = 48.0;
 
@@ -54,7 +55,7 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
         AABB area = getBoundingBox().inflate(radius);
         for (Entity entity : level().getEntitiesOfClass(Entity.class, area)) {
             if (entity instanceof LivingEntity living) {
-                if (entity instanceof ServerPlayer player && !player.gameMode.isSurvival()) {
+                if (entity instanceof ServerPlayer player && (player.isSpectator() || player.isCreative())) {
                     continue;
                 }
                 applyBlindnessEffect(living);
@@ -89,7 +90,12 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
             flashEffect.setTotalAndTicker(effectDuration.decayTime());
         }
 
-        target.addEffect(effect);
+        boolean applied = target.addEffect(effect);
+        if (applied && effectDuration.totalDuration() > 0 && target instanceof ServerPlayer player
+                && getOwner() instanceof ServerPlayer thrower && countedTargets.add(player.getUUID())) {
+            com.ptcrys.fpsmatch.core.FPSMCore.getInstance().getMapByPlayer(thrower)
+                    .ifPresent(map -> map.recordFlashedEnemy(thrower, player));
+        }
 
         if (target instanceof ServerPlayer player) {
             playDistanceBasedSound(player, distance);

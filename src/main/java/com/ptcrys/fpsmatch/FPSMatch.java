@@ -73,7 +73,7 @@ public class FPSMatch {
 
     public static final String MODID = "fpsmatch";
     public static final Logger LOGGER = LoggerFactory.getLogger("FPSMatch");
-    private static final String PROTOCOL_VERSION = "1.4.0";
+    private static final String PROTOCOL_VERSION = "1.4.2";
     private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(ResourceLocation.tryBuild("fpsmatch", "main"),PROTOCOL_VERSION);
     public static final SimpleChannel INSTANCE = PACKET_REGISTER.getChannel();
     public static final String DEBUG_SYS_PROP = "fpsm.debug";
@@ -223,6 +223,11 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(MapRoomInvitationS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamManageActionC2SPacket.class);
         PACKET_REGISTER.registerPacket(TeamManageResultS2CPacket.class);
+        // Append to preserve existing packet IDs. Every shop request needs its result callback.
+        PACKET_REGISTER.registerPacket(ShopActionResultS2CPacket.class);
+        PACKET_REGISTER.registerPacket(SaveShopSlotConfigurationC2SPacket.class);
+        PACKET_REGISTER.registerPacket(SetShopGroupsC2SPacket.class);
+        PACKET_REGISTER.registerPacket(ShopGroupsResultS2CPacket.class);
         event.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> FPSMClientPacketRegistrar::registerAll));
     }
 

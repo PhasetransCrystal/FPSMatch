@@ -61,6 +61,12 @@ public abstract class BaseMap {
     public final String mapName;
     // 游戏是否开始
     protected boolean isStart = false;
+    private final com.ptcrys.fpsmatch.core.data.MatchClock matchClock = new com.ptcrys.fpsmatch.core.data.MatchClock();
+
+    public final int getElapsedMatchSeconds() { return matchClock.seconds(); }
+    public final long getElapsedMatchTicks() { return matchClock.ticks(); }
+    public final void resetMatchClock() { matchClock.reset(); }
+    protected boolean shouldCountMatchTime() { return isStart; }
     // 是否处于调试模式
     private boolean isDebug = false;
     // 服务器世界
@@ -255,6 +261,7 @@ public abstract class BaseMap {
      * 地图每个 tick 的操作
      */
     public final void mapTick() {
+        matchClock.tick(shouldCountMatchTime());
         checkForVictory();
         tick();
         if (!isStart) {
@@ -350,6 +357,7 @@ public abstract class BaseMap {
     public boolean start() {
         boolean cancelled = MinecraftForge.EVENT_BUS.post(new FPSMapEvent.StartEvent(this));
         if (!cancelled) {
+            resetMatchClock();
             this.clearReadyPlayers();
         }
         return !cancelled;
@@ -439,6 +447,7 @@ public abstract class BaseMap {
      * 重置游戏
      */
     public void reset() {
+        resetMatchClock();
         MinecraftForge.EVENT_BUS.post(new FPSMapEvent.ResetEvent(this));
         this.clearReadyPlayers();
     }
@@ -815,8 +824,29 @@ public abstract class BaseMap {
             if (!isValidAttack(attacker, hurt)) return;
             if (!getMapTeams().isSameTeam(attacker, hurt)) {
                 getMapTeams().addHurtData(attacker, hurt, amount);
+                var category = com.ptcrys.fpsmatch.core.damage.MinecraftDamageSourceClassifier.classify(source);
+                if (category == com.ptcrys.fpsmatch.core.damage.DamageSourceCategory.EXPLOSIVE
+                        || category == com.ptcrys.fpsmatch.core.damage.DamageSourceCategory.INCENDIARY
+                        || category == com.ptcrys.fpsmatch.core.damage.DamageSourceCategory.FIRE
+                        || source.getDirectEntity() instanceof com.ptcrys.fpsmatch.core.entity.BaseProjectileLifeTimeEntity
+                        || (com.ptcrys.fpsmatch.compat.impl.FPSMImpl.findLrtacticalMod()
+                        && com.ptcrys.fpsmatch.compat.LrtacticalCompat.isUtilityDamage(source))
+                        || (com.ptcrys.fpsmatch.compat.impl.FPSMImpl.findCounterStrikeGrenadesMod()
+                        && !com.ptcrys.fpsmatch.compat.CounterStrikeGrenadesCompat.getItemFromDamageSource(source).isEmpty())) {
+                    getMapTeams().getPlayerData(attacker).ifPresent(data ->
+                            data.addUtilityDamage(Math.min(hurt.getHealth(), amount)));
+                }
             }
         });
+    }
+
+    /** Called once per affected enemy per flash, after the grenade resolves visibility and duration. */
+    public void recordFlashedEnemy(ServerPlayer thrower, ServerPlayer target) {
+        if (!isStart || thrower == target || target.isSpectator()
+                || !checkGameHasPlayer(thrower) || !checkGameHasPlayer(target)
+                || getMapTeams().isSameTeam(thrower, target)
+                || !getMapTeams().getPlayerData(target).map(PlayerData::isLiving).orElse(false)) return;
+        getMapTeams().getPlayerData(thrower).ifPresent(PlayerData::addFlashedEnemy);
     }
 
     /**

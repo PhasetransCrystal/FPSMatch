@@ -1,6 +1,7 @@
 package com.ptcrys.fpsmatch.common.client.screen;
 
 import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.client.FPSMClient;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMGuiTheme;
 import com.ptcrys.fpsmatch.common.item.MapCreatorTool;
 import com.ptcrys.fpsmatch.common.item.tool.ToolInteractionAction;
@@ -95,6 +96,13 @@ public class MapCreatorToolScreen extends Screen {
                 .pos(left + 200, top + 182)
                 .size(82, 20)
                 .build());
+
+        var debugData = FPSMClient.getGlobalData().getDebugData();
+        this.addRenderableWidget(new Button.Builder(Component.translatable(
+                debugData.isVisible() ? "gui.fpsm.preview.hide" : "gui.fpsm.preview.show"), button -> {
+            debugData.toggleVisibility();
+            button.setMessage(Component.translatable(debugData.isVisible() ? "gui.fpsm.preview.hide" : "gui.fpsm.preview.show"));
+        }).pos(left + 18, top + 204).size(264, 20).build());
 
         updateTypeButton();
         updateMapButton();

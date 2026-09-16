@@ -9,6 +9,10 @@
   "plugin": "com.ptcrys.fpsmatch.mixin.FPSMatchMixinPlugin",
   "refmap": "fpsmatch.refmap.json",
   "mixins": [
+    "compat.grenades.FlashBangStatsMixin",
+    "compat.lrt.LrtFlashStatsMixin",
+    "compat.lrt.LrtCloudFireStatsMixin",
+    "compat.lrt.LrtSplashFireStatsMixin",
     "sound.ItemDropSoundMixin",
     "combat.DeadOrDyingMixin",
     "particle.DustParticleOptionsMixin",
@@ -18,9 +22,7 @@
     "ammo.AmmoEntityMixin",
     "ammo.DefaultAmmoMixin",
     "ammo.ModernKineticGunItemMixin",
-    "ammo.TweakAmmoMixin",
-    "compat.forge.ResourceLocationDefaultNamespaceCompatMixin",
-    "compat.forge.ResourceLocationFactoriesCompatMixin"
+    "ammo.TweakAmmoMixin"
   ],
   "client": [
     "sound.ItemPickupSoundMixin",

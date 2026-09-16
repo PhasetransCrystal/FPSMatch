@@ -5,6 +5,9 @@ import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.data.RenderableArea;
 import com.ptcrys.fpsmatch.common.client.data.RenderablePoint;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
+import com.ptcrys.fpsmatch.common.client.spec.SpectateMode;
+import com.ptcrys.fpsmatch.common.client.spec.SpectateState;
+import com.ptcrys.fpsmatch.common.client.spec.SpectatorCameraController;
 import com.ptcrys.fpsmatch.common.effect.FPSMEffectRegister;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.OpenMapSelectionC2SPacket;
@@ -147,7 +150,7 @@ public class FPSMClientEvents
     }
 
     /**
-     * Open the LDLib2 map browser immediately on the client, then ask the server for a fresh snapshot.
+     * Open the Modern UI map browser immediately on the client, then ask the server for a fresh snapshot.
      * Waiting only for the S2C reply fails on singleplayer because PauseScreen freezes the integrated server.
      * Parent is null so closing does not re-open PauseScreen.
      */
@@ -168,6 +171,13 @@ public class FPSMClientEvents
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
+        if (event.phase == TickEvent.Phase.END && SpectateState.isRestricted()
+                && (player == null || !player.isSpectator())) {
+            // Also cover sessions entered directly by a team switch, without a killcam.
+            SpectateState.set(SpectateMode.FREE);
+            SpectatorCameraController.reset();
+            if (player != null) mc.setCameraEntity(player);
+        }
         if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get())) {
             mc.getSoundManager().stop();
         }

@@ -15,21 +15,23 @@ FPSMatch 是面向 Minecraft 1.20.1 Forge 的库模组，为团队制竞技 FPS 
 | 地图工具 | OP 2 级地图/出生点编辑工具、地图设置、区域预览与比赛中编辑保护 |
 | HUD 与统计 | 支持自定义 HUD，并记录 KDA、爆头、伤害等玩家统计数据 |
 | 地图房间 | 地图选择、房间详情、加入/准备管理与可选图标/详情背景贴图 |
-| 兼容集成 | 必需 LDLib2 和 Kotlin for Forge；TaCZ 及其他玩法模组为可选集成 |
+| 兼容集成 | 必需 Modern UI 和 Kotlin for Forge，客户端另需 Modern UI；TaCZ 及其他玩法模组为可选集成 |
 | 指令帮助 | 游戏内可通过 `/fpsm help` 查看指令帮助 |
 
 地图 ID 是持久化标识：长度为 1-48，仅允许小写 `a-z`、数字 `0-9`、`_`、`-`。出生点必须在地图边界和同一维度内，脚下有实体支撑，玩家占用的两格无碰撞体且没有流体。完整服主/开发者指引见[本地 Wiki](WIKI.md)，其中包含[缩略图与地图图标教程](WIKI.md#地图缩略图与图标填写教程)。
+
+当前工作区客户端需要 Modern UI **1.20.1-3.12.0.1**。地图浏览、房间子页面、商店配置和装备购买界面使用原生 Modern UI 控件；文字由 Modern UI 字体引擎处理。专用服务器不要求安装 Modern UI。
 
 ## 版本兼容矩阵
 
 带 `*` 的列为必须依赖，未标注的模组列为兼容集成项。`1.3.0` 行表示当前源码工作区快照，并不代表已确认存在公开发布产物。
 
-| FPSMatch | 分发来源 | Minecraft* | Forge* | LDLib2* | Kotlin for Forge* | Modern UI | TaCZ | TaCZ Tweaks | LR Tactical | CounterStrikeGrenade | KubeJS |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.3.0 | GitHub 工作区快照 | 1.20.1 | 47.4.10 | 2.2.27+1.20.1 | 4.11.0+ | 3.12.0.1 | 1.1.7-hotfix | 2.11.2 | 0.4.3 | 1.20.1-1.5.2 | 2001.6.5-build.14 |
-| 1.2.5 | Modrinth / CurseForge | 1.20.1 | 47.3.11 | - | - | 3.11.1.6 | 1.1.7-hotfix | - | 0.3.0 | 1.4.1 | - |
+| FPSMatch | 分发来源 | Minecraft* | Forge* | Modern UI* | Kotlin for Forge* | TaCZ | TaCZ Tweaks | LR Tactical | CounterStrikeGrenade | KubeJS |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1.3.0 | GitHub 工作区快照 | 1.20.1 | 47.4.10 | 2.2.27+1.20.1 | 4.11.0+ | 1.1.7-hotfix | 2.11.2 | 0.4.3 | 1.20.1-1.5.2 | 2001.6.5-build.14 |
+| 1.2.5 | Modrinth / CurseForge | 1.20.1 | 47.3.11 | - | - | 1.1.7-hotfix | - | 0.3.0 | 1.4.1 | - |
 
-FPSMatch 的元数据将 TaCZ 标记为可选。Modern UI、CounterStrikeGrenade、LR Tactical、KubeJS 及其他未标注条目由玩法扩展或服务器整合包按需选择，不是框架元数据声明的基础硬依赖。
+FPSMatch 的元数据将 TaCZ 标记为可选。CounterStrikeGrenade、LR Tactical、KubeJS 及其他未标注条目由玩法扩展或服务器整合包按需选择，不是框架元数据声明的基础硬依赖。
 
 ## 下载
 

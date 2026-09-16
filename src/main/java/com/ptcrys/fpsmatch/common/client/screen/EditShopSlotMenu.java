@@ -7,6 +7,7 @@ import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
+import com.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorValues;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.shop.FPSMShop;
@@ -34,6 +35,8 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     private final ContainerData data;
     private final ItemStackHandler itemHandler;
     private ShopSlot shopSlot;
+    private List<String> listeners;
+    private List<String> availableListeners;
     private final String gameType;
     private final String mapName;
     private final String teamName;
@@ -55,6 +58,11 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
                 buf.readUtf(ID_MAX_LENGTH),
                 buf.readInt()
         );
+        // Read names directly: a module registered only on the server need not exist client-side.
+        listeners = buf.readCollection(FriendlyByteBuf.limitValue(java.util.ArrayList::new, ShopEditorValues.MAX_CATALOG),
+                in -> in.readUtf(ShopEditorValues.MAX_MODULE_NAME));
+        availableListeners = buf.readCollection(FriendlyByteBuf.limitValue(java.util.ArrayList::new, ShopEditorValues.MAX_CATALOG),
+                in -> in.readUtf(ShopEditorValues.MAX_MODULE_NAME));
     }
 
     public EditShopSlotMenu(int id, Inventory playerInventory, ItemStackHandler handler, ContainerData data, ShopSlot shopSlot, String gameType, String mapName, String teamName, String shopType, int slotNum) {
@@ -62,6 +70,8 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         this.itemHandler = handler;
         this.data = data;
         this.shopSlot = shopSlot;
+        this.listeners = List.copyOf(shopSlot.getListenerNames());
+        this.availableListeners = FPSMCore.getInstance().getListenerModuleManager().getListenerModules().stream().sorted().toList();
         this.gameType = gameType;
         this.mapName = mapName;
         this.teamName = teamName;
@@ -135,15 +145,21 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
 
     /**
      * Validates and commits one slot edit using only the server-owned menu identity.
-     * The legacy packet remains three integers; map/team/type/index are never trusted from the client.
+     * Map/team/type/index are never trusted from the client.
      */
     public SaveResult trySaveData(ServerPlayer serverPlayer, int ammoCount, int defaultCost, int groupId) {
+        return trySaveData(serverPlayer, ammoCount, defaultCost, groupId, shopSlot.getListenerNames());
+    }
+
+    public SaveResult trySaveData(ServerPlayer serverPlayer, int ammoCount, int defaultCost, int groupId, List<String> modules) {
         if (serverPlayer == null || serverPlayer.containerMenu != this) {
             return SaveResult.INVALID_MENU;
         }
         if (!MapRoomQueryService.isMapOperator(serverPlayer)) {
             return SaveResult.NO_PERMISSION;
         }
+        var manager = FPSMCore.getInstance().getListenerModuleManager();
+        if (!ShopEditorValues.validModules(modules, manager.getListenerModules())) return SaveResult.INVALID_MODULE;
         if (defaultCost < 0 || defaultCost > 1_000_000
                 || ammoCount < 0 || ammoCount > 999_999
                 || groupId < -1 || groupId > 999_999) {
@@ -181,7 +197,8 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
                     ammoCount
             );
         }
-        if (sameConfiguration(current, editedStack, defaultCost, groupId)) {
+        if (sameConfiguration(current, editedStack, defaultCost, groupId)
+                && current.getListenerNames().equals(modules)) {
             setAmmo(ammoCount);
             setPrice(defaultCost);
             setGroupId(groupId);
@@ -193,10 +210,13 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         replacement.setItemSupplier(savedStack::copy);
         replacement.setDefaultCost(defaultCost);
         replacement.setGroupId(groupId);
+        for (String name : replacement.getListenerNames()) replacement.removeListenerModule(name);
+        for (String name : modules) replacement.addListener(manager.getListenerModule(name));
         shop.replaceDefaultShopData(shopType, slotNum, replacement);
         shop.syncShopData();
         FPSMCore.getInstance().getFPSMDataManager().saveAllData();
         this.shopSlot = replacement;
+        this.listeners = List.copyOf(replacement.getListenerNames());
         this.itemHandler.setStackInSlot(0, savedStack.copy());
         setAmmo(ammoCount);
         setPrice(defaultCost);
@@ -229,7 +249,8 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         INVALID_SLOT("gui.fpsm.shop_editor.save.invalid_slot"),
         STALE_SLOT("gui.fpsm.shop_editor.save.stale_slot"),
         INVALID_ITEM("gui.fpsm.shop_editor.save.invalid_item"),
-        INVALID_VALUE("gui.fpsm.shop_editor.save.invalid_value");
+        INVALID_VALUE("gui.fpsm.shop_editor.save.invalid_value"),
+        INVALID_MODULE("gui.fpsm.shop_editor.save.invalid_module");
 
         private final String translationKey;
 
@@ -251,8 +272,10 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     }
 
     public List<String> getListeners() {
-        return this.shopSlot.getListenerNames();
+        return List.copyOf(listeners);
     }
+
+    public List<String> getAvailableListeners() { return List.copyOf(availableListeners); }
 
     public boolean isGun(){
         return GunCompatManager.isGun(this.slots.get(0).getItem());

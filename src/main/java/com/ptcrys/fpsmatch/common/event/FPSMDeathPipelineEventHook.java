@@ -71,7 +71,8 @@ public class FPSMDeathPipelineEventHook {
             return;
         }
 
-        FPSMapEvent.PlayerEvent.HurtEvent hurtEvent = new FPSMapEvent.PlayerEvent.HurtEvent(map, hurt, event.getSource(), event.getAmount());
+        DamageSource attributedSource = com.ptcrys.fpsmatch.compat.LrtUtilityAttribution.resolve(hurt, event.getSource());
+        FPSMapEvent.PlayerEvent.HurtEvent hurtEvent = new FPSMapEvent.PlayerEvent.HurtEvent(map, hurt, attributedSource, event.getAmount());
         if (MinecraftForge.EVENT_BUS.post(hurtEvent)) {
             event.setCanceled(true);
             return;
@@ -83,7 +84,7 @@ public class FPSMDeathPipelineEventHook {
             return;
         }
 
-        map.recordHurtData(hurt, event.getSource(), event.getAmount());
+        map.recordHurtData(hurt, attributedSource, event.getAmount());
     }
 
     @SubscribeEvent
@@ -136,7 +137,8 @@ public class FPSMDeathPipelineEventHook {
                 player.setHealth(player.getMaxHealth());
                 RECENTLY_KILLED.add(player.getUUID());
 
-                FPSMapEvent.PlayerEvent.DeathEvent deathEvent = new FPSMapEvent.PlayerEvent.DeathEvent(map, player, event.getSource());
+                DamageSource attributedSource = com.ptcrys.fpsmatch.compat.LrtUtilityAttribution.resolve(player, event.getSource());
+                FPSMapEvent.PlayerEvent.DeathEvent deathEvent = new FPSMapEvent.PlayerEvent.DeathEvent(map, player, attributedSource);
                 MinecraftForge.EVENT_BUS.post(deathEvent);
                 if (deathEvent.isCanceled()) {
                     return;

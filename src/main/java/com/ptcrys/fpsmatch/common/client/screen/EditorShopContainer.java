@@ -5,6 +5,8 @@ import com.google.gson.JsonElement;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
 import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
+import com.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorValues;
+import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.ptcrys.fpsmatch.core.shop.FPSMShop;
 import com.ptcrys.fpsmatch.core.shop.INamedType;
@@ -289,6 +291,46 @@ public class EditorShopContainer extends AbstractContainerMenu {
         return Collections.unmodifiableList(allShopSlots);
     }
 
+    /** Validate the entire selection before changing any default slots. */
+    public EditShopSlotMenu.SaveResult trySetGroups(ServerPlayer player, int[] indices, int groupId) {
+        if (player == null || player.containerMenu != this) return EditShopSlotMenu.SaveResult.INVALID_MENU;
+        if (!MapRoomQueryService.isMapOperator(player)) return EditShopSlotMenu.SaveResult.NO_PERMISSION;
+        if (!ShopEditorValues.validGroup(groupId) || !ShopEditorValues.validSelection(indices, allShopSlots.size()))
+            return EditShopSlotMenu.SaveResult.INVALID_VALUE;
+        var resolved = resolveCurrentShop();
+        if (resolved.isEmpty()) return EditShopSlotMenu.SaveResult.SHOP_UNAVAILABLE;
+        var shop = resolved.get();
+        List<List<ShopSlot>> lists = new ArrayList<>();
+        List<SlotRef> refs = new ArrayList<>();
+        List<ShopSlot> replacements = new ArrayList<>();
+        for (int index : indices) {
+            SlotRef ref = getShopSlotRef(index);
+            if (ref == null) return EditShopSlotMenu.SaveResult.INVALID_SLOT;
+            final List<ShopSlot> current;
+            try { current = shop.getDefaultShopSlotListByType(ref.type()); }
+            catch (IllegalArgumentException invalid) { return EditShopSlotMenu.SaveResult.INVALID_SLOT; }
+            if (current == null || ref.slotNum() >= current.size() || current.get(ref.slotNum()) == null)
+                return EditShopSlotMenu.SaveResult.INVALID_SLOT;
+            if (current.get(ref.slotNum()) != allShopSlots.get(index)) return EditShopSlotMenu.SaveResult.STALE_SLOT;
+            ShopSlot replacement = current.get(ref.slotNum()).copy();
+            replacement.setGroupId(groupId);
+            refs.add(ref); lists.add(current); replacements.add(replacement);
+        }
+        for (int i = 0; i < indices.length; i++) {
+            lists.get(i).set(refs.get(i).slotNum(), replacements.get(i));
+            allShopSlots.set(indices[i], replacements.get(i));
+        }
+        shop.resetPlayerData();
+        shop.syncShopData();
+        FPSMCore.getInstance().getFPSMDataManager().saveAllData();
+        return EditShopSlotMenu.SaveResult.SUCCESS;
+    }
+
+    public void applyGroups(int[] indices, int groupId) {
+        if (!ShopEditorValues.validGroup(groupId) || !ShopEditorValues.validSelection(indices, allShopSlots.size())) return;
+        for (int index : indices) if (allShopSlots.get(index) != null) allShopSlots.get(index).setGroupId(groupId);
+    }
+
     private void openSecondMenu(Player player, ShopSlot shopSlot, SlotRef slotRef) {
         if (player == null || shopSlot == null || slotRef == null) {
             return;
@@ -312,6 +354,9 @@ public class EditorShopContainer extends AbstractContainerMenu {
                         buf.writeUtf(teamName);
                         buf.writeUtf(slotRef.type());
                         buf.writeInt(slotRef.slotNum());
+                        buf.writeCollection(shopSlot.getListenerNames(), (out, name) -> out.writeUtf(name, 256));
+                        buf.writeCollection(com.ptcrys.fpsmatch.core.FPSMCore.getInstance().getListenerModuleManager()
+                                .getListenerModules().stream().sorted().toList(), (out, name) -> out.writeUtf(name, 256));
                     }
             );
         }

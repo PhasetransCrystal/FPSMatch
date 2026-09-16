@@ -1,7 +1,7 @@
 package com.ptcrys.fpsmatch.common.packet.spec;
 
 import com.ptcrys.fpsmatch.common.client.spec.SpectateMode;
-import com.ptcrys.fpsmatch.common.client.spec.SpectateState;
+import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -18,10 +18,6 @@ public record SpectateModeS2CPacket(SpectateMode mode) {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctxSup) {
-        NetworkEvent.Context ctx = ctxSup.get();
-        ctx.enqueueWork(() -> {
-            SpectateState.set(mode);
-        });
-        ctx.setPacketHandled(true);
+        ClientPacketExecutor.execute(ctxSup, this);
     }
 }

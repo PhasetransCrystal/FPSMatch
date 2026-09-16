@@ -2,10 +2,10 @@ package com.ptcrys.fpsmatch.common.client;
 
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.data.FPSMClientGlobalData;
+import com.ptcrys.fpsmatch.common.client.event.FPSMClientResetEvent;
 import com.ptcrys.fpsmatch.common.client.key.*;
 import com.ptcrys.fpsmatch.common.client.renderer.*;
 import com.ptcrys.fpsmatch.common.client.screen.VanillaGuiRegister;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.element.FPSMUiElements;
 import com.ptcrys.fpsmatch.common.client.screen.hud.FlashBombHud;
 import com.ptcrys.fpsmatch.util.RenderUtil;
 import com.ptcrys.fpsmatch.common.effect.FPSMEffectRegister;
@@ -54,8 +54,6 @@ public class FPSMClient {
     {
         //注册原版GUI
         VanillaGuiRegister.register();
-        // FPSM 自定义 LDLib2 XML 标签注册安全网（缺失时手动注册并报错）
-        FPSMUiElements.registerAll();
     }
 
     @SubscribeEvent
@@ -85,5 +83,6 @@ public class FPSMClient {
     public static void reset() {
         DATA.reset();
         RenderUtil.invalidatePlayerInfoCache();
+        MinecraftForge.EVENT_BUS.post(new FPSMClientResetEvent());
     }
 }

@@ -87,6 +87,7 @@ mixin {
 // Dependency repositories
 repositories {
     mavenCentral()
+    maven { name = 'IzzelAliz'; url = 'https://maven.izzel.io/releases/' }
 
     maven {
         name = 'PtcrysMaven'
@@ -127,13 +128,9 @@ repositories {
         content { includeGroup 'dev.architectury' }
     }
 
-    maven {
-        name 'IzzelAliz Maven'
-        url 'https://maven.izzel.io/releases/'
-    }
 }
 
-// Dependencies
+// Modern UI shares these libraries with Minecraft.
 def withoutMinecraftLibraries = { dependency ->
     dependency.exclude group: 'org.apache.logging.log4j'
     dependency.exclude group: 'com.google.code.findbugs', module: 'jsr305'
@@ -142,14 +139,12 @@ def withoutMinecraftLibraries = { dependency ->
     dependency.exclude group: 'it.unimi.dsi', module: 'fastutil'
 }
 
+// Dependencies
 dependencies {
-    implementation('com.lowdragmc:ldlib2-forge:2.2.27+1.20.1')
-
-    withoutMinecraftLibraries(additionalRuntimeClasspath(
-            implementation("icyllis.modernui:ModernUI-Core:${modernui_core_version}")))
-    withoutMinecraftLibraries(additionalRuntimeClasspath(
-            implementation("icyllis.modernui:ModernUI-Markflow:${modernui_core_version}")))
+    withoutMinecraftLibraries(additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Core:${modernui_core_version}")))
+    withoutMinecraftLibraries(additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Markflow:${modernui_core_version}")))
     modImplementation "icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}"
+
 
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixinextras_version}"))
     implementation(jarJar("io.github.llamalad7:mixinextras-forge:${mixinextras_version}"))
@@ -185,7 +180,6 @@ def generateModMetadata = tasks.register('generateModMetadata', ProcessResources
             forge_version          : forge_version,
             forge_version_range    : forge_version_range,
             loader_version_range   : loader_version_range,
-            ldlib2_version_range   : ldlib2_version_range,
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_license            : mod_license,

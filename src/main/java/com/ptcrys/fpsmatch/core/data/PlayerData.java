@@ -31,6 +31,8 @@ public class PlayerData {
     private int mvpCount = 0;
     private boolean isLiving = true;
     private int headshotKills = 0;
+    private float utilityDamage;
+    private int flashedEnemies;
 
     //回合临时字段（仅服务端使用，enableRounds=true时生效）
     private int _kills = 0; // 本回合击杀
@@ -38,6 +40,8 @@ public class PlayerData {
     private int _assists = 0; // 本回合助攻
     private float _damage = 0.0f; // 本回合伤害
     private int _headshotKills = 0; // 本回合爆头击杀
+    private float _utilityDamage;
+    private int _flashedEnemies;
 
     //服务端独有字段
     private final Map<UUID, Damage> damageData = new HashMap<>(); // 伤害明细
@@ -45,6 +49,8 @@ public class PlayerData {
     private boolean dirty = true; // 脏数据标记
     public final boolean enableRounds; // 是否启用回合模式
     private boolean lastDeath = false; //上次死亡标记 用于复活后判别发放物资
+    private long combatRevision;
+    public long getCombatRevision() { return combatRevision; }
 
     //客户端独有字段
     @OnlyIn(Dist.CLIENT)
@@ -100,7 +106,7 @@ public class PlayerData {
 
     // 击杀数
     public int getKills() {
-        return kills;
+        return kills + (enableRounds ? _kills : 0);
     }
 
     public int getTempKills(){
@@ -109,7 +115,7 @@ public class PlayerData {
 
     // 死亡数
     public int getDeaths() {
-        return deaths;
+        return deaths + (enableRounds ? _deaths : 0);
     }
 
     public int getTempDeaths(){
@@ -118,7 +124,7 @@ public class PlayerData {
 
     // 助攻数
     public int getAssists() {
-        return assists;
+        return assists + (enableRounds ? _assists : 0);
     }
 
     public int getTempAssists(){
@@ -127,7 +133,43 @@ public class PlayerData {
 
     // 总伤害
     public float getDamage() {
-        return damage;
+        return damage + (enableRounds ? _damage : 0);
+    }
+
+    public float getUtilityDamage() {
+        return utilityDamage + (enableRounds ? _utilityDamage : 0);
+    }
+
+    public int getFlashedEnemies() {
+        return flashedEnemies + (enableRounds ? _flashedEnemies : 0);
+    }
+
+    public int getTempFlashedEnemies() { return _flashedEnemies; }
+
+    public void addUtilityDamage(float amount) {
+        if (!Float.isFinite(amount) || amount <= 0) return;
+        if (enableRounds) _utilityDamage += amount;
+        else utilityDamage += amount;
+        markDirty();
+    }
+
+    public void addFlashedEnemy() {
+        if (enableRounds) _flashedEnemies++;
+        else flashedEnemies++;
+        markDirty();
+    }
+
+    /** Apply an aggregate snapshot, also used when transferring players between modes. */
+    public void setUtilityDamage(float amount) {
+        utilityDamage = Math.max(0, amount);
+        _utilityDamage = 0;
+        markDirty();
+    }
+
+    public void setFlashedEnemies(int count) {
+        flashedEnemies = Math.max(0, count);
+        _flashedEnemies = 0;
+        markDirty();
     }
 
     public float getTempDamage(){
@@ -389,12 +431,15 @@ public class PlayerData {
     // 回合结束：合并临时数据到基础字段，清空临时数据
     public void saveRoundData() {
         if (!enableRounds) return;
+        combatRevision++;
 
         this.kills += _kills;
         this.deaths += _deaths;
         this.assists += _assists;
         this.damage += _damage;
         this.headshotKills += _headshotKills;
+        this.utilityDamage += _utilityDamage;
+        this.flashedEnemies += _flashedEnemies;
         this.scores += (_kills * 2) + _assists; // 回合得分结算
 
         this._kills = 0;
@@ -403,12 +448,15 @@ public class PlayerData {
         this._damage = 0;
         this._headshotKills = 0;
         this.damageData.clear();
+        this._utilityDamage = 0;
+        this._flashedEnemies = 0;
 
         markDirty();
     }
 
     // 重置所有数据
     public void reset() {
+        combatRevision++;
         this.scores = 0;
         this.kills = 0;
         this.deaths = 0;
@@ -425,6 +473,8 @@ public class PlayerData {
         this._headshotKills = 0;
 
         this.damageData.clear();
+        this.utilityDamage = this._utilityDamage = 0;
+        this.flashedEnemies = this._flashedEnemies = 0;
         markDirty();
     }
 
@@ -440,21 +490,25 @@ public class PlayerData {
     public PlayerData copy(Player targetPlayer, boolean enableRounds) {
         PlayerData copy = new PlayerData(targetPlayer, enableRounds);
         copy.setScores(this.scores);
-        copy.setKills(this.getKills());
-        copy.setDeaths(this.getDeaths());
-        copy.setAssists(this.getAssists());
-        copy.setDamage(this.getDamage());
+        copy.kills = this.getKills();
+        copy.deaths = this.getDeaths();
+        copy.assists = this.getAssists();
+        copy.damage = this.getDamage();
         copy.setMvpCount(this.mvpCount);
         copy.setLiving(this.isLiving);
         copy.setHeadshotKills(this.getHeadshotKills());
+        copy.setUtilityDamage(this.getUtilityDamage());
+        copy.setFlashedEnemies(this.getFlashedEnemies());
         return copy;
     }
 
     public void merge(PlayerData other) {
-        this.setKills(this.getKills() + other.getKills());
-        this.setDeaths(this.getDeaths() + other.getDeaths());
-        this.setAssists(this.getAssists() + other.getAssists());
-        this.setDamage(this.getDamage() + other.getDamage());
+        this.kills += other.getKills();
+        this.deaths += other.getDeaths();
+        this.assists += other.getAssists();
+        this.damage += other.getDamage();
+        this.utilityDamage += other.getUtilityDamage();
+        this.flashedEnemies += other.getFlashedEnemies();
         this.setHeadshotKills(this.getHeadshotKills() + other.getHeadshotKills());
     }
 
@@ -479,6 +533,8 @@ public class PlayerData {
         info.put("Deaths", getDeaths());
         info.put("Assists", getAssists());
         info.put("Damage", getDamage());
+        info.put("utilityDamage", getUtilityDamage());
+        info.put("flashedEnemies", getFlashedEnemies());
         info.put("headshotKills", getHeadshotKills());
         info.put("mvpCount", mvpCount);
         info.put("hp", FPSMCore.initialized() ? healthPercentServer() : hp);

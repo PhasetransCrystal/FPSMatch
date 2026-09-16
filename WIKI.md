@@ -43,7 +43,8 @@ FPSMatch 不适合以下用途：
 - Minecraft `1.20.1`
 - Forge `47.4.10` 或更高的 1.20.1 Forge 版本
 - Java 17
-- LDLib2 `2.2.27+1.20.1`
+- Modern UI `2.2.27+1.20.1`
+- Modern UI `1.20.1-3.12.0.1`（客户端必需；地图/房间/商店使用原生 Modern UI）
 - Kotlin for Forge `4.11.0+`
 
 ### 常见兼容模组
@@ -51,7 +52,6 @@ FPSMatch 不适合以下用途：
 | 模组 | 作用 |
 | --- | --- |
 | TaCZ | 枪械数据、开火、换弹、弹药、枪械商店兼容 |
-| Modern UI | 部分 GUI/配置页面依赖 |
 | CounterStrikeGrenade | CS 风格投掷物兼容 |
 | KubeJS | 将 FPSMatch 事件暴露给脚本 |
 | Cloth Config | 配置界面兼容 |

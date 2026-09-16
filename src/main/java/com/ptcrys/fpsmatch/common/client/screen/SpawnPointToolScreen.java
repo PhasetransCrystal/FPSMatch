@@ -1,6 +1,7 @@
 package com.ptcrys.fpsmatch.common.client.screen;
 
 import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.client.FPSMClient;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMGuiTheme;
 import com.ptcrys.fpsmatch.common.packet.OpenSpawnPointToolScreenS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.SpawnPointToolActionC2SPacket;
@@ -86,9 +87,15 @@ public class SpawnPointToolScreen extends Screen {
                 .pos(left + 168, top + 170)
                 .size(140, 20)
                 .build());
+        var debugData = FPSMClient.getGlobalData().getDebugData();
+        this.addRenderableWidget(new Button.Builder(Component.translatable(
+                debugData.isVisible() ? "gui.fpsm.preview.hide" : "gui.fpsm.preview.show"), button -> {
+            debugData.toggleVisibility();
+            button.setMessage(Component.translatable(debugData.isVisible() ? "gui.fpsm.preview.hide" : "gui.fpsm.preview.show"));
+        }).pos(left + 18, top + 194).size(140, 20).build());
         this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.close"), button -> onClose())
-                .pos(left + 18, top + 194)
-                .size(290, 20)
+                .pos(left + 168, top + 194)
+                .size(140, 20)
                 .build());
 
         updateButtonLabels();

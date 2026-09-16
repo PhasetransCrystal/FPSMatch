@@ -151,6 +151,8 @@ public abstract class FPSMCapability<H> {
         boolean isDirty();
         void readFromBuf(FriendlyByteBuf buf);
         void writeToBuf(FriendlyByteBuf buf);
+        /** A targeted initial snapshot must not consume changes owed to existing viewers. */
+        default void onBroadcast() {}
     }
 
     public interface DataSynchronizable {

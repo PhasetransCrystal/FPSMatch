@@ -8,14 +8,11 @@ import com.ptcrys.fpsmatch.common.client.data.RenderablePoint;
 import com.ptcrys.fpsmatch.common.client.screen.MapCreatorToolScreen;
 import com.ptcrys.fpsmatch.common.client.screen.MatchConfigToolScreen;
 import com.ptcrys.fpsmatch.common.client.screen.SpawnPointToolScreen;
-import com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2.Ldlib2EditShopSlotScreen;
-import com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2.Ldlib2EditorShopScreen;
-import com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2.Ldlib2ShopConfigToolScreen;
+import com.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernEditShopSlotScreen;
+import com.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernEditorShopScreen;
+import com.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernShopConfigToolScreen;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapShopScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSettingsScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapRegionsScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapImportScreen;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.modernui.*;
 import com.ptcrys.fpsmatch.common.packet.AddAreaDataS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.AddPointDataS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.FPSMInventorySelectedS2CPacket;
@@ -38,6 +35,9 @@ import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionAccessS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
 import com.ptcrys.fpsmatch.common.client.music.FPSClientMusicManager;
 import com.ptcrys.fpsmatch.common.client.shop.ShopActionResultListener;
+import com.ptcrys.fpsmatch.common.client.spec.SpectateMode;
+import com.ptcrys.fpsmatch.common.client.spec.SpectateState;
+import com.ptcrys.fpsmatch.common.client.spec.SpectatorCameraController;
 import com.ptcrys.fpsmatch.common.packet.shop.OpenShopConfigToolScreenS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.shop.ShopActionResultS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.shop.ShopDataSlotS2CPacket;
@@ -89,17 +89,19 @@ public final class FPSMClientPacketHandlers {
 
     public static void handleOpenShopConfigToolScreen(OpenShopConfigToolScreenS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof Ldlib2ShopConfigToolScreen screen) {
+        if (minecraft.screen instanceof ModernShopConfigToolScreen screen) {
             screen.applyData(packet);
         } else {
-            minecraft.setScreen(new Ldlib2ShopConfigToolScreen(packet));
+            minecraft.setScreen(new ModernShopConfigToolScreen(packet));
         }
     }
 
     public static void handleRespawn(FPSMatchRespawnS2CPacket packet) {
-        if (Minecraft.getInstance().player != null) {
-            Minecraft.getInstance().setScreen(null);
-            Minecraft.getInstance().player.respawn();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            resetCameraToPlayer(mc);
+            mc.setScreen(null);
+            mc.player.respawn();
         }
     }
 
@@ -119,14 +121,27 @@ public final class FPSMClientPacketHandlers {
     }
 
     public static void handleGameType(FPSMatchGameTypeS2CPacket packet) {
-        FPSMClient.getGlobalData().setCurrentGameType(packet.getGameType());
-        FPSMClient.getGlobalData().setCurrentMap(packet.getMapName());
-        FPSMClient.getGlobalData().setTeamGlow(packet.isTeamGlow());
-        FPSMClient.getGlobalData().setEnemyGlow(packet.isEnemyGlow());
+        FPSMClientGlobalData data = FPSMClient.getGlobalData();
+        if (!data.getCurrentMap().equals(packet.getMapName())
+                || !data.getCurrentGameType().equals(packet.getGameType())) {
+            resetCameraToPlayer(Minecraft.getInstance());
+        }
+        data.setCurrentGameType(packet.getGameType());
+        data.setCurrentMap(packet.getMapName());
+        data.setTeamGlow(packet.isTeamGlow());
+        data.setEnemyGlow(packet.isEnemyGlow());
     }
 
     public static void handleStatsReset(FPSMatchStatsResetS2CPacket packet) {
+        resetCameraToPlayer(Minecraft.getInstance());
         FPSMClient.reset();
+    }
+
+    private static void resetCameraToPlayer(Minecraft mc) {
+        if (mc.player == null) return;
+        SpectateState.set(SpectateMode.FREE);
+        SpectatorCameraController.reset();
+        mc.setCameraEntity(mc.player);
     }
 
     public static void handleSoundPlay(FPSMSoundPlayS2CPacket packet) {
@@ -189,7 +204,16 @@ public final class FPSMClientPacketHandlers {
     }
 
     public static void handleTeamPlayerLeave(TeamPlayerLeaveS2CPacket packet) {
+        Minecraft mc = Minecraft.getInstance();
         FPSMClient.getGlobalData().removePlayer(packet.player());
+
+        // Leaving a team ends any active spectator view.  The target entity can
+        // still exist on the client, so merely clearing team data leaves the
+        // camera attached to the previous game's player until another target
+        // packet arrives.
+        if (mc.player != null && packet.player().equals(mc.player.getUUID())) {
+            resetCameraToPlayer(mc);
+        }
     }
 
     public static void handleTeamPlayerStats(TeamPlayerStatsS2CPacket packet) {
@@ -207,6 +231,9 @@ public final class FPSMClientPacketHandlers {
         data.setDeaths(packet.getDeaths());
         data.setAssists(packet.getAssists());
         data.setDamage(packet.getDamage());
+        data.setUtilityDamage(packet.getUtilityDamage());
+        data.setFlashedEnemies(packet.getFlashedEnemies());
+        data.setTempKills(packet.getRoundKills());
         data.setMvpCount(packet.getMvpCount());
         data.setLiving(packet.isLiving());
         data.setHeadshotKills(packet.getHeadshotKills());
@@ -239,14 +266,14 @@ public final class FPSMClientPacketHandlers {
 
     public static void handleMapRoomReadyState(MapRoomReadyStateS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2TeamManageScreen screen) {
+        if (minecraft.screen instanceof ModernMapRoomScreen screen) {
             screen.applyReadyState(packet.gameType(), packet.mapName(), packet.countdownSeconds(), packet.readyPlayers());
         }
     }
 
     public static void handleMapImportSources(MapImportSourcesS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof Ldlib2MapImportScreen screen && screen.acceptsSources(packet)) {
+        if (minecraft.screen instanceof ModernMapRoomScreen screen && screen.acceptsSources(packet)) {
             screen.applySources(packet);
         }
     }
@@ -268,7 +295,7 @@ public final class FPSMClientPacketHandlers {
         boolean isMapImportToast = toastKey.startsWith("gui.fpsm.map_import.")
                 || toastKey.equals("gui.fpsm.map_select.action.no_permission")
                 || toastKey.equals("gui.fpsm.map_select.action.map_not_found");
-        if (isShopSaveToast && minecraft.screen instanceof Ldlib2EditShopSlotScreen screen
+        if (isShopSaveToast && minecraft.screen instanceof ModernEditShopSlotScreen screen
                 && screen.isSaveResultRelevant()) {
             screen.applySaveResult(packet);
             if (minecraft.player != null) {
@@ -276,7 +303,7 @@ public final class FPSMClientPacketHandlers {
             }
             return;
         }
-        if (isShopOpenToast && minecraft.screen instanceof Ldlib2EditorShopScreen screen
+        if (isShopOpenToast && minecraft.screen instanceof ModernEditorShopScreen screen
                 && screen.isSlotOpenPending()) {
             screen.applySlotOpenFailure(packet.message());
             if (minecraft.player != null) {
@@ -284,7 +311,7 @@ public final class FPSMClientPacketHandlers {
             }
             return;
         }
-        if (isShopOpenToast && minecraft.screen instanceof Ldlib2MapShopScreen screen
+        if (isShopOpenToast && minecraft.screen instanceof ModernShopConfigToolScreen screen
                 && screen.isEditorOpenPending()) {
             screen.applyEditorOpenFailure(packet.message());
             if (minecraft.player != null) {
@@ -292,15 +319,7 @@ public final class FPSMClientPacketHandlers {
             }
             return;
         }
-        if (isShopOpenToast && minecraft.screen instanceof Ldlib2ShopConfigToolScreen screen
-                && screen.isEditorOpenPending()) {
-            screen.applyEditorOpenFailure(packet.message());
-            if (minecraft.player != null) {
-                minecraft.player.displayClientMessage(packet.message(), packet.error());
-            }
-            return;
-        }
-        if (isShopOpenToast && minecraft.screen instanceof Ldlib2EditShopSlotScreen screen
+        if (isShopOpenToast && minecraft.screen instanceof ModernEditShopSlotScreen screen
                 && screen.isReturnPending()) {
             screen.applyReturnFailure(packet.message());
             if (minecraft.player != null) {
@@ -308,32 +327,9 @@ public final class FPSMClientPacketHandlers {
             }
             return;
         }
-        if (isMapSettingToast && minecraft.screen instanceof Ldlib2MapSettingsScreen screen
-                && screen.isSavePending()) {
-            screen.applySaveFailure(packet);
-            if (minecraft.player != null) {
-                minecraft.player.displayClientMessage(packet.message(), packet.error());
-            }
-            return;
-        }
-        if (isRegionToast && minecraft.screen instanceof Ldlib2MapRegionsScreen screen
-                && screen.isActionPending()) {
-            screen.applyActionResult(packet);
-            if (minecraft.player != null) {
-                minecraft.player.displayClientMessage(packet.message(), packet.error());
-            }
-            return;
-        }
-        if (isMapImportToast && minecraft.screen instanceof Ldlib2MapImportScreen screen
-                && screen.isActionPending()) {
-            screen.applyActionResult(packet);
-            if (minecraft.player != null) {
-                minecraft.player.displayClientMessage(packet.message(), packet.error());
-            }
-            return;
-        }
+        if (minecraft.screen instanceof ModernMapRoomScreen room) room.applyToast(packet);
         FPSMClient.getGlobalData().setMapRoomToast(packet);
-        if (minecraft.screen instanceof com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSelectionScreen screen) {
+        if (minecraft.screen instanceof ModernMapSelectionScreen screen) {
             screen.applyToast();
         }
         if (minecraft.player != null) {

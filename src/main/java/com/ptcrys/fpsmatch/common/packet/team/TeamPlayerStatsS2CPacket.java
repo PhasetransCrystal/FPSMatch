@@ -29,6 +29,9 @@ public class TeamPlayerStatsS2CPacket {
     private final boolean isLiving;
     private final int headshotKills;
     private final float healthPercent;
+    private final float utilityDamage;
+    private final int flashedEnemies;
+    private final int roundKills;
 
     //  构建方法
     public static TeamPlayerStatsS2CPacket of(ServerTeam team, PlayerData data) {
@@ -44,14 +47,15 @@ public class TeamPlayerStatsS2CPacket {
                 data.getMvpCount(),
                 data.isLivingOnServer(),
                 data.getHeadshotKills(),
-                data.healthPercentServer()
+                data.healthPercentServer(),
+                data.getUtilityDamage(), data.getFlashedEnemies(), data.getTempKills()
         );
     }
 
     public TeamPlayerStatsS2CPacket(UUID playerUuid, String teamName, Component playerName,
                                     int scores, int Kills, int Deaths, int Assists,
                                     float Damage, int mvpCount, boolean isLiving, int headshotKills,
-                                    float healthPercent) {
+                                    float healthPercent, float utilityDamage, int flashedEnemies, int roundKills) {
         this.uuid = playerUuid;
         this.teamName = teamName;
         this.playerName = playerName;
@@ -64,6 +68,9 @@ public class TeamPlayerStatsS2CPacket {
         this.isLiving = isLiving;
         this.headshotKills = headshotKills;
         this.healthPercent = healthPercent;
+        this.utilityDamage = utilityDamage;
+        this.flashedEnemies = flashedEnemies;
+        this.roundKills = roundKills;
     }
 
     public TeamPlayerStatsS2CPacket(FriendlyByteBuf buf) {
@@ -80,6 +87,9 @@ public class TeamPlayerStatsS2CPacket {
         this.isLiving = buf.readBoolean();
         this.headshotKills = buf.readInt();
         this.healthPercent = buf.readFloat();
+        this.utilityDamage = buf.readFloat();
+        this.flashedEnemies = buf.readVarInt();
+        this.roundKills = buf.readVarInt();
     }
 
     public static void encode(TeamPlayerStatsS2CPacket packet, FriendlyByteBuf buf) {
@@ -96,6 +106,9 @@ public class TeamPlayerStatsS2CPacket {
         buf.writeBoolean(packet.isLiving);
         buf.writeInt(packet.headshotKills);
         buf.writeFloat(packet.healthPercent);
+        buf.writeFloat(packet.utilityDamage);
+        buf.writeVarInt(packet.flashedEnemies);
+        buf.writeVarInt(packet.roundKills);
     }
 
     public static TeamPlayerStatsS2CPacket decode(FriendlyByteBuf buf) {
@@ -149,6 +162,10 @@ public class TeamPlayerStatsS2CPacket {
     public int getHeadshotKills() {
         return headshotKills;
     }
+
+    public float getUtilityDamage() { return utilityDamage; }
+    public int getFlashedEnemies() { return flashedEnemies; }
+    public int getRoundKills() { return roundKills; }
 
     public float getHealthPercent() {
         return healthPercent;

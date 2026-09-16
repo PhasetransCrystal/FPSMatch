@@ -503,6 +503,7 @@ public class MapTeams {
                 FPSMAddTeamS2CPacket addTeamPacket = FPSMAddTeamS2CPacket.of(team);
                 for (ServerPlayer player : players) {
                     FPSMatch.sendToPlayer(player, addTeamPacket);
+                    team.syncCapabilities(player);
                 }
             }
             for (PlayerData playerData : team.getPlayersData()) {

@@ -7,6 +7,7 @@ import com.ptcrys.fpsmatch.common.packet.mapselect.*;
 import com.ptcrys.fpsmatch.common.packet.shop.*;
 import com.ptcrys.fpsmatch.common.packet.team.*;
 import com.ptcrys.fpsmatch.common.packet.spec.SpectatorTargetS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.spec.SpectateModeS2CPacket;
 import com.ptcrys.fpsmatch.compat.spectate.net.SpectatorInspectPackets;
 import com.ptcrys.fpsmatch.compat.spectate.net.SpectatorLrtAttackPackets;
 
@@ -33,6 +34,11 @@ public final class FPSMClientPacketRegistrar {
         ClientPacketRegistry.register(RemoveDebugDataByPrefixS2CPacket.class, FPSMClientPacketHandlers::handleRemoveDebugDataByPrefix);
         ClientPacketRegistry.register(ShopDataSlotS2CPacket.class, FPSMClientPacketHandlers::handleShopDataSlot);
         ClientPacketRegistry.register(ShopActionResultS2CPacket.class, FPSMClientPacketHandlers::handleShopActionResult);
+        ClientPacketRegistry.register(ShopGroupsResultS2CPacket.class, packet -> {
+            var minecraft = net.minecraft.client.Minecraft.getInstance();
+            if (minecraft.screen instanceof com.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernEditorShopScreen screen
+                    && screen.getMenu().containerId == packet.containerId()) screen.applyGroupResult(packet);
+        });
         ClientPacketRegistry.register(ShopMoneyS2CPacket.class, FPSMClientPacketHandlers::handleShopMoney);
         ClientPacketRegistry.register(MapImportSourcesS2CPacket.class, FPSMClientPacketHandlers::handleMapImportSources);
         ClientPacketRegistry.register(FPSMAddTeamS2CPacket.class, FPSMClientPacketHandlers::handleAddTeam);
@@ -47,6 +53,14 @@ public final class FPSMClientPacketRegistrar {
         ClientPacketRegistry.register(MapRoomInvitationS2CPacket.class, FPSMClientPacketHandlers::handleMapRoomInvitation);
         ClientPacketRegistry.register(TeamManageResultS2CPacket.class, FPSMClientPacketHandlers::handleTeamManageResult);
         ClientPacketRegistry.register(SpectatorTargetS2CPacket.class, SpectatorTargetClientHandler::handle);
+        ClientPacketRegistry.register(SpectateModeS2CPacket.class, packet -> {
+            com.ptcrys.fpsmatch.common.client.spec.SpectateState.set(packet.mode());
+            if (packet.mode() == com.ptcrys.fpsmatch.common.client.spec.SpectateMode.FREE) {
+                com.ptcrys.fpsmatch.common.client.spec.SpectatorCameraController.reset();
+                var minecraft = net.minecraft.client.Minecraft.getInstance();
+                if (minecraft.player != null) minecraft.setCameraEntity(minecraft.player);
+            }
+        });
         ClientPacketRegistry.register(SpectatorInspectPackets.S2CWatchedPlayerInspectPacket.class, SpectatorClientPacketHandlers::handleWatchedPlayerInspect);
         ClientPacketRegistry.register(SpectatorLrtAttackPackets.S2CWatchedPlayerLrtAttackPacket.class, SpectatorClientPacketHandlers::handleWatchedPlayerLrtAttack);
     }

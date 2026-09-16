@@ -45,15 +45,15 @@ description='''${mod_description}'''
   side="BOTH"
 
 [[dependencies."${mod_id}"]]
-  modId="ldlib2"
-  mandatory=true
-  versionRange="${ldlib2_version_range}"
-  ordering="NONE"
-  side="BOTH"
-
-[[dependencies."${mod_id}"]]
   modId="kotlinforforge"
   mandatory=true
   versionRange="[4.11.0,)"
   ordering="NONE"
   side="BOTH"
+
+[[dependencies."${mod_id}"]]
+modId="modernui"
+mandatory=true
+versionRange="[3.12.0.1,)"
+ordering="AFTER"
+side="CLIENT"

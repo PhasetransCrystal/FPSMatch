@@ -1,17 +1,8 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect;
 
 import com.mojang.logging.LogUtils;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.modernui.*;
 import com.ptcrys.fpsmatch.common.client.screen.FPSMTeamActionScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapDetailScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapInvitationScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapInviteScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapManageScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSelectionScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSettingsScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapShopScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapRegionsScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapImportScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2TeamManageScreen;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
@@ -28,7 +19,7 @@ import java.util.Optional;
 
 /**
  * Map-room UI router.
- * Product open path always uses LDLib2 ModularUI screens.
+ * Product open path always uses Modern UI screens.
  */
 public final class FPSMMapSelectScreens {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -37,11 +28,11 @@ public final class FPSMMapSelectScreens {
     }
 
     public static boolean isMapSelectionScreen(Screen screen) {
-        return screen instanceof Ldlib2MapSelectionScreen;
+        return screen instanceof ModernMapSelectionScreen;
     }
 
     /**
-     * Active open/refresh: apply into an already-open LDLib2 browser, otherwise open a new one.
+     * Active open/refresh: apply into an already-open Modern UI browser, otherwise open a new one.
      */
     public static void openSelection(MapSelectionSnapshotS2CPacket packet) {
         openSelection(packet, sanitizeParent(Minecraft.getInstance().screen));
@@ -57,18 +48,18 @@ public final class FPSMMapSelectScreens {
             minecraft.execute(() -> openSelection(packet, parent));
             return;
         }
-        if (minecraft.screen instanceof Ldlib2MapSelectionScreen screen) {
+        if (minecraft.screen instanceof ModernMapSelectionScreen screen) {
             screen.applySnapshot(packet);
             return;
         }
         try {
-            minecraft.setScreen(new Ldlib2MapSelectionScreen(packet, parent));
-            if (!(minecraft.screen instanceof Ldlib2MapSelectionScreen)) {
-                throw new IllegalStateException("LDLib2 map selection screen was not installed");
+            minecraft.setScreen(new ModernMapSelectionScreen(packet, parent));
+            if (!(minecraft.screen instanceof ModernMapSelectionScreen)) {
+                throw new IllegalStateException("Modern UI map selection screen was not installed");
             }
         } catch (Throwable error) {
-            // Fail hard: do not fall back to classic widget screens.
-            LOGGER.error("Failed to open LDLib2 map selection UI", error);
+            minecraft.setScreen(parent);
+            LOGGER.error("Failed to open Modern UI map selection UI", error);
         }
     }
 
@@ -90,8 +81,8 @@ public final class FPSMMapSelectScreens {
 
         Minecraft minecraft = Minecraft.getInstance();
         Screen parent = sanitizeParent(minecraft.screen);
-        Ldlib2MapSelectionScreen screen =
-                new Ldlib2MapSelectionScreen(snapshot, parent);
+        ModernMapSelectionScreen screen =
+                new ModernMapSelectionScreen(snapshot, parent);
         try {
             minecraft.setScreen(screen);
             if (minecraft.screen != screen) {
@@ -105,15 +96,15 @@ public final class FPSMMapSelectScreens {
             if (minecraft.screen == screen) {
                 minecraft.setScreen(parent);
             }
-            LOGGER.error("Failed to open LDLib2 map selection acceptance UI", failure);
+            LOGGER.error("Failed to open Modern UI map selection acceptance UI", failure);
             return Optional.empty();
         }
     }
 
     public static final class AcceptanceHandle {
-        private final Ldlib2MapSelectionScreen screen;
+        private final ModernMapSelectionScreen screen;
 
-        private AcceptanceHandle(Ldlib2MapSelectionScreen screen) {
+        private AcceptanceHandle(ModernMapSelectionScreen screen) {
             this.screen = Objects.requireNonNull(screen, "screen");
         }
 
@@ -142,58 +133,22 @@ public final class FPSMMapSelectScreens {
         Minecraft minecraft = Minecraft.getInstance();
         Screen current = minecraft.screen;
 
-        if (current instanceof Ldlib2MapDetailScreen screen) {
-            screen.applyDetail(packet.detail());
-            return;
-        }
-        if (current instanceof Ldlib2MapManageScreen screen) {
-            screen.applyDetail(packet.detail());
-            return;
-        }
-        if (current instanceof Ldlib2TeamManageScreen screen) {
-            screen.applyDetail(packet.detail());
-            return;
-        }
-        if (current instanceof FPSMTeamActionScreen screen) {
-            screen.applyDetail(packet.detail());
-            return;
-        }
-        if (current instanceof Ldlib2MapInviteScreen screen) {
-            screen.applyDetail(packet.detail());
-            return;
-        }
-        if (current instanceof Ldlib2MapSettingsScreen screen) {
-            screen.applyDetail(packet.detail());
-            return;
-        }
-        if (current instanceof Ldlib2MapShopScreen screen) {
-            screen.applyDetail(packet.detail());
-            return;
-        }
-        if (current instanceof Ldlib2MapRegionsScreen screen) {
-            screen.applyDetail(packet.detail());
-            return;
-        }
-        if (current instanceof Ldlib2MapImportScreen screen) {
+        if (current instanceof FPSMMapDetailChildScreen screen) {
             screen.applyDetail(packet.detail());
             return;
         }
 
-        if (current instanceof Ldlib2MapSelectionScreen list) {
+        if (current instanceof ModernMapSelectionScreen list) {
             if (!list.acceptsDetail(packet.detail())) return;
             list.applyDetail(packet.detail());
             if (list.consumePendingDetailOpen()) {
-                openChild(new Ldlib2TeamManageScreen(packet.detail(), list));
-                return;
-            }
-            if (list.consumePendingTeamOpen()) {
-                openChild(new Ldlib2TeamManageScreen(packet.detail(), list));
+                openChild(new ModernMapRoomScreen(packet.detail(), list));
                 return;
             }
             return;
         }
 
-        openChild(new Ldlib2TeamManageScreen(packet.detail(), sanitizeParent(current)));
+        openChild(new ModernMapRoomScreen(packet.detail(), sanitizeParent(current)));
     }
 
     /**
@@ -211,7 +166,7 @@ public final class FPSMMapSelectScreens {
      */
     public static void applySelectionIfOpen(MapSelectionSnapshotS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof Ldlib2MapSelectionScreen screen) {
+        if (minecraft.screen instanceof ModernMapSelectionScreen screen) {
             screen.applySnapshot(packet);
         }
     }
@@ -222,10 +177,10 @@ public final class FPSMMapSelectScreens {
 
     public static void openInvitation(MapRoomInvitationS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof Ldlib2MapInvitationScreen screen) {
-            minecraft.setScreen(new Ldlib2MapInvitationScreen(packet, screen.parentScreen()));
+        if (minecraft.screen instanceof ModernMapInvitationScreen screen) {
+            minecraft.setScreen(new ModernMapInvitationScreen(packet, screen.parentScreen()));
         } else {
-            minecraft.setScreen(new Ldlib2MapInvitationScreen(packet, minecraft.screen));
+            minecraft.setScreen(new ModernMapInvitationScreen(packet, minecraft.screen));
         }
     }
 
