@@ -44,14 +44,14 @@ public class FPSMBaseCommand {
         helpManager.registerCommandParameters("fpsm listener_module add change_item_module", "*changed_cost", "*default_cost");
         
         return builder
-                .then(Commands.literal("save").executes(FPSMBaseCommand::handleSave))
-                .then(Commands.literal("reload").executes(FPSMBaseCommand::handleReLoad))
-                .then(Commands.literal("debug").executes(FPSMBaseCommand::handleDebug))
-                .then(Commands.literal("tacz")
+                .then(Commands.literal("save").requires(source -> source.hasPermission(2)).executes(FPSMBaseCommand::handleSave))
+                .then(Commands.literal("reload").requires(source -> source.hasPermission(2)).executes(FPSMBaseCommand::handleReLoad))
+                .then(Commands.literal("debug").requires(source -> source.hasPermission(2)).executes(FPSMBaseCommand::handleDebug))
+                .then(Commands.literal("tacz").requires(source -> source.hasPermission(2))
                         .then(Commands.literal("dummy")
                                 .then(Commands.argument("amount", IntegerArgumentType.integer(0))
                                         .executes(FPSMBaseCommand::handleSetDummyAmmoAmount))))
-                .then(Commands.literal("listener_module")
+                .then(Commands.literal("listener_module").requires(source -> source.hasPermission(2))
                         .then(Commands.literal("add")
                                 .then(Commands.literal("change_item_module")
                                         .then(Commands.argument("changed_cost", IntegerArgumentType.integer(1))

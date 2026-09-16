@@ -1,4 +1,10 @@
 {
+  "commands.fpsm.client_only": "此指令需要在安装 FPSMatch 的游戏客户端中执行。",
+  "commands.fpsm.help.mapselect": "打开地图选择界面（客户端）",
+  "commands.fpsm.help.camera": "查看当前镜头会话状态（客户端）",
+  "commands.fpsm.help.toggle": "展开或折叠帮助节点",
+  "commands.fpsm.help.map.settings.reset": "恢复指定配置项的默认值",
+  "commands.fpsm.help.map.settings.reset_all": "恢复全部配置项的默认值",
   "fpsm.shop.title.cooldown": "剩余购买时间 %1$s",
   "fpsm.shop.title.min.money": "下一轮的最低金额 %1$s",
   "fpsm.shop.slot.empty": "空",

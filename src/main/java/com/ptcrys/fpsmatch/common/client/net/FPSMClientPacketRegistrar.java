@@ -57,8 +57,7 @@ public final class FPSMClientPacketRegistrar {
             com.ptcrys.fpsmatch.common.client.spec.SpectateState.set(packet.mode());
             if (packet.mode() == com.ptcrys.fpsmatch.common.client.spec.SpectateMode.FREE) {
                 com.ptcrys.fpsmatch.common.client.spec.SpectatorCameraController.reset();
-                var minecraft = net.minecraft.client.Minecraft.getInstance();
-                if (minecraft.player != null) minecraft.setCameraEntity(minecraft.player);
+                com.ptcrys.fpsmatch.common.client.camera.CameraDirector.restoreBase();
             }
         });
         ClientPacketRegistry.register(SpectatorInspectPackets.S2CWatchedPlayerInspectPacket.class, SpectatorClientPacketHandlers::handleWatchedPlayerInspect);

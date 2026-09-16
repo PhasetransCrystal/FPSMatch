@@ -194,6 +194,7 @@ def generateModMetadata = tasks.register('generateModMetadata', ProcessResources
 }
 
 sourceSets {
+    test.compileClasspath += sourceSets.main.compileClasspath
     main.resources {
         srcDir 'src/generated/resources'
         srcDir generateModMetadata
@@ -231,6 +232,25 @@ tasks.named('createMinecraftArtifacts') {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
+
+tasks.register('cameraSystemCheck', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.output + sourceSets.main.output + sourceSets.main.compileClasspath
+    mainClass = 'com.ptcrys.fpsmatch.common.camera.CameraSystemCheck'
+}
+
+tasks.named('check') { dependsOn tasks.named('cameraSystemCheck') }
+
+tasks.register('commandTreeCheck', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    // Use runtime Log4j, not the old compile-only copy brought in by server compatibility dependencies.
+    classpath = sourceSets.test.output + sourceSets.main.output +
+            sourceSets.main.runtimeClasspath.filter { it.name.startsWith('log4j-') } +
+            sourceSets.main.compileClasspath.filter { !it.name.startsWith('log4j-') }
+    mainClass = 'com.ptcrys.fpsmatch.common.command.CommandTreeCheck'
+    classpath += files(layout.buildDirectory.file("moddev/artifacts/client-extra-${minecraft_version}-${forge_version}.jar"))
+}
+tasks.named('check') { dependsOn tasks.named('commandTreeCheck') }
 
 // Maven publication
 publishing {

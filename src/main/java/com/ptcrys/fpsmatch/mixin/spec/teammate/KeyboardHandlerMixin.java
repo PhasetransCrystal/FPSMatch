@@ -25,6 +25,22 @@ public class KeyboardHandlerMixin {
     @Inject(method = "keyPress(JIIII)V", at = @At("HEAD"), cancellable = true)
     private void onKeyPress(long window, int keyCode, int scanCode, int action, int modifiers, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
+        if (mc.screen == null && com.ptcrys.fpsmatch.common.client.camera.CameraDirector.hasSession()) {
+            var policy = com.ptcrys.fpsmatch.common.client.camera.CameraDirector.policy();
+            var options = mc.options;
+            boolean blocked = (policy.blockMovement() && matches(keyCode, scanCode, options.keyUp, options.keyDown,
+                    options.keyLeft, options.keyRight, options.keyJump, options.keyShift, options.keySprint))
+                    || (policy.blockInteraction() && matches(keyCode, scanCode, options.keyAttack, options.keyUse,
+                    options.keyPickItem, options.keyDrop, options.keySwapOffhand))
+                    || (!policy.allowSpectatorSwitch() && SpecKeyHandler.switchKeyMatches(keyCode, scanCode))
+                    || (policy.lockPerspective() && options.keyTogglePerspective.matches(keyCode, scanCode));
+            // Release events and UI shortcuts must still reach vanilla.
+            if (action != GLFW.GLFW_RELEASE && blocked
+                    && keyCode != GLFW.GLFW_KEY_ESCAPE
+                    && !options.keyChat.matches(keyCode, scanCode)
+                    && !options.keyCommand.matches(keyCode, scanCode)) ci.cancel();
+            return;
+        }
         if (mc.player == null || mc.gameMode == null) {
             return;
         }
@@ -57,5 +73,10 @@ public class KeyboardHandlerMixin {
         if (!(allowEscape || allowTeamSwitch || allowChat)) {
             ci.cancel();
         }
+    }
+
+    private static boolean matches(int keyCode, int scanCode, net.minecraft.client.KeyMapping... keys) {
+        for (var key : keys) if (key.matches(keyCode, scanCode)) return true;
+        return false;
     }
 }

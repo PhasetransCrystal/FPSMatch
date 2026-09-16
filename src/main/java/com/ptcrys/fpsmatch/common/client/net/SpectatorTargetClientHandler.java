@@ -5,8 +5,6 @@ import com.ptcrys.fpsmatch.common.client.spec.SpectateState;
 import com.ptcrys.fpsmatch.common.client.spec.SpectateTarget;
 import com.ptcrys.fpsmatch.common.client.spec.SpectatorCameraController;
 import com.ptcrys.fpsmatch.common.packet.spec.SpectatorTargetS2CPacket;
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.Entity;
 
 public final class SpectatorTargetClientHandler {
     private SpectatorTargetClientHandler() {}
@@ -25,19 +23,6 @@ public final class SpectatorTargetClientHandler {
             SpectatorCameraController.setAngles(packet.yaw(), packet.pitch());
         }
         packet.applyClient();
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) return;
-        SpectateTarget target = new SpectateTarget(packet.mode(), packet.entityId(), packet.anchor(), packet.yaw(), packet.pitch(), packet.orbitRadius());
-        Entity entity = target.entityId() < 0 ? null : mc.level.getEntity(target.entityId());
-        if (packet.mode() == SpectateMode.TEAMMATE || packet.mode() == SpectateMode.ATTACH) {
-            // 目标队友实体可能尚未在客户端加载完成；此时保持当前相机，不要强行切回自己，
-            // 否则会立刻从队友身上脱落。服务端会在后续 tick 持续重发附着指令完成补挂。
-            if (entity != null) {
-                mc.setCameraEntity(entity);
-            }
-        } else if (packet.mode().isRestricted()) {
-            mc.setCameraEntity(mc.player);
-        }
+        com.ptcrys.fpsmatch.common.client.camera.CameraDirector.refresh();
     }
 }
-

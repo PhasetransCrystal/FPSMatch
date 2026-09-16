@@ -1,4 +1,10 @@
 {
+  "commands.fpsm.client_only": "Run this command in a game client with FPSMatch installed.",
+  "commands.fpsm.help.mapselect": "Open map selection (client)",
+  "commands.fpsm.help.camera": "Show the current camera session (client)",
+  "commands.fpsm.help.toggle": "Expand or collapse a help node",
+  "commands.fpsm.help.map.settings.reset": "Reset a setting to its default value",
+  "commands.fpsm.help.map.settings.reset_all": "Reset all settings to their default values",
   "fpsm.shop.title.cooldown": "Remaining purchase time %1$s",
   "fpsm.shop.title.min.money": "Minimum amount for next round %1$s",
   "fpsm.shop.slot.empty": "None",

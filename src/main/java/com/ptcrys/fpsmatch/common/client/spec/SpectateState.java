@@ -6,7 +6,7 @@ public final class SpectateState {
 
     public static void set(SpectateMode value) {
         mode = value == null ? SpectateMode.FREE : value;
-        if (mode == SpectateMode.FREE) target = null;
+        if (mode == SpectateMode.FREE || (target != null && target.mode() != mode)) target = null;
     }
 
     public static void setTarget(SpectateTarget value) {

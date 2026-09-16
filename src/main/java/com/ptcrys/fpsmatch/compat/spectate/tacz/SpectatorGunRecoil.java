@@ -45,6 +45,7 @@ public final class SpectatorGunRecoil {
 
     @SubscribeEvent
     public static void onAngles(ViewportEvent.ComputeCameraAngles e) {
+        if (com.ptcrys.fpsmatch.common.client.camera.CameraDirector.policy().suppressViewEffects()) return;
         if (!ENABLE) {
             return;
         }

@@ -1,6 +1,8 @@
 package com.ptcrys.fpsmatch.mixin.spec.teammate;
 
 import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.client.camera.CameraDirector;
+import com.ptcrys.fpsmatch.common.client.camera.CameraPolicy;
 import com.ptcrys.fpsmatch.common.client.spec.SpectateMode;
 import com.ptcrys.fpsmatch.common.client.spec.SpectateState;
 import com.ptcrys.fpsmatch.common.client.spec.SpectatorCameraController;
@@ -25,6 +27,10 @@ public abstract class MouseHandlerMixin {
     @Inject(method = "onPress", at = @At("HEAD"), cancellable = true)
     private void fpsmatch$handleRestrictedClick(long window, int button, int action, int modifiers, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
+        if (action == GLFW.GLFW_PRESS && mc.screen == null && CameraDirector.hasSession() && CameraDirector.policy().blockInteraction()) {
+            ci.cancel();
+            return;
+        }
         if (mc.player == null || mc.gameMode == null || mc.gameMode.getPlayerMode() != GameType.SPECTATOR) {
             return;
         }
@@ -57,14 +63,12 @@ public abstract class MouseHandlerMixin {
     @Inject(method = "turnPlayer", at = @At("HEAD"), cancellable = true)
     private void fpsmatch$handleRestrictedTurn(CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.gameMode == null || mc.gameMode.getPlayerMode() != GameType.SPECTATOR) {
-            return;
-        }
-        if (mc.screen != null || !SpectateState.isRestricted()) {
-            return;
-        }
-        SpectateMode mode = SpectateState.get();
-        if (mode != SpectateMode.C4_ORBIT && mode != SpectateMode.DEATH_SPOT) {
+        if (mc.screen != null) return;
+        CameraPolicy.LookInput look = CameraDirector.policy().look();
+        if (look == CameraPolicy.LookInput.PLAYER) return;
+        if (look == CameraPolicy.LookInput.LOCKED) {
+            this.accumulatedDX = this.accumulatedDY = 0;
+            ci.cancel();
             return;
         }
 
@@ -75,7 +79,7 @@ public abstract class MouseHandlerMixin {
         if (mc.options.invertYMouse().get()) {
             dy = -dy;
         }
-        SpectatorCameraController.applyAngles(
+        CameraDirector.turn(
                 (float) (this.accumulatedDX * factor),
                 (float) (dy * factor));
 

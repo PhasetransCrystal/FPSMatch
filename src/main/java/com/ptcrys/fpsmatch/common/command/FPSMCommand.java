@@ -33,9 +33,10 @@ public class FPSMCommand {
 
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
+        FPSMHelpManager.getInstance().reset();
 
         LiteralArgumentBuilder<CommandSourceStack> tree = Commands.literal("fpsm")
-                .requires(permission -> permission.hasPermission(2))
+                .executes(FPSMCommand::handleHelp)
                 .then(Commands.literal("help")
                         .executes(FPSMCommand::handleHelp)
                         .then(Commands.literal("toggle")
@@ -50,19 +51,20 @@ public class FPSMCommand {
 
         RegisterFPSMCommandEvent registerFPSMCommandEvent = new RegisterFPSMCommandEvent(literal,context, FPSMHelpManager.getInstance());
         MinecraftForge.EVENT_BUS.post(registerFPSMCommandEvent);
-        dispatcher.register(registerFPSMCommandEvent.getTree());
+        FPSMHelpManager.getInstance().bind(dispatcher.register(registerFPSMCommandEvent.getTree()));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> init(Pair<LiteralArgumentBuilder<CommandSourceStack>, CommandBuildContext> builder) {
         FPSMBaseCommand.init(builder.getFirst());
         FPSMapCommand.init(builder);
+        FPSMClientCommands.registerServerEntries(builder.getFirst());
         return builder.getFirst();
     }
 
     private static int handleHelp(CommandContext<CommandSourceStack> context) {
         FPSMHelpManager helpManager = FPSMHelpManager.getInstance();
         // 显示命令树
-        MutableComponent helpMessage = helpManager.buildCommandTreeHelp();
+        MutableComponent helpMessage = helpManager.buildCommandTreeHelp(context.getSource());
 
         context.getSource().sendSuccess(() -> helpMessage, false);
         return 1;
@@ -73,14 +75,12 @@ public class FPSMCommand {
         int hash = IntegerArgumentType.getInteger(context, "hash");
         FPSMHelpManager helpManager = FPSMHelpManager.getInstance();
         // 切换节点展开/闭合状态
-        boolean success = helpManager.toggleNodeExpanded(hash);
+        boolean success = helpManager.toggleNodeExpanded(hash, context.getSource());
         if (success) {
-            MutableComponent helpMessage = Component.literal("\n".repeat(2)).append(helpManager.buildCommandTreeHelp());
+            MutableComponent helpMessage = Component.literal("\n".repeat(2)).append(helpManager.buildCommandTreeHelp(context.getSource()));
             context.getSource().sendSuccess(() -> helpMessage, false);
-        }/*else{
-            context.getSource().sendFailure(Component.translatable("commands.fpsm.help.toggle_failed"));
-        }*/
-        return 1;
+        }
+        return success ? 1 : 0;
     }
 
     // 辅助方法

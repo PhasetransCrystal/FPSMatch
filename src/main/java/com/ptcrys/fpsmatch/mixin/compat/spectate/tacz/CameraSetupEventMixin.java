@@ -19,8 +19,12 @@ public abstract class CameraSetupEventMixin {
         SpectatorCameraRecoil.trigger(event.getShooter());
     }
 
-    @Inject(method = "applyCameraRecoil(Lnet/minecraftforge/client/event/ViewportEvent$ComputeCameraAngles;)V", at = @At("HEAD"))
+    @Inject(method = "applyCameraRecoil(Lnet/minecraftforge/client/event/ViewportEvent$ComputeCameraAngles;)V", at = @At("HEAD"), cancellable = true)
     private static void fpsmatch$applySpectatorCameraRecoil(ViewportEvent.ComputeCameraAngles event, CallbackInfo ci) {
+        if (com.ptcrys.fpsmatch.common.client.camera.CameraDirector.policy().suppressViewEffects()) {
+            ci.cancel();
+            return;
+        }
         SpectatorCameraRecoil.apply(event);
     }
 }

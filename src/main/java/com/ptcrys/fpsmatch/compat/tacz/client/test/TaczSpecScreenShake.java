@@ -40,6 +40,7 @@ public final class TaczSpecScreenShake {
     }
 
     public static void handleCameraAngles(ViewportEvent.ComputeCameraAngles event) {
+        if (com.ptcrys.fpsmatch.common.client.camera.CameraDirector.policy().suppressViewEffects()) return;
         if (!ENABLE) return;
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || !player.isSpectator()) return;

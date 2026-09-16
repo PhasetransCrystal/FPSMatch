@@ -56,6 +56,7 @@ public final class SpectatorCameraRecoil {
     }
 
     public static void apply(ViewportEvent.ComputeCameraAngles event) {
+        if (com.ptcrys.fpsmatch.common.client.camera.CameraDirector.policy().suppressViewEffects()) return;
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer local = mc.player;
         if (local == null || !local.isSpectator()) {

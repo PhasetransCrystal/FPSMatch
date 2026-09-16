@@ -18,11 +18,9 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.event.TickEvent;
@@ -42,23 +40,6 @@ public class FPSMClientEvents
     private static int mapSelectionButtonWidth;
     private static int mapSelectionButtonHeight;
     private static boolean pendingOpenMapSelection;
-
-    /**
-     * Client-side shortcut for the same deferred open path used by the pause-menu button.
-     */
-    @SubscribeEvent
-    public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {
-        event.getDispatcher().register(Commands.literal("fpsmmap")
-                .executes(context -> {
-                    if (!FPSMClient.getGlobalData().isMapSelectionButtonVisible()) {
-                        context.getSource().sendFailure(Component.translatable(
-                                "gui.fpsm.map_select.action.no_permission"));
-                        return 0;
-                    }
-                    requestOpenMapSelectionFromPause();
-                    return 1;
-                }));
-    }
 
     @SubscribeEvent
     public static void onScreenInit(ScreenEvent.Init.Post event) {
@@ -176,7 +157,7 @@ public class FPSMClientEvents
             // Also cover sessions entered directly by a team switch, without a killcam.
             SpectateState.set(SpectateMode.FREE);
             SpectatorCameraController.reset();
-            if (player != null) mc.setCameraEntity(player);
+            com.ptcrys.fpsmatch.common.client.camera.CameraDirector.restoreBase();
         }
         if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get())) {
             mc.getSoundManager().stop();

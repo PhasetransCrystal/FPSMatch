@@ -25,6 +25,11 @@
     "ammo.TweakAmmoMixin"
   ],
   "client": [
+    "camera.CameraGuiMixin",
+    "camera.CameraEntityMixin",
+    "camera.CameraRenderMixin",
+    "camera.CameraItemInHandMixin",
+    "camera.CameraToastMixin",
     "sound.ItemPickupSoundMixin",
     "input.MinecraftKeybindingMixin",
     "input.PlayerTabOverlayMixin",
@@ -55,7 +60,7 @@
     "spec.teammate.CameraInvokerMixin",
     "spec.teammate.KeyboardHandlerMixin",
     "spec.teammate.MouseHandlerMixin",
-    "spec.teammate.CameraRestrictedSpectatorMixin"
+    "camera.CameraSetupMixin"
   ],
   "injectors": {
     "defaultRequire": 1

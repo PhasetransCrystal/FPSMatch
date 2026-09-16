@@ -99,7 +99,7 @@ public final class FPSMClientPacketHandlers {
     public static void handleRespawn(FPSMatchRespawnS2CPacket packet) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            resetCameraToPlayer(mc);
+            com.ptcrys.fpsmatch.common.client.camera.CameraDirector.playerRespawn();
             mc.setScreen(null);
             mc.player.respawn();
         }
@@ -138,10 +138,8 @@ public final class FPSMClientPacketHandlers {
     }
 
     private static void resetCameraToPlayer(Minecraft mc) {
-        if (mc.player == null) return;
-        SpectateState.set(SpectateMode.FREE);
-        SpectatorCameraController.reset();
-        mc.setCameraEntity(mc.player);
+        com.ptcrys.fpsmatch.common.client.camera.CameraDirector.reset(
+                com.ptcrys.fpsmatch.common.camera.CameraEndReason.MATCH_RESET);
     }
 
     public static void handleSoundPlay(FPSMSoundPlayS2CPacket packet) {

@@ -66,6 +66,9 @@ public class FPSMapCommand {
         helpManager.registerCommandHelp("fpsm map modify settings set", Component.translatable("commands.fpsm.help.map.settings.set"));
         helpManager.registerCommandHelp("fpsm map modify settings save", Component.translatable("commands.fpsm.help.map.settings.save"));
         helpManager.registerCommandHelp("fpsm map modify settings load", Component.translatable("commands.fpsm.help.map.settings.load"));
+        helpManager.registerCommandHelp("fpsm map modify settings reset", "commands.fpsm.help.map.settings.reset");
+        helpManager.registerCommandHelp("fpsm map modify settings reset all", "commands.fpsm.help.map.settings.reset_all");
+        helpManager.registerCommandHelp("fpsm map modify team teams spectator players", "commands.fpsm.help.map.team.players");
 
         helpManager.registerCommandParameters("fpsm map modify settings get",
                 "*" + FPSMCommandSuggests.SETTING_ARG);
@@ -81,7 +84,7 @@ public class FPSMapCommand {
         helpManager.registerCommandParameters("fpsm map modify team teams", "*" + FPSMCommandSuggests.TEAM_NAME_ARG);
         helpManager.registerCommandParameters("fpsm map modify team teams players", "*" + FPSMCommandSuggests.TARGETS_ARG, "*" + FPSMCommandSuggests.ACTION_ARG);
         return builder.getFirst()
-                .then(Commands.literal("map")
+                .then(Commands.literal("map").requires(source -> source.hasPermission(2))
                         .then(Commands.literal("create")
                                 .then(Commands.argument(FPSMCommandSuggests.GAME_TYPE_ARG, StringArgumentType.string())
                                         .suggests(FPSMCommandSuggests.GAME_TYPES_SUGGESTION)

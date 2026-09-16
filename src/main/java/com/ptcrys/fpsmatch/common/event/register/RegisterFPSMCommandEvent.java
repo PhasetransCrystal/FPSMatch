@@ -19,6 +19,13 @@ public class RegisterFPSMCommandEvent extends Event {
     }
 
     public void addChild(LiteralArgumentBuilder<CommandSourceStack> child) {
+        var requirement = child.getRequirement();
+        child.requires(source -> source.hasPermission(2) && requirement.test(source));
+        this.builder.then(child);
+    }
+
+    /** Explicit opt-in for commands available to ordinary players. */
+    public void addPlayerChild(LiteralArgumentBuilder<CommandSourceStack> child) {
         this.builder.then(child);
     }
 
