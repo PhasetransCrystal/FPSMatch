@@ -1,10 +1,12 @@
 package com.ptcrys.fpsmatch.core.entity;
+
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+
 /**
  * 抽象基类，用于表示具有生命周期的投掷物实体。
  * <p>
@@ -12,6 +14,7 @@ import net.minecraft.world.level.Level;
  * 提供了超时逻辑和激活状态下的持续时间逻辑，允许子类实现自定义的超时和激活时间到期行为。
  */
 public abstract class BaseProjectileLifeTimeEntity extends BaseProjectileEntity {
+
     /**
      * 实体数据访问器，用于同步投掷物的超时时间（单位：tick）。
      * <p>
@@ -29,7 +32,7 @@ public abstract class BaseProjectileLifeTimeEntity extends BaseProjectileEntity 
     /**
      * 构造函数，用于创建具有生命周期的投掷物实体。
      *
-     * @param type 投掷物的实体类型
+     * @param type  投掷物的实体类型
      * @param level 投掷物所在的层级
      */
     public BaseProjectileLifeTimeEntity(EntityType<? extends BaseProjectileLifeTimeEntity> type, Level level) {
@@ -39,9 +42,9 @@ public abstract class BaseProjectileLifeTimeEntity extends BaseProjectileEntity 
     /**
      * 构造函数，用于创建具有生命周期的投掷物实体并指定发射者。
      *
-     * @param type 投掷物的实体类型
+     * @param type    投掷物的实体类型
      * @param shooter 投掷物的发射者
-     * @param level 投掷物所在的层级
+     * @param level   投掷物所在的层级
      */
     public BaseProjectileLifeTimeEntity(EntityType<? extends BaseProjectileLifeTimeEntity> type, LivingEntity shooter, Level level) {
         super(type, shooter, level);
@@ -110,8 +113,7 @@ public abstract class BaseProjectileLifeTimeEntity extends BaseProjectileEntity 
      * <p>
      * 子类可以通过覆盖该方法实现自定义的超时逻辑。
      */
-    protected void onTimeOut() {
-    }
+    protected void onTimeOut() {}
 
     // 访问方法
     /**

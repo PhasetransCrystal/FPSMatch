@@ -1,8 +1,9 @@
 package com.ptcrys.fpsmatch.common.packet.mapselect;
 
-import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -16,11 +17,11 @@ import java.util.function.Supplier;
  * 客户端队伍管理界面据此实时显示倒计时与已准备玩家集合。
  */
 public record MapRoomReadyStateS2CPacket(
-        String gameType,
-        String mapName,
-        int countdownSeconds,
-        Set<UUID> readyPlayers
-) {
+                                         String gameType,
+                                         String mapName,
+                                         int countdownSeconds,
+                                         Set<UUID> readyPlayers) {
+
     private static final int ID_MAX_LENGTH = 128;
 
     public static void encode(MapRoomReadyStateS2CPacket packet, FriendlyByteBuf buf) {

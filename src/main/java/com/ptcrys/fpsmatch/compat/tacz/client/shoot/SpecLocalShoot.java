@@ -1,5 +1,11 @@
 package com.ptcrys.fpsmatch.compat.tacz.client.shoot;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+
 import com.ptcrys.fpsmatch.compat.tacz.client.animation.GunAnimationController;
 import com.ptcrys.fpsmatch.compat.tacz.client.test.TaczSpecScreenShake;
 import com.ptcrys.fpsmatch.compat.tacz.client.util.GunSpecUtils;
@@ -13,11 +19,6 @@ import com.tacz.guns.client.resource.GunDisplayInstance;
 import com.tacz.guns.client.resource.index.ClientGunIndex;
 import com.tacz.guns.resource.pojo.data.gun.Bolt;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
 
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
@@ -129,9 +130,7 @@ public final class SpecLocalShoot {
                                              GunData gunData, LocalPlayerDataHolder data) {
         FireMode mode = iGun.getFireMode(stack);
         long elapsed = System.currentTimeMillis() - data.clientShootTimestamp;
-        return Math.max((mode == FireMode.BURST)
-                ? (long) (gunData.getBurstData().getMinInterval() * 1000f) - elapsed
-                : gunData.getShootInterval(shooter, mode, stack) - elapsed, 0);
+        return Math.max((mode == FireMode.BURST) ? (long) (gunData.getBurstData().getMinInterval() * 1000f) - elapsed : gunData.getShootInterval(shooter, mode, stack) - elapsed, 0);
     }
 
     private static void cancelTask(AtomicReference<ScheduledFuture<?>> futureRef) {

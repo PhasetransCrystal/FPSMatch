@@ -25,6 +25,7 @@ import java.util.*;
  * }</pre>
  */
 public class GunCompatManager {
+
     private static final IGunProvider DEFAULT = NoGunProvider.INSTANCE;
     /** 按注册顺序保留所有 Provider */
     private static final Map<String, IGunProvider> providers = new LinkedHashMap<>();

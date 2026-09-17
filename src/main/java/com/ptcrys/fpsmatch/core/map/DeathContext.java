@@ -4,6 +4,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
+
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -16,6 +17,7 @@ import java.util.Optional;
  * - EntityKillByGunEvent 到达后可补全枪击细节
  */
 public final class DeathContext {
+
     private final ServerPlayer deadPlayer;
     @Nullable
     private ServerPlayer attacker;

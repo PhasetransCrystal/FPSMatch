@@ -1,4 +1,10 @@
 package com.ptcrys.fpsmatch.common.client.data;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.shop.ClientShopSlot;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
@@ -7,19 +13,17 @@ import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket
 import com.ptcrys.fpsmatch.core.data.PlayerData;
 import com.ptcrys.fpsmatch.core.team.BaseTeam;
 import com.ptcrys.fpsmatch.core.team.ClientTeam;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.concurrent.ThreadSafe;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 @ThreadSafe
 public class FPSMClientGlobalData {
+
     // 常量定义
     public static final String NONE_VALUE = "none";
     public static final String SPECTATOR_TEAM = "spectator";
@@ -47,11 +51,11 @@ public class FPSMClientGlobalData {
         return debugData;
     }
 
-    public record MapRoomInvitation(String gameType, String mapName, Component message, long receivedAtMillis) {
-    }
+    public record MapRoomInvitation(String gameType, String mapName, Component message, long receivedAtMillis) {}
 
     // 记录类用于简化数据传递
     public record PlayerTeamData(@Nullable String teamName, @Nullable PlayerData playerData) {
+
         public boolean isValid() {
             return teamName != null && playerData != null;
         }
@@ -100,7 +104,7 @@ public class FPSMClientGlobalData {
 
     // === 队伍数据相关方法 ===
 
-    public List<ClientTeam> getTeams(){
+    public List<ClientTeam> getTeams() {
         return new ArrayList<>(clientTeamData.values());
     }
 
@@ -177,7 +181,7 @@ public class FPSMClientGlobalData {
         return getPlayerTeamData(uuid).map(PlayerTeamData::playerData);
     }
 
-    public Optional<PlayerData> getLocalData(){
+    public Optional<PlayerData> getLocalData() {
         return getPlayerTeamData(Minecraft.getInstance().player.getUUID()).map(PlayerTeamData::playerData);
     }
 
@@ -284,7 +288,7 @@ public class FPSMClientGlobalData {
         int living = 0;
         for (var clientTeam : clientTeamData.values()) {
             if (clientTeam.name.equals(team)) {
-                for (var data :clientTeam.players.values()){
+                for (var data : clientTeam.players.values()) {
                     if (data.isLiving()) living++;
                 }
             }
@@ -424,7 +428,6 @@ public class FPSMClientGlobalData {
     public boolean isCurrentTeam(String team) {
         return currentTeam.equals(team);
     }
-    
 
     public Map<UUID, Integer> getAllPlayersMoney() {
         return Collections.unmodifiableMap(playersMoney);

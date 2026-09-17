@@ -1,12 +1,5 @@
 package com.ptcrys.fpsmatch.mixin.ammo;
 
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.ptcrys.fpsmatch.compat.IPassThroughEntity;
-import com.ptcrys.fpsmatch.mixin.accessor.FPSMClipContextAccessor;
-import com.tacz.guns.config.common.AmmoConfig;
-import com.tacz.guns.init.ModBlocks;
-import com.tacz.guns.util.block.BlockRayTrace;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ClipContext;
@@ -14,6 +7,14 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraftforge.registries.ForgeRegistries;
+
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.ptcrys.fpsmatch.compat.IPassThroughEntity;
+import com.ptcrys.fpsmatch.mixin.accessor.FPSMClipContextAccessor;
+import com.tacz.guns.config.common.AmmoConfig;
+import com.tacz.guns.init.ModBlocks;
+import com.tacz.guns.util.block.BlockRayTrace;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -23,13 +24,12 @@ import java.util.function.Function;
 
 @Mixin(value = BlockRayTrace.class, remap = false)
 public class DefaultAmmoMixin {
+
     @WrapOperation(
-            method = "rayTraceBlocks",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lcom/tacz/guns/util/block/BlockRayTrace;performRayTrace(Lnet/minecraft/world/level/ClipContext;Ljava/util/function/BiFunction;Ljava/util/function/Function;)Ljava/lang/Object;"
-            )
-    )
+                   method = "rayTraceBlocks",
+                   at = @At(
+                            value = "INVOKE",
+                            target = "Lcom/tacz/guns/util/block/BlockRayTrace;performRayTrace(Lnet/minecraft/world/level/ClipContext;Ljava/util/function/BiFunction;Ljava/util/function/Function;)Ljava/lang/Object;"))
     private static Object fpsmatch$markPassedWallWhenBlockStepIsIgnored(ClipContext context,
                                                                         BiFunction<ClipContext, BlockPos, Object> hitFunction,
                                                                         Function<ClipContext, Object> missFactory,

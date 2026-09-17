@@ -1,14 +1,14 @@
 package com.ptcrys.fpsmatch.compat.tacz;
 
-import com.ptcrys.fpsmatch.compat.gun.*;
-import com.tacz.guns.api.TimelessAPI;
-import com.tacz.guns.api.item.GunTabType;
-import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.resource.index.CommonGunIndex;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.loading.FMLEnvironment;
+
+import com.ptcrys.fpsmatch.compat.gun.*;
+import com.tacz.guns.api.TimelessAPI;
+import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.resource.index.CommonGunIndex;
 
 import java.util.Optional;
 

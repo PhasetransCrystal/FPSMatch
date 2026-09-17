@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class RoundLifecycle<W, R> {
+
     private final int waitingTicks;
     private final int roundTicks;
     private final int roundEndTicks;
@@ -58,8 +59,7 @@ public class RoundLifecycle<W, R> {
             case WAITING -> tickWaiting();
             case ACTIVE_ROUND -> tickActiveRound();
             case ROUND_END_WAITING -> tickRoundEndWaiting();
-            case PAUSED -> {
-            }
+            case PAUSED -> {}
         }
     }
 
@@ -190,6 +190,7 @@ public class RoundLifecycle<W, R> {
     }
 
     public static class Builder<W, R> {
+
         private int waitingTicks;
         private int roundTicks;
         private int roundEndTicks;

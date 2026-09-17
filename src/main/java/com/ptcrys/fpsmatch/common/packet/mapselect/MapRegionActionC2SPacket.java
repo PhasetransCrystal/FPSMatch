@@ -1,24 +1,25 @@
 package com.ptcrys.fpsmatch.common.packet.mapselect;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomActionService;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager;
-import com.ptcrys.fpsmatch.core.data.AreaData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.mapselect.MapRoomActionService;
+import com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager;
+import com.ptcrys.fpsmatch.core.data.AreaData;
+
 import java.util.function.Supplier;
 
 public record MapRegionActionC2SPacket(
-        Action action,
-        String gameType,
-        String mapName,
-        int index,
-        BlockPos pos1,
-        BlockPos pos2
-) {
+                                       Action action,
+                                       String gameType,
+                                       String mapName,
+                                       int index,
+                                       BlockPos pos1,
+                                       BlockPos pos2) {
+
     private static final int ID_MAX_LENGTH = 128;
 
     public enum Action {

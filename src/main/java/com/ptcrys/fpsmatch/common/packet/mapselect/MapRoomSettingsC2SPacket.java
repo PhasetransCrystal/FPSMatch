@@ -1,14 +1,16 @@
 package com.ptcrys.fpsmatch.common.packet.mapselect;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomActionService;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.mapselect.MapRoomActionService;
+
 import java.util.function.Supplier;
 
 public record MapRoomSettingsC2SPacket(String gameType, String mapName, String settingName, String value) {
+
     private static final int ID_MAX_LENGTH = 128;
     private static final int VALUE_MAX_LENGTH = 1024;
 
@@ -36,8 +38,7 @@ public record MapRoomSettingsC2SPacket(String gameType, String mapName, String s
             }
             result.detail().ifPresentOrElse(
                     detail -> FPSMatch.sendToPlayer(player, new MapRoomDetailS2CPacket(detail)),
-                    () -> FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(result.message(), !result.success()))
-            );
+                    () -> FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(result.message(), !result.success())));
         });
         ctx.get().setPacketHandled(true);
     }

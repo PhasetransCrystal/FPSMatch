@@ -1,19 +1,21 @@
 package com.ptcrys.fpsmatch.common.packet.mapselect;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomActionService;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
-import com.ptcrys.fpsmatch.common.mapselect.MapSelectionAccessSync;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.mapselect.MapRoomActionService;
+import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
+import com.ptcrys.fpsmatch.common.mapselect.MapSelectionAccessSync;
 
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 
 public record MapRoomActionC2SPacket(Action action, String gameType, String mapName, UUID targetPlayer, String data) {
+
     private static final int ID_MAX_LENGTH = 128;
     private static final int DATA_MAX_LENGTH = 128;
 
@@ -90,8 +92,7 @@ public record MapRoomActionC2SPacket(Action action, String gameType, String mapN
             }
             result.detail().ifPresentOrElse(
                     detail -> FPSMatch.sendToPlayer(player, new MapRoomDetailS2CPacket(detail)),
-                    () -> FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(result.message(), !result.success()))
-            );
+                    () -> FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(result.message(), !result.success())));
         });
         ctx.get().setPacketHandled(true);
     }
@@ -102,7 +103,6 @@ public record MapRoomActionC2SPacket(Action action, String gameType, String mapN
                     FPSMatch.sendToPlayer(player, new MapRoomDetailS2CPacket(MapRoomQueryService.detail(player, map)));
                     com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager.watchDetail(player.getUUID(), gameType, mapName);
                 },
-                () -> FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(Component.translatable("gui.fpsm.map_select.action.map_not_found"), true))
-        );
+                () -> FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(Component.translatable("gui.fpsm.map_select.action.map_not_found"), true)));
     }
 }

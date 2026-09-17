@@ -1,11 +1,12 @@
 package com.ptcrys.fpsmatch.mixin.compat.spectate.tacz;
 
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.entity.LivingEntity;
+
+import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
 import com.tacz.guns.api.entity.IGunOperator;
 import com.tacz.guns.client.gameplay.LocalPlayerAim;
 import com.tacz.guns.client.gameplay.LocalPlayerDataHolder;
-import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -18,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(value = LocalPlayerAim.class, remap = false)
 public abstract class MixinLocalPlayerAimSpectatorTick {
+
     @Shadow
     @Final
     private LocalPlayerDataHolder data;

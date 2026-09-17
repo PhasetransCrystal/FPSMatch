@@ -1,5 +1,8 @@
 package com.ptcrys.fpsmatch.core.capability;
 
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.common.MinecraftForge;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.mojang.serialization.Codec;
@@ -11,8 +14,6 @@ import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.persistence.DataPersistenceException;
 import com.ptcrys.fpsmatch.core.team.BaseTeam;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.common.MinecraftForge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,7 @@ import java.util.stream.Stream;
 
 @SuppressWarnings("unchecked")
 public class CapabilityMap<H, T extends FPSMCapability<H>> {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(CapabilityMap.class);
 
     public static <C extends MapCapability> Optional<C> getMapCapability(BaseMap map, final Class<C> capability) {
@@ -63,8 +65,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     private final Map<Class<? extends T>, T> capabilities = new ConcurrentHashMap<>();
-    private final Map<Class<? extends T>, PendingAddition<T>> pendingAdditions =
-            new ConcurrentHashMap<>();
+    private final Map<Class<? extends T>, PendingAddition<T>> pendingAdditions = new ConcurrentHashMap<>();
     private final ReentrantLock lifecycleLock = new ReentrantLock();
 
     private final H holder;
@@ -124,8 +125,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
                 return false;
             }
             Optional<C> candidate = FPSMCapabilityManager.createInstance(
-                    this.getHolder(), capabilityClass
-            );
+                    this.getHolder(), capabilityClass);
             if (candidate.isEmpty()) {
                 pending.completion.complete(Optional.empty());
                 return false;
@@ -178,9 +178,8 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     private boolean addDirectlyWithLifecycleLock(
-            Class<T> capabilityClass,
-            T capability
-    ) {
+                                                 Class<T> capabilityClass,
+                                                 T capability) {
         PendingAddition<T> pending = new PendingAddition<>();
         PendingAddition<T> active = pendingAdditions.putIfAbsent(capabilityClass, pending);
         if (active != null) {
@@ -205,10 +204,9 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     private boolean initializeAndPublish(
-            Class<? extends T> capabilityClass,
-            T capability,
-            PendingAddition<T> pending
-    ) {
+                                         Class<? extends T> capabilityClass,
+                                         T capability,
+                                         PendingAddition<T> pending) {
         if (isCancelled(pending)) {
             pending.completion.complete(Optional.empty());
             return false;
@@ -232,8 +230,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
                     capability,
                     initializationStarted,
                     registrationAttempted,
-                    failure
-            );
+                    failure);
             pending.completion.completeExceptionally(failure);
             throw failure;
         }
@@ -294,8 +291,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     private Optional<T> awaitPending(PendingAddition<T> pending) {
         if (pending.ownerThread == Thread.currentThread()) {
             throw new IllegalStateException(
-                    "Capability factory/init cannot recursively create the same capability type"
-            );
+                    "Capability factory/init cannot recursively create the same capability type");
         }
         try {
             return pending.completion.get();
@@ -303,8 +299,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
             Thread.currentThread().interrupt();
             throw new IllegalStateException(
                     "Interrupted while waiting for capability initialization",
-                    interrupted
-            );
+                    interrupted);
         } catch (ExecutionException failure) {
             Throwable cause = failure.getCause();
             if (cause instanceof RuntimeException runtimeFailure) {
@@ -324,17 +319,15 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
             Thread.currentThread().interrupt();
             throw new IllegalStateException(
                     "Interrupted while waiting for capability lifecycle",
-                    interrupted
-            );
+                    interrupted);
         }
     }
 
     private void rollbackFailedAddition(
-            T capability,
-            boolean initializationStarted,
-            boolean registrationAttempted,
-            Throwable failure
-    ) {
+                                        T capability,
+                                        boolean initializationStarted,
+                                        boolean registrationAttempted,
+                                        Throwable failure) {
         if (registrationAttempted) {
             try {
                 MinecraftForge.EVENT_BUS.unregister(capability);
@@ -538,8 +531,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
                                 if (getCapabilityType().isAssignableFrom(capability.getClass())) {
                                     this.addDirectly((T) capability);
                                 }
-                            })
-            );
+                            }));
         });
     }
 
@@ -584,9 +576,8 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
             FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(className, getCapabilityType())
                     .ifPresent(clazz -> {
                         this.get(clazz).ifPresentOrElse(capability -> {
-                                    decodePublishedCapability(clazz, data);
-                                }, () -> restoreCapability(clazz, data)
-                        );
+                            decodePublishedCapability(clazz, data);
+                        }, () -> restoreCapability(clazz, data));
                     });
         } finally {
             lifecycleLock.unlock();
@@ -606,8 +597,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
             if (published != null) {
                 decodePublishedCapability(capabilityClass, data);
                 pending.completion.complete(Optional.ofNullable(
-                        capabilities.get(capabilityClass)
-                ));
+                        capabilities.get(capabilityClass)));
                 return;
             }
             if (isCancelled(pending)) {
@@ -615,8 +605,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
                 return;
             }
             Optional<? extends T> candidate = FPSMCapabilityManager.createInstance(
-                    this.getHolder(), capabilityClass
-            );
+                    this.getHolder(), capabilityClass);
             if (candidate.isEmpty()) {
                 pending.completion.complete(Optional.empty());
                 return;
@@ -638,9 +627,8 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     private void decodePublishedCapability(
-            Class<? extends T> capabilityClass,
-            JsonElement data
-    ) {
+                                           Class<? extends T> capabilityClass,
+                                           JsonElement data) {
         capabilities.computeIfPresent(capabilityClass, (ignored, capability) -> {
             decodeCapability(capability, data);
             return capability;
@@ -651,10 +639,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         if (!(capability instanceof FPSMCapability.Savable<?> savable)) {
             return true;
         }
-        if (data.isJsonNull()
-                || (data.isJsonPrimitive()
-                && data.getAsJsonPrimitive().isString()
-                && data.getAsString().isEmpty())) {
+        if (data.isJsonNull() || (data.isJsonPrimitive() && data.getAsJsonPrimitive().isString() && data.getAsString().isEmpty())) {
             return false;
         }
         try {
@@ -713,21 +698,20 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     public record Wrapper(Map<String, JsonElement> data) {
+
         private static final Codec<JsonElement> JSON_CODEC = Codec.PASSTHROUGH.xmap(
                 dynamic -> dynamic.convert(JsonOps.INSTANCE).getValue(),
-                value -> new Dynamic<>(JsonOps.INSTANCE, value)
-        );
-        public static final Codec<Map<String, JsonElement>> DATA_CODEC =
-                Codec.unboundedMap(Codec.STRING, JSON_CODEC);
+                value -> new Dynamic<>(JsonOps.INSTANCE, value));
+        public static final Codec<Map<String, JsonElement>> DATA_CODEC = Codec.unboundedMap(Codec.STRING, JSON_CODEC);
         public static final Codec<Wrapper> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                DATA_CODEC.fieldOf("capabilities").forGetter(Wrapper::data)
-        ).apply(instance, Wrapper::new));
+                DATA_CODEC.fieldOf("capabilities").forGetter(Wrapper::data)).apply(instance, Wrapper::new));
 
-        public JsonElement encode(){
-            return CODEC.encodeStart(JsonOps.INSTANCE, this).getOrThrow(false,e->{throw new DataPersistenceException("Error while encode capability map to json.");});
+        public JsonElement encode() {
+            return CODEC.encodeStart(JsonOps.INSTANCE, this).getOrThrow(false, e -> { throw new DataPersistenceException("Error while encode capability map to json."); });
         }
 
         public static class Builder<H> {
+
             private final Map<String, JsonElement> data = new HashMap<>();
 
             public <T extends FPSMCapability<H>> Builder<H> add(Class<? extends T> clazz, JsonElement value) {
@@ -740,8 +724,8 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
                 return this;
             }
 
-            public JsonElement encode(){
-                return DATA_CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow(false,e->{throw new DataPersistenceException("Error while encode capability map to json.");});
+            public JsonElement encode() {
+                return DATA_CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, e -> { throw new DataPersistenceException("Error while encode capability map to json."); });
             }
 
             public Wrapper build() {
@@ -751,10 +735,9 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     private static final class PendingAddition<C> {
+
         private final CompletableFuture<Optional<C>> completion = new CompletableFuture<>();
         private final Thread ownerThread = Thread.currentThread();
         private boolean cancelled;
     }
-
-
 }

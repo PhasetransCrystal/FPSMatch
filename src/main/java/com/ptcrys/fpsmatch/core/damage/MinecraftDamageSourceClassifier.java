@@ -8,6 +8,7 @@ import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.damagesource.DamageTypes;
 
 public final class MinecraftDamageSourceClassifier {
+
     static {
         registerDefaultType(DamageTypes.IN_FIRE, DamageSourceCategory.FIRE);
         registerDefaultType(DamageTypes.ON_FIRE, DamageSourceCategory.FIRE);
@@ -26,8 +27,7 @@ public final class MinecraftDamageSourceClassifier {
         registerDefaultType(DamageTypes.SWEET_BERRY_BUSH, DamageSourceCategory.ENVIRONMENT);
     }
 
-    private MinecraftDamageSourceClassifier() {
-    }
+    private MinecraftDamageSourceClassifier() {}
 
     public static void registerId(ResourceLocation sourceId, DamageSourceCategory category) {
         DamageSourceManager.registerId(sourceId.toString(), category);

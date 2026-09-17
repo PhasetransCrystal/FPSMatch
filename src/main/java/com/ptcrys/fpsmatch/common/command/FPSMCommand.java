@@ -1,20 +1,5 @@
 package com.ptcrys.fpsmatch.common.command;
 
-import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.datafixers.util.Pair;
-import com.ptcrys.fpsmatch.core.capability.CapabilityMap;
-import com.ptcrys.fpsmatch.core.capability.map.MapCapability;
-import com.ptcrys.fpsmatch.common.event.register.RegisterFPSMCommandEvent;
-import com.ptcrys.fpsmatch.core.map.*;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.core.team.BaseTeam;
-import com.ptcrys.fpsmatch.core.team.ServerTeam;
-import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -24,6 +9,22 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
+
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.datafixers.util.Pair;
+import com.ptcrys.fpsmatch.common.event.register.RegisterFPSMCommandEvent;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.capability.CapabilityMap;
+import com.ptcrys.fpsmatch.core.capability.map.MapCapability;
+import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
+import com.ptcrys.fpsmatch.core.map.*;
+import com.ptcrys.fpsmatch.core.team.BaseTeam;
+import com.ptcrys.fpsmatch.core.team.ServerTeam;
 
 import java.util.*;
 
@@ -41,15 +42,14 @@ public class FPSMCommand {
                         .executes(FPSMCommand::handleHelp)
                         .then(Commands.literal("toggle")
                                 .then(Commands.argument("hash", IntegerArgumentType.integer())
-                                        .executes(FPSMCommand::handleHelpToggle)))
-                        );
+                                        .executes(FPSMCommand::handleHelpToggle))));
         CommandBuildContext context = event.getBuildContext();
 
-        Pair<LiteralArgumentBuilder<CommandSourceStack>, CommandBuildContext> builder = Pair.of(tree,context);
+        Pair<LiteralArgumentBuilder<CommandSourceStack>, CommandBuildContext> builder = Pair.of(tree, context);
 
         LiteralArgumentBuilder<CommandSourceStack> literal = init(builder);
 
-        RegisterFPSMCommandEvent registerFPSMCommandEvent = new RegisterFPSMCommandEvent(literal,context, FPSMHelpManager.getInstance());
+        RegisterFPSMCommandEvent registerFPSMCommandEvent = new RegisterFPSMCommandEvent(literal, context, FPSMHelpManager.getInstance());
         MinecraftForge.EVENT_BUS.post(registerFPSMCommandEvent);
         FPSMHelpManager.getInstance().bind(dispatcher.register(registerFPSMCommandEvent.getTree()));
     }
@@ -69,9 +69,8 @@ public class FPSMCommand {
         context.getSource().sendSuccess(() -> helpMessage, false);
         return 1;
     }
-    
-    private static int handleHelpToggle(CommandContext<CommandSourceStack> context) {
 
+    private static int handleHelpToggle(CommandContext<CommandSourceStack> context) {
         int hash = IntegerArgumentType.getInteger(context, "hash");
         FPSMHelpManager helpManager = FPSMHelpManager.getInstance();
         // 切换节点展开/闭合状态
@@ -87,20 +86,20 @@ public class FPSMCommand {
     public static Optional<BaseMap> getMap(CommandContext<CommandSourceStack> context) {
         String gameType = StringArgumentType.getString(context, GAME_TYPE_ARG);
         String mapName = StringArgumentType.getString(context, MAP_NAME_ARG);
-        return FPSMCore.getInstance().getMapByTypeWithName(gameType,mapName);
+        return FPSMCore.getInstance().getMapByTypeWithName(gameType, mapName);
     }
 
     public static Optional<ServerTeam> getTeam(CommandContext<CommandSourceStack> context) {
         String teamName = StringArgumentType.getString(context, TEAM_NAME_ARG);
         Optional<BaseMap> mapOpt = getMap(context);
         if (mapOpt.isPresent()) {
-           return mapOpt.get().getMapTeams().getTeamByName(teamName);
-        }else{
+            return mapOpt.get().getMapTeams().getTeamByName(teamName);
+        } else {
             return Optional.empty();
         }
     }
 
-    public static Optional<CapabilityMap<BaseMap,MapCapability>> getMapCapabilities(CommandContext<CommandSourceStack> context) {
+    public static Optional<CapabilityMap<BaseMap, MapCapability>> getMapCapabilities(CommandContext<CommandSourceStack> context) {
         Optional<BaseMap> map = getMap(context);
         return map.map(BaseMap::getCapabilityMap);
     }
@@ -110,12 +109,12 @@ public class FPSMCommand {
         return map.map(ServerTeam::getCapabilityMap);
     }
 
-    public static <T extends TeamCapability> Optional<T> getTeamCapability(CommandContext<CommandSourceStack> context , Class<T> clazz) {
+    public static <T extends TeamCapability> Optional<T> getTeamCapability(CommandContext<CommandSourceStack> context, Class<T> clazz) {
         Optional<ServerTeam> team = getTeam(context);
         return team.flatMap(serverTeam -> serverTeam.getCapabilityMap().get(clazz));
     }
 
-    public static <T extends MapCapability> Optional<T> getMapCapability(CommandContext<CommandSourceStack> context , Class<T> clazz) {
+    public static <T extends MapCapability> Optional<T> getMapCapability(CommandContext<CommandSourceStack> context, Class<T> clazz) {
         Optional<BaseMap> map = getMap(context);
         return map.flatMap(baseMap -> baseMap.getCapabilityMap().get(clazz));
     }

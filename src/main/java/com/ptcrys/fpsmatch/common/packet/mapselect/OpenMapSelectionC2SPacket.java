@@ -1,18 +1,19 @@
 package com.ptcrys.fpsmatch.common.packet.mapselect;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
-import com.ptcrys.fpsmatch.config.FPSMConfig;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
+import com.ptcrys.fpsmatch.config.FPSMConfig;
+
 import java.util.function.Supplier;
 
 public record OpenMapSelectionC2SPacket() {
-    public static void encode(OpenMapSelectionC2SPacket packet, FriendlyByteBuf buf) {
-    }
+
+    public static void encode(OpenMapSelectionC2SPacket packet, FriendlyByteBuf buf) {}
 
     public static OpenMapSelectionC2SPacket decode(FriendlyByteBuf buf) {
         return new OpenMapSelectionC2SPacket();

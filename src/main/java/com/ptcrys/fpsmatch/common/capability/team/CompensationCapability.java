@@ -1,18 +1,20 @@
 package com.ptcrys.fpsmatch.common.capability.team;
 
-import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
-import com.ptcrys.fpsmatch.core.team.BaseTeam;
-import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
-import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.network.FriendlyByteBuf;
+
+import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
+import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
+import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
+import com.ptcrys.fpsmatch.core.team.BaseTeam;
 
 import java.util.function.Function;
 
 public class CompensationCapability extends TeamCapability implements FPSMCapability.CapabilitySynchronizable {
+
     private boolean dirty = false;
     private int compensationFactor = 0;
     // 补偿因子 = 当前连败数（0 表示无连败）；上限 4 对应 CS 连败补偿封顶 2900
-    private Function<Integer,Integer> setter = (i)-> Math.max(0, Math.min(i, 4));
+    private Function<Integer, Integer> setter = (i) -> Math.max(0, Math.min(i, 4));
 
     public CompensationCapability(BaseTeam team) {
         super(team);
@@ -22,7 +24,7 @@ public class CompensationCapability extends TeamCapability implements FPSMCapabi
         FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.TEAM, CompensationCapability.class, CompensationCapability::new);
     }
 
-    public void withSetter( Function<Integer,Integer> setter) {
+    public void withSetter(Function<Integer, Integer> setter) {
         this.setter = setter;
     }
 
@@ -30,11 +32,11 @@ public class CompensationCapability extends TeamCapability implements FPSMCapabi
         return setter;
     }
 
-    public void add(int factor){
+    public void add(int factor) {
         setFactor(compensationFactor + factor);
     }
 
-    public void reduce(int factor){
+    public void reduce(int factor) {
         setFactor(compensationFactor - factor);
     }
 

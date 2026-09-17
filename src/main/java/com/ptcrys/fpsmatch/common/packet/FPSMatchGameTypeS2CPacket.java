@@ -6,6 +6,7 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public class FPSMatchGameTypeS2CPacket {
+
     private final String mapName;
     private final String gameType;
     private final boolean teamGlow;

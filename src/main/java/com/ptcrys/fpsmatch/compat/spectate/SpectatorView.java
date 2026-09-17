@@ -10,8 +10,8 @@ import net.minecraft.world.entity.player.Player;
  * Resolves the current spectating target from the client camera.
  */
 public final class SpectatorView {
-    private SpectatorView() {
-    }
+
+    private SpectatorView() {}
 
     public static boolean isSpectatingOther(LocalPlayer local) {
         if (local == null || !local.isSpectator()) {

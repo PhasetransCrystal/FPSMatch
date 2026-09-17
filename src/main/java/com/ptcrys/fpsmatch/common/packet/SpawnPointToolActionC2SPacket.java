@@ -1,5 +1,11 @@
 package com.ptcrys.fpsmatch.common.packet;
 
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.network.NetworkEvent;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.capability.team.SpawnPointCapability;
 import com.ptcrys.fpsmatch.common.item.SpawnPointTool;
@@ -7,23 +13,18 @@ import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.data.SpawnPointData;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 public record SpawnPointToolActionC2SPacket(
-        Action action,
-        String selectedType,
-        String selectedMap,
-        String selectedTeam,
-        int selectedIndex
-) {
+                                            Action action,
+                                            String selectedType,
+                                            String selectedMap,
+                                            String selectedTeam,
+                                            int selectedIndex) {
+
     public enum Action {
         REFRESH,
         SAVE_SELECTIONS,
@@ -45,8 +46,7 @@ public record SpawnPointToolActionC2SPacket(
                 buf.readUtf(),
                 buf.readUtf(),
                 buf.readUtf(),
-                buf.readVarInt()
-        );
+                buf.readVarInt());
     }
 
     public static void sendScreen(ServerPlayer player, ItemStack stack, String requestedType, String requestedMap, String requestedTeam, int requestedIndex) {
@@ -59,8 +59,7 @@ public record SpawnPointToolActionC2SPacket(
                 snapshot.availableTeams(),
                 snapshot.selectedTeam(),
                 snapshot.selectedIndex(),
-                snapshot.spawnPoints()
-        ));
+                snapshot.spawnPoints()));
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
@@ -135,9 +134,7 @@ public record SpawnPointToolActionC2SPacket(
         String selectedType = availableTypes.contains(requestedType) ? requestedType : firstOrBlank(availableTypes);
         List<String> availableMaps = selectedType.isBlank() ? List.of() : FPSMCore.getInstance().getMapNamesWithType(selectedType);
         String selectedMap = availableMaps.contains(requestedMap) ? requestedMap : firstOrBlank(availableMaps);
-        Optional<BaseMap> map = selectedType.isBlank() || selectedMap.isBlank()
-                ? Optional.empty()
-                : FPSMCore.getInstance().getMapByTypeWithName(selectedType, selectedMap);
+        Optional<BaseMap> map = selectedType.isBlank() || selectedMap.isBlank() ? Optional.empty() : FPSMCore.getInstance().getMapByTypeWithName(selectedType, selectedMap);
         List<String> availableTeams = map.map(baseMap -> baseMap.getMapTeams().getNormalTeamsName()).orElse(List.of());
         String selectedTeam = availableTeams.contains(requestedTeam) ? requestedTeam : firstOrBlank(availableTeams);
         Optional<ServerTeam> team = map.flatMap(baseMap -> baseMap.getMapTeams().getTeamByName(selectedTeam)).filter(ServerTeam::isNormal);
@@ -148,9 +145,7 @@ public record SpawnPointToolActionC2SPacket(
         SpawnPointTool.setSelectedMap(stack, selectedMap);
         SpawnPointTool.setSelectedTeam(stack, selectedTeam);
 
-        int normalizedIndex = spawnPoints.isEmpty()
-                ? -1
-                : Math.max(0, Math.min(requestedIndex < 0 ? 0 : requestedIndex, spawnPoints.size() - 1));
+        int normalizedIndex = spawnPoints.isEmpty() ? -1 : Math.max(0, Math.min(requestedIndex < 0 ? 0 : requestedIndex, spawnPoints.size() - 1));
 
         return new SelectionSnapshot(
                 availableTypes,
@@ -163,8 +158,7 @@ public record SpawnPointToolActionC2SPacket(
                 spawnPoints,
                 map,
                 team,
-                capability
-        );
+                capability);
     }
 
     private static String firstOrBlank(List<String> values) {
@@ -172,17 +166,15 @@ public record SpawnPointToolActionC2SPacket(
     }
 
     private record SelectionSnapshot(
-            List<String> availableTypes,
-            String selectedType,
-            List<String> availableMaps,
-            String selectedMap,
-            List<String> availableTeams,
-            String selectedTeam,
-            int selectedIndex,
-            List<SpawnPointData> spawnPoints,
-            Optional<BaseMap> map,
-            Optional<ServerTeam> team,
-            Optional<SpawnPointCapability> capability
-    ) {
-    }
+                                     List<String> availableTypes,
+                                     String selectedType,
+                                     List<String> availableMaps,
+                                     String selectedMap,
+                                     List<String> availableTeams,
+                                     String selectedTeam,
+                                     int selectedIndex,
+                                     List<SpawnPointData> spawnPoints,
+                                     Optional<BaseMap> map,
+                                     Optional<ServerTeam> team,
+                                     Optional<SpawnPointCapability> capability) {}
 }

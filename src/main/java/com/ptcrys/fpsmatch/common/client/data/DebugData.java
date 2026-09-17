@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 public class DebugData {
+
     private final Map<String, RenderableArea> areas = new LinkedHashMap<>();
     private final Map<String, RenderablePoint> points = new LinkedHashMap<>();
     private boolean visible = true;

@@ -1,27 +1,27 @@
 package com.ptcrys.fpsmatch.compat.spectate.lrtactical;
 
-import com.tacz.guns.client.renderer.item.AnimateGeoItemRenderer;
-import java.util.UUID;
-import java.util.function.Supplier;
-import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
-import com.ptcrys.fpsmatch.compat.spectate.net.SpectatorLrtAttackPackets.S2CWatchedPlayerLrtAttackPacket;
-import com.ptcrys.fpsmatch.compat.spectate.tacz.SpectatorGunItemMirror;
-import me.xjqsh.lrtactical.api.item.IMeleeWeapon;
-import me.xjqsh.lrtactical.api.melee.MeleeAction;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
+import com.ptcrys.fpsmatch.compat.spectate.net.SpectatorLrtAttackPackets.S2CWatchedPlayerLrtAttackPacket;
+import com.ptcrys.fpsmatch.compat.spectate.tacz.SpectatorGunItemMirror;
+import com.tacz.guns.client.renderer.item.AnimateGeoItemRenderer;
+import me.xjqsh.lrtactical.api.item.IMeleeWeapon;
+import me.xjqsh.lrtactical.api.melee.MeleeAction;
+
+import java.util.UUID;
 
 /**
  * Handles spectator replication for LRTactical melee attacks.
  */
 public final class SpectatorLrtAttackNet {
-    private SpectatorLrtAttackNet() {
-    }
+
+    private SpectatorLrtAttackNet() {}
 
     public static void handleWatchedPlayerAttackPacket(S2CWatchedPlayerLrtAttackPacket packet) {
         Minecraft mc = Minecraft.getInstance();

@@ -8,14 +8,17 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.ItemStackHandler;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class EditorShopCapabilityProvider implements ICapabilityProvider {
+
     public static final int ROWS = 5;
     public static final int COLS = 5;
     private final ItemStack shopEditToolStack;
     private final ItemStackHandler itemStackHandler = new ItemStackHandler(ROWS * COLS) {
+
         @Override
         protected void onContentsChanged(int slot) {
             super.onContentsChanged(slot);
@@ -41,5 +44,4 @@ public class EditorShopCapabilityProvider implements ICapabilityProvider {
         CompoundTag tag = shopEditToolStack.getOrCreateTag();
         tag.put("ShopItems", itemStackHandler.serializeNBT());
     }
-
 }

@@ -8,9 +8,7 @@ public class TACZCompat {
 
     /**
      * 注册TACZ观察者支持
-     * */
+     */
     @OnlyIn(Dist.CLIENT)
-    public static void registerSpecClient(IEventBus bus) {
-
-    }
+    public static void registerSpecClient(IEventBus bus) {}
 }

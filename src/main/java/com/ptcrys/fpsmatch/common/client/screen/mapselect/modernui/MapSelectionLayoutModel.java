@@ -6,13 +6,14 @@ package com.ptcrys.fpsmatch.common.client.screen.mapselect.modernui;
  * remain empty for compatibility with older bindings.
  */
 public record MapSelectionLayoutModel(
-        Rect header,
-        Rect toast,
-        Rect list,
-        Rect detail,
-        boolean compact
-) {
+                                      Rect header,
+                                      Rect toast,
+                                      Rect list,
+                                      Rect detail,
+                                      boolean compact) {
+
     public record Rect(int x, int y, int width, int height) {
+
         public Rect {
             if (width < 0 || height < 0) {
                 throw new IllegalArgumentException("layout dimensions must be non-negative");
@@ -45,7 +46,6 @@ public record MapSelectionLayoutModel(
                 new Rect(0, headerHeight, width, toastHeight),
                 new Rect(0, contentTop, width, contentHeight),
                 new Rect(0, 0, 0, 0),
-                width < 360 || contentHeight < 150
-        );
+                width < 360 || contentHeight < 150);
     }
 }

@@ -1,4 +1,3 @@
 package com.ptcrys.fpsmatch.core.item;
 
-public interface BlastBombItem {
-}
+public interface BlastBombItem {}

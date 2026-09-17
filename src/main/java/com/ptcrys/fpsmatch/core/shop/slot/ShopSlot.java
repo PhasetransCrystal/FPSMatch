@@ -1,24 +1,25 @@
 package com.ptcrys.fpsmatch.core.shop.slot;
 
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
+
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
+import com.ptcrys.fpsmatch.common.drop.DropType;
+import com.ptcrys.fpsmatch.common.event.PlayerObtainItemEvent;
+import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.shop.INamedType;
 import com.ptcrys.fpsmatch.core.shop.ShopData;
 import com.ptcrys.fpsmatch.core.shop.event.CheckCostEvent;
 import com.ptcrys.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.ptcrys.fpsmatch.core.shop.functional.ListenerModule;
-import com.ptcrys.fpsmatch.common.drop.DropType;
 import com.ptcrys.fpsmatch.util.FPSMUtil;
-import com.ptcrys.fpsmatch.common.event.PlayerObtainItemEvent;
-import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -26,25 +27,25 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public class ShopSlot{
+public class ShopSlot {
+
     public static final Codec<ShopSlot> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ItemStack.CODEC.fieldOf("ItemStack").forGetter(ShopSlot::process),
             Codec.INT.fieldOf("defaultCost").forGetter(ShopSlot::getDefaultCost),
             Codec.INT.fieldOf("maxBuyCount").forGetter(ShopSlot::getMaxBuyCount),
             Codec.INT.fieldOf("groupId").forGetter(ShopSlot::getGroupId),
-            Codec.list(Codec.STRING).fieldOf("listenerModule").forGetter(ShopSlot::getListenerNames)
-    ).apply(instance, (itemstack,dC,mBC,gId,fL) -> {
-        ShopSlot shopSlot = new ShopSlot(itemstack,dC,mBC,gId);
-        fL.forEach(name->{
-            ListenerModule lm = FPSMCore.getInstance().getListenerModuleManager().getListenerModule(name);
-            if(lm != null){
-                shopSlot.addListener(lm);
-            }else{
-                System.out.println("error : couldn't find listener module by -> " + name);
-            }
-        });
-        return shopSlot;
-    }));
+            Codec.list(Codec.STRING).fieldOf("listenerModule").forGetter(ShopSlot::getListenerNames)).apply(instance, (itemstack, dC, mBC, gId, fL) -> {
+                ShopSlot shopSlot = new ShopSlot(itemstack, dC, mBC, gId);
+                fL.forEach(name -> {
+                    ListenerModule lm = FPSMCore.getInstance().getListenerModuleManager().getListenerModule(name);
+                    if (lm != null) {
+                        shopSlot.addListener(lm);
+                    } else {
+                        System.out.println("error : couldn't find listener module by -> " + name);
+                    }
+                });
+                return shopSlot;
+            }));
 
     // 物品供应器，用于提供物品栈
     public Supplier<ItemStack> itemSupplier;
@@ -68,17 +69,18 @@ public class ShopSlot{
 
     /**
      * 获取当前价格
+     * 
      * @return 当前价格
      */
     public int getCost() {
         return cost;
     }
 
-    public void setCost(int count){
+    public void setCost(int count) {
         this.cost = count;
     }
 
-    public void setDefaultCost(int count){
+    public void setDefaultCost(int count) {
         this.defaultCost = count;
     }
 
@@ -88,18 +90,20 @@ public class ShopSlot{
 
     /**
      * 获取组ID
+     * 
      * @return 组ID
      */
     public int getGroupId() {
         return groupId;
     }
 
-    public void setGroupId(int groupId){
+    public void setGroupId(int groupId) {
         this.groupId = groupId;
     }
 
     /**
      * 获取已购买数量
+     * 
      * @return 已购买数量
      */
     public int getBoughtCount() {
@@ -108,6 +112,7 @@ public class ShopSlot{
 
     /**
      * 获取最大购买数量
+     * 
      * @return 最大购买数量
      */
     public int getMaxBuyCount() {
@@ -116,6 +121,7 @@ public class ShopSlot{
 
     /**
      * 判断是否锁定
+     * 
      * @return 是否锁定
      */
     public boolean isLocked() {
@@ -124,6 +130,7 @@ public class ShopSlot{
 
     /**
      * 处理物品，返回一个新的物品栈
+     * 
      * @return 新的物品栈
      */
     public ItemStack process() {
@@ -146,9 +153,8 @@ public class ShopSlot{
 
     public void lock(int boughtCount) {
         locked = true;
-        this.boughtCount = Math.min(this.getMaxBuyCount(),boughtCount);
+        this.boughtCount = Math.min(this.getMaxBuyCount(), boughtCount);
     }
-
 
     /**
      * 设置为非锁定状态
@@ -158,14 +164,15 @@ public class ShopSlot{
     }
 
     public void unlock(int count) {
-        this.boughtCount -= Math.min(this.boughtCount,Math.max(0,count));
-        if(boughtCount < maxBuyCount){
+        this.boughtCount -= Math.min(this.boughtCount, Math.max(0, count));
+        if (boughtCount < maxBuyCount) {
             this.unlock();
         }
     }
 
     /**
      * 设置最大购买数量
+     * 
      * @param maxBuyCount 最大购买数量
      */
     public void setMaxBuyCount(int maxBuyCount) {
@@ -174,37 +181,41 @@ public class ShopSlot{
 
     /**
      * 判断是否有组
+     * 
      * @return 是否有组
      */
-    public boolean haveGroup(){
+    public boolean haveGroup() {
         return groupId >= 0;
     }
 
     /**
      * 设置索引
+     * 
      * @param index 索引
      */
-    public void setIndex(int index){
-        if(this.index < 0){
+    public void setIndex(int index) {
+        if (this.index < 0) {
             this.index = index;
         }
     }
 
     /**
      * 获取索引
+     * 
      * @return 索引
      */
-    public int getIndex(){
+    public int getIndex() {
         return index;
     }
 
     /**
      * 构造函数，用于创建一个新的物品槽位
-     * @param itemStack 物品栈
+     * 
+     * @param itemStack   物品栈
      * @param defaultCost 默认价格
      */
     public ShopSlot(ItemStack itemStack, int defaultCost) {
-        if(GunCompatManager.isGun(itemStack)){
+        if (GunCompatManager.isGun(itemStack)) {
             FPSMUtil.fixGunItem(itemStack, GunCompatManager.findProvider(itemStack));
         }
         this.itemSupplier = itemStack::copy;
@@ -215,7 +226,8 @@ public class ShopSlot{
 
     /**
      * 构造函数，用于创建一个新的物品槽位，并设置最大购买数量
-     * @param itemStack 物品栈
+     * 
+     * @param itemStack   物品栈
      * @param defaultCost 默认价格
      * @param maxBuyCount 最大购买数量
      */
@@ -226,23 +238,25 @@ public class ShopSlot{
 
     /**
      * 构造函数，用于创建一个新的物品槽位，并设置组ID和返回检查器
-     * @param itemStack 物品
+     * 
+     * @param itemStack   物品
      * @param defaultCost 默认价格
      * @param maxBuyCount 最大购买数量
-     * @param groupId 组ID
+     * @param groupId     组ID
      */
     public ShopSlot(ItemStack itemStack, int defaultCost, int maxBuyCount, int groupId) {
-        this(itemStack,defaultCost,maxBuyCount);
+        this(itemStack, defaultCost, maxBuyCount);
         this.groupId = groupId;
     }
 
     /**
      * 构造函数，用于创建一个新的物品槽位，并设置组ID和返回检查器
-     * @param supplier 物品供应器
+     * 
+     * @param supplier    物品供应器
      * @param defaultCost 默认价格
      * @param maxBuyCount 最大购买数量
-     * @param groupId 组ID
-     * @param checker 退款检查器
+     * @param groupId     组ID
+     * @param checker     退款检查器
      */
     public ShopSlot(Supplier<ItemStack> supplier, int defaultCost, int maxBuyCount, int groupId, Predicate<ItemStack> checker) {
         this.itemSupplier = supplier;
@@ -255,6 +269,7 @@ public class ShopSlot{
 
     /**
      * 判断是否可以购买
+     * 
      * @param money 当前金钱
      * @return 是否可以购买
      */
@@ -264,23 +279,24 @@ public class ShopSlot{
 
     /**
      * 判断是否可以返回
+     * 
      * @return 是否可以返回
      */
     public boolean canReturn(Player player) {
-        if(player.getInventory().clearOrCountMatchingItems(this.returningChecker,0,player.inventoryMenu.getCraftSlots()) > 0){
+        if (player.getInventory().clearOrCountMatchingItems(this.returningChecker, 0, player.inventoryMenu.getCraftSlots()) > 0) {
             return boughtCount > 0 && !locked;
-        }else{
+        } else {
             return false;
         }
     }
 
-    public Predicate<ItemStack> getDefaultChecker(){
-        return (itemStack)->{
+    public Predicate<ItemStack> getDefaultChecker() {
+        return (itemStack) -> {
             ItemStack shopItem = this.process();
-            if(GunCompatManager.isGun(itemStack)){
-            ResourceLocation gunId = GunCompatManager.findProvider(itemStack).getGunId(itemStack);
-            return GunCompatManager.isGun(shopItem) && gunId.equals(GunCompatManager.findProvider(shopItem).getGunId(shopItem));
-            }else {
+            if (GunCompatManager.isGun(itemStack)) {
+                ResourceLocation gunId = GunCompatManager.findProvider(itemStack).getGunId(itemStack);
+                return GunCompatManager.isGun(shopItem) && gunId.equals(GunCompatManager.findProvider(shopItem).getGunId(shopItem));
+            } else {
                 return itemStack.getDisplayName().getString().equals(shopItem.getDisplayName().getString()) && shopItem.getItem() == itemStack.getItem();
             }
         };
@@ -300,29 +316,30 @@ public class ShopSlot{
      * 当组内物品槽位发生变化时调用
      */
     public final void onGroupSlotChanged(ShopSlotChangeEvent event) {
-        if(!event.isCancelLogic() && this.isLocked() && this.getBoughtCount() >= 1){
-            int i = event.player.getInventory().clearOrCountMatchingItems(this.returningChecker,1,event.player.inventoryMenu.getCraftSlots());
-            if(i > 0){
+        if (!event.isCancelLogic() && this.isLocked() && this.getBoughtCount() >= 1) {
+            int i = event.player.getInventory().clearOrCountMatchingItems(this.returningChecker, 1, event.player.inventoryMenu.getCraftSlots());
+            if (i > 0) {
                 this.boughtCount--;
                 this.unlock();
-                FPSMUtil.playerDropMatchItem(event.player,this.process().copy());
+                FPSMUtil.playerDropMatchItem(event.player, this.process().copy());
                 event.setCancelLogic(true);
             }
         }
-        if(!this.listener.isEmpty()){
+        if (!this.listener.isEmpty()) {
             listener.forEach(listenerModule -> listenerModule.onChange(event));
         }
     }
 
-    public void handleCheckCostEvent(CheckCostEvent event){
-        listener.forEach(listenerModule -> listenerModule.onCostCheck(event,this));
+    public void handleCheckCostEvent(CheckCostEvent event) {
+        listener.forEach(listenerModule -> listenerModule.onCostCheck(event, this));
     }
 
     public void addListener(ListenerModule listener) {
         this.listener.add(listener);
         this.listener.sort(Comparator.comparingInt(ListenerModule::getPriority).reversed());
     }
-    public List<String> getListenerNames(){
+
+    public List<String> getListenerNames() {
         List<String> names = new ArrayList<>();
         this.listener.forEach(listenerModule -> names.add(listenerModule.getName()));
         return names;
@@ -330,8 +347,9 @@ public class ShopSlot{
 
     /**
      * 购买物品 不要直接使用！从ShopData层判定与调用
+     * 
      * @param player 玩家
-     * @param money 当前金钱
+     * @param money  当前金钱
      * @return 购买后剩余金钱
      */
     public int buy(ServerPlayer player, int money) {
@@ -373,7 +391,7 @@ public class ShopSlot{
         ShopCapability.getShopByPlayer(player).ifPresent(shop -> {
             ShopData<?> shopData = shop.getPlayerShopData(player.getUUID());
             Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(existingItem);
-            if (pair != null && ((INamedType)pair.getFirst()).dorpUnlock()) {
+            if (pair != null && ((INamedType) pair.getFirst()).dorpUnlock()) {
                 ShopSlot slot = pair.getSecond();
                 slot.unlock(1);
             }
@@ -388,9 +406,10 @@ public class ShopSlot{
         this.itemSupplier = itemSupplier;
     }
 
-    //同上
+    // 同上
     /**
      * 返回物品
+     * 
      * @param player 玩家
      */
     public void returnItem(Player player) {
@@ -411,17 +430,16 @@ public class ShopSlot{
         boughtCount -= count;
     }
 
-
     public void removeListenerModule(String module) {
         this.listener.removeIf(listenerModule -> listenerModule.getName().equals(module));
     }
 
     public ShopSlot copy() {
         ItemStack itemStack = this.itemSupplier.get();
-        if(GunCompatManager.isGun(itemStack)){
+        if (GunCompatManager.isGun(itemStack)) {
             FPSMUtil.fixGunItem(itemStack, GunCompatManager.findProvider(itemStack));
         }
-        ShopSlot slot = new ShopSlot(itemStack::copy,this.defaultCost,this.maxBuyCount,this.groupId,this.returningChecker);
+        ShopSlot slot = new ShopSlot(itemStack::copy, this.defaultCost, this.maxBuyCount, this.groupId, this.returningChecker);
         slot.setIndex(this.index);
         slot.listener.addAll(this.listener);
         return slot;
@@ -437,7 +455,7 @@ public class ShopSlot{
         return GunCompatManager.findProvider(itemStack).getMaxDummyAmmo(itemStack);
     }
 
-    public String toString(){
+    public String toString() {
         return "ShopSlot{" +
                 "itemStack=" + this.process() +
                 ", defaultCost=" + defaultCost +

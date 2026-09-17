@@ -5,10 +5,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public final class ClientPacketRegistry {
+
     private static final Map<Class<?>, Consumer<Object>> HANDLERS = new ConcurrentHashMap<>();
 
-    private ClientPacketRegistry() {
-    }
+    private ClientPacketRegistry() {}
 
     public static <T> void register(Class<T> packetClass, Consumer<T> handler) {
         HANDLERS.put(packetClass, packet -> handler.accept(packetClass.cast(packet)));

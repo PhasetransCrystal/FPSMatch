@@ -1,7 +1,5 @@
 package com.ptcrys.fpsmatch.common.client.camera;
 
-import com.ptcrys.fpsmatch.common.camera.CameraEndReason;
-import com.ptcrys.fpsmatch.common.client.event.FPSMClientResetEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.*;
@@ -11,10 +9,15 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import com.ptcrys.fpsmatch.common.camera.CameraEndReason;
+import com.ptcrys.fpsmatch.common.client.event.FPSMClientResetEvent;
+
 @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = "fpsmatch")
 public final class CameraEvents {
+
     private static long renderFrame;
     private static long overlayFrame = -1;
+
     private CameraEvents() {}
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -67,8 +70,7 @@ public final class CameraEvents {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void scroll(InputEvent.MouseScrollingEvent event) {
-        if (Minecraft.getInstance().screen == null && CameraDirector.hasSession()
-                && CameraDirector.policy().blockInteraction()) event.setCanceled(true);
+        if (Minecraft.getInstance().screen == null && CameraDirector.hasSession() && CameraDirector.policy().blockInteraction()) event.setCanceled(true);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -112,10 +114,18 @@ public final class CameraEvents {
         graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), alpha << 24);
     }
 
-    @SubscribeEvent public static void reset(FPSMClientResetEvent event) { CameraDirector.reset(CameraEndReason.MATCH_RESET); }
-    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { CameraDirector.reset(CameraEndReason.WORLD_CHANGED); }
-    @SubscribeEvent public static void unload(LevelEvent.Unload event) {
-        if (event.getLevel().isClientSide() && event.getLevel() == Minecraft.getInstance().level) CameraDirector.reset(CameraEndReason.WORLD_CHANGED);
+    @SubscribeEvent
+    public static void reset(FPSMClientResetEvent event) {
+        CameraDirector.reset(CameraEndReason.MATCH_RESET);
     }
 
+    @SubscribeEvent
+    public static void logout(ClientPlayerNetworkEvent.LoggingOut event) {
+        CameraDirector.reset(CameraEndReason.WORLD_CHANGED);
+    }
+
+    @SubscribeEvent
+    public static void unload(LevelEvent.Unload event) {
+        if (event.getLevel().isClientSide() && event.getLevel() == Minecraft.getInstance().level) CameraDirector.reset(CameraEndReason.WORLD_CHANGED);
+    }
 }

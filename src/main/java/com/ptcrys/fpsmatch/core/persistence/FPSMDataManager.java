@@ -1,10 +1,11 @@
 package com.ptcrys.fpsmatch.core.persistence;
 
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.loading.FMLLoader;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.ptcrys.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.loading.FMLLoader;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -17,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class FPSMDataManager {
+
     private static final ExecutorService ASYNC_EXECUTOR = Executors.newFixedThreadPool(2, runnable -> {
         Thread thread = new Thread(runnable, "FPSMatch Data IO");
         thread.setDaemon(true);
@@ -31,9 +33,14 @@ public class FPSMDataManager {
 
     // 数据条目：存储文件夹名和SaveHolder
     private static class DataEntry<T> {
+
         String folderName;
         SaveHolder<T> holder;
-        DataEntry(String folderName, SaveHolder<T> holder) { this.folderName = folderName; this.holder = holder; }
+
+        DataEntry(String folderName, SaveHolder<T> holder) {
+            this.folderName = folderName;
+            this.holder = holder;
+        }
     }
 
     public FPSMDataManager(String levelName) {
@@ -57,7 +64,7 @@ public class FPSMDataManager {
     @SuppressWarnings("unchecked")
     public <T> void saveData(T data, String fileName, boolean overwrite) {
         if (!registry.containsKey(data.getClass())) return;
-        DataEntry<T> entry = getEntry((Class<T>)data.getClass());
+        DataEntry<T> entry = getEntry((Class<T>) data.getClass());
         File file = getSaveFolder(data);
         entry.holder.getWriter(data, fileName, overwrite).accept(file);
     }

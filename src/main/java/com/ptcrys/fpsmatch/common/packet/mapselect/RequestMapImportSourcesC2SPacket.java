@@ -1,17 +1,18 @@
 package com.ptcrys.fpsmatch.common.packet.mapselect;
 
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.network.NetworkEvent;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.mapselect.MapImportService;
 import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
 public record RequestMapImportSourcesC2SPacket(String gameType, String mapName) {
+
     private static final int MAX_LENGTH = 128;
 
     public static void encode(RequestMapImportSourcesC2SPacket packet, FriendlyByteBuf buf) {

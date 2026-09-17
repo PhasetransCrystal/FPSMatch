@@ -1,21 +1,23 @@
 package com.ptcrys.fpsmatch.common.client.spec;
 
-import com.ptcrys.fpsmatch.common.client.FPSMClient;
-import com.ptcrys.fpsmatch.common.client.data.FPSMClientGlobalData;
-import com.ptcrys.fpsmatch.core.team.ClientTeam;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.scores.Team;
 import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Team;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import com.ptcrys.fpsmatch.common.client.FPSMClient;
+import com.ptcrys.fpsmatch.common.client.data.FPSMClientGlobalData;
+import com.ptcrys.fpsmatch.core.team.ClientTeam;
 
 import java.util.Optional;
 
 @OnlyIn(Dist.CLIENT)
 public final class PlayerOutlineRenderer {
+
     public static final int NO_OUTLINE_COLOR = -1;
 
     private static final int TEAM_RED = 64;
@@ -32,8 +34,7 @@ public final class PlayerOutlineRenderer {
     private static final int ENEMY_COLOR = rgb(ENEMY_RED, ENEMY_GREEN, ENEMY_BLUE);
     private static final int SPECTATOR_COLOR = rgb(SPECTATOR_RED, SPECTATOR_GREEN, SPECTATOR_BLUE);
 
-    private PlayerOutlineRenderer() {
-    }
+    private PlayerOutlineRenderer() {}
 
     public static boolean shouldOutline(Entity target) {
         return getOutlineColor(target) != NO_OUTLINE_COLOR;
@@ -50,9 +51,7 @@ public final class PlayerOutlineRenderer {
         if (isLocalCurrentMatchNormalTeam(data)) {
             return isCurrentMatchPlayer(data, player);
         }
-        return localPlayer.isSpectator()
-                && isLocalCurrentMatchSpectatorTeam(data)
-                && isCurrentMatchPlayer(data, player);
+        return localPlayer.isSpectator() && isLocalCurrentMatchSpectatorTeam(data) && isCurrentMatchPlayer(data, player);
     }
 
     public static int getOutlineColor(Entity target) {
@@ -93,9 +92,7 @@ public final class PlayerOutlineRenderer {
         if (!data.isCurrentGameType("csdm")) return false;
         Team localTeam = localPlayer.getTeam();
         Team targetTeam = player.getTeam();
-        return localTeam instanceof PlayerTeam playerTeam
-                && localTeam == targetTeam
-                && playerTeam.isAllowFriendlyFire();
+        return localTeam instanceof PlayerTeam playerTeam && localTeam == targetTeam && playerTeam.isAllowFriendlyFire();
     }
 
     static Optional<Boolean> isSameCurrentMatchClientTeam(FPSMClientGlobalData data, Player localPlayer, Player player) {
@@ -176,9 +173,7 @@ public final class PlayerOutlineRenderer {
     private static boolean isLocalCurrentMatchSpectatorTeam(FPSMClientGlobalData data) {
         return getCurrentMatchClientTeam(data)
                 .map(team -> isCurrentMatchSpectatorTeam(data, team))
-                .orElseGet(() -> data.isInMap()
-                        && data.isInGame()
-                        && isSpectatorTeamName(data.getCurrentTeam()));
+                .orElseGet(() -> data.isInMap() && data.isInGame() && isSpectatorTeamName(data.getCurrentTeam()));
     }
 
     static boolean isCurrentMatchNormalTeam(FPSMClientGlobalData data, ClientTeam team) {
@@ -190,10 +185,7 @@ public final class PlayerOutlineRenderer {
     }
 
     private static boolean isCurrentMatchTeam(FPSMClientGlobalData data, ClientTeam team) {
-        return data.isInMap()
-                && data.isInGame()
-                && team.gameType.equals(data.getCurrentGameType())
-                && team.mapName.equals(data.getCurrentMap());
+        return data.isInMap() && data.isInGame() && team.gameType.equals(data.getCurrentGameType()) && team.mapName.equals(data.getCurrentMap());
     }
 
     private static boolean isSpectatorTeam(ClientTeam team) {
@@ -201,10 +193,7 @@ public final class PlayerOutlineRenderer {
     }
 
     private static boolean isCurrentMatchNormalTeamName(FPSMClientGlobalData data, String teamName) {
-        return data.isInMap()
-                && data.isInGame()
-                && !FPSMClientGlobalData.NONE_VALUE.equals(teamName)
-                && !isSpectatorTeamName(teamName);
+        return data.isInMap() && data.isInGame() && !FPSMClientGlobalData.NONE_VALUE.equals(teamName) && !isSpectatorTeamName(teamName);
     }
 
     private static boolean isSpectatorTeamName(String teamName) {

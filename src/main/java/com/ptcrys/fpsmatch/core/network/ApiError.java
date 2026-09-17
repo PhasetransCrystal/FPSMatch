@@ -4,6 +4,7 @@ package com.ptcrys.fpsmatch.core.network;
  * API错误信息封装类
  */
 public class ApiError {
+
     private String message;
     private Throwable cause;
 

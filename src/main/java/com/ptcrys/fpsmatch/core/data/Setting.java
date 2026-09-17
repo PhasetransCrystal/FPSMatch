@@ -1,10 +1,11 @@
 package com.ptcrys.fpsmatch.core.data;
 
+import net.minecraft.network.FriendlyByteBuf;
+
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.ptcrys.fpsmatch.FPSMatch;
-import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.function.Function;
 
@@ -15,16 +16,17 @@ import java.util.function.Function;
  * <p>
  * 主要功能：
  * <ul>
- *     <li>存储配置项的名称、默认值和当前值。</li>
- *     <li>提供配置值的获取和设置方法。</li>
- *     <li>将配置值编码为 JSON 元素。</li>
- *     <li>从 JSON 元素中解码配置值。</li>
- *     <li>提供创建各种类型配置项的静态工厂方法。</li>
+ * <li>存储配置项的名称、默认值和当前值。</li>
+ * <li>提供配置值的获取和设置方法。</li>
+ * <li>将配置值编码为 JSON 元素。</li>
+ * <li>从 JSON 元素中解码配置值。</li>
+ * <li>提供创建各种类型配置项的静态工厂方法。</li>
  * </ul>
  *
  * @param <T> 配置值的类型，必须与指定的 Codec 兼容。
  */
 public class Setting<T> {
+
     public static final String DEFAULT_CATEGORY = "default";
 
     /**
@@ -52,8 +54,8 @@ public class Setting<T> {
     /**
      * 构造一个新的配置项实例。
      *
-     * @param configName 配置项的名称。
-     * @param codec      用于处理配置值的编解码器。
+     * @param configName   配置项的名称。
+     * @param codec        用于处理配置值的编解码器。
      * @param defaultValue 配置项的默认值。
      */
     public Setting(String configName, Codec<T> codec, T defaultValue) {
@@ -72,8 +74,8 @@ public class Setting<T> {
     /**
      * 构造一个新的配置项实例。
      *
-     * @param configName 配置项的名称。
-     * @param codec      用于处理配置值的编解码器。
+     * @param configName   配置项的名称。
+     * @param codec        用于处理配置值的编解码器。
      * @param defaultValue 配置项的默认值。
      */
     public Setting(String configName, Codec<T> codec, T defaultValue, Function<String, T> parser) {
@@ -110,7 +112,7 @@ public class Setting<T> {
         return value;
     }
 
-    public T getDefaultValue(){
+    public T getDefaultValue() {
         return defaultValue;
     }
 
@@ -156,7 +158,7 @@ public class Setting<T> {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return String.valueOf(this.value);
     }
 
@@ -172,32 +174,31 @@ public class Setting<T> {
         }).getFirst();
     }
 
-    public boolean parse(String value){
-        if(value == null) return false;
-        if(parser == null) return false;
+    public boolean parse(String value) {
+        if (value == null) return false;
+        if (parser == null) return false;
 
-        try{
+        try {
             this.value = parser.apply(value);
             return true;
-        }catch(Exception e){
+        } catch (Exception e) {
             FPSMatch.LOGGER.error(e.getMessage());
             return false;
         }
     }
 
-    public void readFromBuf(FriendlyByteBuf buf){
+    public void readFromBuf(FriendlyByteBuf buf) {
         value = buf.readJsonWithCodec(codec);
     }
 
-    public void writeToBuf(FriendlyByteBuf buf){
+    public void writeToBuf(FriendlyByteBuf buf) {
         buf.writeJsonWithCodec(codec, this.value);
     }
-
 
     /**
      * 创建一个整型配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */
@@ -212,7 +213,7 @@ public class Setting<T> {
     /**
      * 创建一个长整型配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */
@@ -227,7 +228,7 @@ public class Setting<T> {
     /**
      * 创建一个浮点型配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */
@@ -242,7 +243,7 @@ public class Setting<T> {
     /**
      * 创建一个双精度浮点型配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */
@@ -257,7 +258,7 @@ public class Setting<T> {
     /**
      * 创建一个字节型配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */
@@ -272,7 +273,7 @@ public class Setting<T> {
     /**
      * 创建一个布尔型配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */
@@ -295,7 +296,7 @@ public class Setting<T> {
     /**
      * 创建一个字符串配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */

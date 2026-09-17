@@ -1,23 +1,24 @@
 package com.ptcrys.fpsmatch.common.packet;
 
-import com.ptcrys.fpsmatch.core.data.SpawnPointData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.core.data.SpawnPointData;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
 public record OpenSpawnPointToolScreenS2CPacket(
-        List<String> availableTypes,
-        String selectedType,
-        List<String> availableMaps,
-        String selectedMap,
-        List<String> availableTeams,
-        String selectedTeam,
-        int selectedIndex,
-        List<SpawnPointData> spawnPoints
-) {
+                                                List<String> availableTypes,
+                                                String selectedType,
+                                                List<String> availableMaps,
+                                                String selectedMap,
+                                                List<String> availableTeams,
+                                                String selectedTeam,
+                                                int selectedIndex,
+                                                List<SpawnPointData> spawnPoints) {
+
     public static void encode(OpenSpawnPointToolScreenS2CPacket packet, FriendlyByteBuf buf) {
         writeStringList(buf, packet.availableTypes());
         buf.writeUtf(packet.selectedType());
@@ -38,8 +39,7 @@ public record OpenSpawnPointToolScreenS2CPacket(
                 readStringList(buf),
                 buf.readUtf(),
                 buf.readVarInt(),
-                buf.readJsonWithCodec(SpawnPointData.CODEC.listOf())
-        );
+                buf.readJsonWithCodec(SpawnPointData.CODEC.listOf()));
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {

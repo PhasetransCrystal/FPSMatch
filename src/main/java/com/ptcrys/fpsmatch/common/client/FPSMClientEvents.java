@@ -1,16 +1,5 @@
 package com.ptcrys.fpsmatch.common.client;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.client.data.RenderableArea;
-import com.ptcrys.fpsmatch.common.client.data.RenderablePoint;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
-import com.ptcrys.fpsmatch.common.client.spec.SpectateMode;
-import com.ptcrys.fpsmatch.common.client.spec.SpectateState;
-import com.ptcrys.fpsmatch.common.client.spec.SpectatorCameraController;
-import com.ptcrys.fpsmatch.common.effect.FPSMEffectRegister;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.mapselect.OpenMapSelectionC2SPacket;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -28,12 +17,24 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.client.data.RenderableArea;
+import com.ptcrys.fpsmatch.common.client.data.RenderablePoint;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
+import com.ptcrys.fpsmatch.common.client.spec.SpectateMode;
+import com.ptcrys.fpsmatch.common.client.spec.SpectateState;
+import com.ptcrys.fpsmatch.common.client.spec.SpectatorCameraController;
+import com.ptcrys.fpsmatch.common.effect.FPSMEffectRegister;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.mapselect.OpenMapSelectionC2SPacket;
+
 import java.util.Collection;
 import java.util.List;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-public class FPSMClientEvents
-{
+public class FPSMClientEvents {
+
     private static Button mapSelectionButton;
     private static int mapSelectionButtonX;
     private static int mapSelectionButtonY;
@@ -106,8 +107,7 @@ public class FPSMClientEvents
         }
         double mouseX = event.getMouseX();
         double mouseY = event.getMouseY();
-        if (mouseX < mapSelectionButtonX || mouseX >= mapSelectionButtonX + mapSelectionButtonWidth
-                || mouseY < mapSelectionButtonY || mouseY >= mapSelectionButtonY + mapSelectionButtonHeight) {
+        if (mouseX < mapSelectionButtonX || mouseX >= mapSelectionButtonX + mapSelectionButtonWidth || mouseY < mapSelectionButtonY || mouseY >= mapSelectionButtonY + mapSelectionButtonHeight) {
             return;
         }
         event.setCanceled(true);
@@ -152,8 +152,7 @@ public class FPSMClientEvents
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (event.phase == TickEvent.Phase.END && SpectateState.isRestricted()
-                && (player == null || !player.isSpectator())) {
+        if (event.phase == TickEvent.Phase.END && SpectateState.isRestricted() && (player == null || !player.isSpectator())) {
             // Also cover sessions entered directly by a team switch, without a killcam.
             SpectateState.set(SpectateMode.FREE);
             SpectatorCameraController.reset();
@@ -196,5 +195,4 @@ public class FPSMClientEvents
             poseStack.popPose();
         }
     }
-
 }

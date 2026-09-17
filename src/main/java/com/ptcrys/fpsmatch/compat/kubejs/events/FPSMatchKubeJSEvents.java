@@ -1,25 +1,25 @@
 package com.ptcrys.fpsmatch.compat.kubejs.events;
 
-import com.ptcrys.fpsmatch.common.event.FPSMapEvent;
-import com.ptcrys.fpsmatch.common.event.FPSMTeamEvent;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.core.team.BaseTeam;
-import dev.latvian.mods.kubejs.event.EventGroup;
-import dev.latvian.mods.kubejs.event.EventJS;
-import dev.latvian.mods.kubejs.event.EventExit;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.eventbus.api.Event;
-import org.jetbrains.annotations.Nullable;
+
+import com.ptcrys.fpsmatch.common.event.FPSMTeamEvent;
+import com.ptcrys.fpsmatch.common.event.FPSMapEvent;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
+import com.ptcrys.fpsmatch.core.team.BaseTeam;
+import dev.latvian.mods.kubejs.event.EventExit;
+import dev.latvian.mods.kubejs.event.EventGroup;
+import dev.latvian.mods.kubejs.event.EventJS;
 
 public class FPSMatchKubeJSEvents {
+
     public static final EventGroup GROUP = EventGroup.of("FPSMatchEvents");
 
-
     // ---- Base JS event ----
-    public abstract static class FPSMatchEventJS<E extends Event> extends EventJS{
+    public abstract static class FPSMatchEventJS<E extends Event> extends EventJS {
+
         protected final E event;
 
         public FPSMatchEventJS(E event) {
@@ -41,6 +41,7 @@ public class FPSMatchKubeJSEvents {
 
     // ---- Map event base ----
     public abstract static class FPSMapEventJS<E extends FPSMapEvent> extends FPSMatchEventJS<E> {
+
         public FPSMapEventJS(E event) {
             super(event);
         }
@@ -52,24 +53,28 @@ public class FPSMatchKubeJSEvents {
 
     // ---- Game lifecycle events ----
     public static class StartEventJS extends FPSMapEventJS<FPSMapEvent.StartEvent> {
+
         public StartEventJS(FPSMapEvent.StartEvent event) {
             super(event);
         }
     }
 
     public static class VictoryEventJS extends FPSMapEventJS<FPSMapEvent.VictoryEvent> {
+
         public VictoryEventJS(FPSMapEvent.VictoryEvent event) {
             super(event);
         }
     }
 
     public static class ClearEventJS extends FPSMapEventJS<FPSMapEvent.ClearEvent> {
+
         public ClearEventJS(FPSMapEvent.ClearEvent event) {
             super(event);
         }
     }
 
     public static class ResetEventJS extends FPSMapEventJS<FPSMapEvent.ResetEvent> {
+
         public ResetEventJS(FPSMapEvent.ResetEvent event) {
             super(event);
         }
@@ -77,6 +82,7 @@ public class FPSMatchKubeJSEvents {
 
     // ---- Player event base ----
     public abstract static class FPSMapPlayerEventJS<E extends FPSMapEvent.PlayerEvent> extends FPSMapEventJS<E> {
+
         public FPSMapPlayerEventJS(E event) {
             super(event);
         }
@@ -87,18 +93,21 @@ public class FPSMatchKubeJSEvents {
     }
 
     public static class PlayerJoinEventJS extends FPSMapPlayerEventJS<FPSMapEvent.PlayerEvent.JoinEvent> {
+
         public PlayerJoinEventJS(FPSMapEvent.PlayerEvent.JoinEvent event) {
             super(event);
         }
     }
 
     public static class PlayerLeaveEventJS extends FPSMapPlayerEventJS<FPSMapEvent.PlayerEvent.LeaveEvent> {
+
         public PlayerLeaveEventJS(FPSMapEvent.PlayerEvent.LeaveEvent event) {
             super(event);
         }
     }
 
     public static class PlayerHurtEventJS extends FPSMapPlayerEventJS<FPSMapEvent.PlayerEvent.HurtEvent> {
+
         public PlayerHurtEventJS(FPSMapEvent.PlayerEvent.HurtEvent event) {
             super(event);
         }
@@ -117,6 +126,7 @@ public class FPSMatchKubeJSEvents {
     }
 
     public static class PlayerDeathEventJS extends FPSMapPlayerEventJS<FPSMapEvent.PlayerEvent.DeathEvent> {
+
         public PlayerDeathEventJS(FPSMapEvent.PlayerEvent.DeathEvent event) {
             super(event);
         }
@@ -127,6 +137,7 @@ public class FPSMatchKubeJSEvents {
     }
 
     public static class PlayerKillEventJS extends FPSMapPlayerEventJS<FPSMapEvent.PlayerEvent.KillEvent> {
+
         public PlayerKillEventJS(FPSMapEvent.PlayerEvent.KillEvent event) {
             super(event);
         }
@@ -141,12 +152,14 @@ public class FPSMatchKubeJSEvents {
     }
 
     public static class PlayerLoggedInEventJS extends FPSMapPlayerEventJS<FPSMapEvent.PlayerEvent.LoggedInEvent> {
+
         public PlayerLoggedInEventJS(FPSMapEvent.PlayerEvent.LoggedInEvent event) {
             super(event);
         }
     }
 
     public static class PlayerLoggedOutEventJS extends FPSMapPlayerEventJS<FPSMapEvent.PlayerEvent.LoggedOutEvent> {
+
         public PlayerLoggedOutEventJS(FPSMapEvent.PlayerEvent.LoggedOutEvent event) {
             super(event);
         }
@@ -154,6 +167,7 @@ public class FPSMatchKubeJSEvents {
 
     // ---- Team events ----
     public abstract static class FPSMTeamEventJS<E extends FPSMTeamEvent> extends FPSMatchEventJS<E> {
+
         public FPSMTeamEventJS(E event) {
             super(event);
         }
@@ -164,6 +178,7 @@ public class FPSMatchKubeJSEvents {
     }
 
     public static class TeamJoinEventJS extends FPSMTeamEventJS<FPSMTeamEvent.JoinEvent> {
+
         public TeamJoinEventJS(FPSMTeamEvent.JoinEvent event) {
             super(event);
         }
@@ -174,6 +189,7 @@ public class FPSMatchKubeJSEvents {
     }
 
     public static class TeamLeaveEventJS extends FPSMTeamEventJS<FPSMTeamEvent.LeaveEvent> {
+
         public TeamLeaveEventJS(FPSMTeamEvent.LeaveEvent event) {
             super(event);
         }
@@ -184,6 +200,5 @@ public class FPSMatchKubeJSEvents {
     }
 
     // ---- No-arg constructors for KJS event group ----
-    public FPSMatchKubeJSEvents() {
-    }
+    public FPSMatchKubeJSEvents() {}
 }

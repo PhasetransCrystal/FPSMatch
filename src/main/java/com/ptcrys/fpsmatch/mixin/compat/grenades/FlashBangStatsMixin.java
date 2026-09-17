@@ -1,9 +1,10 @@
 package com.ptcrys.fpsmatch.mixin.compat.grenades;
 
+import net.minecraft.server.level.ServerPlayer;
+
 import club.pisquad.minecraft.csgrenades.entity.FlashBangEntity;
 import club.pisquad.minecraft.csgrenades.network.message.AffectedPlayerInfo;
 import com.ptcrys.fpsmatch.core.FPSMCore;
-import net.minecraft.server.level.ServerPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,7 +19,9 @@ import java.util.UUID;
 /** Consume the grenade's actual server result, including its occlusion and duration checks. */
 @Mixin(value = FlashBangEntity.class, remap = false)
 public abstract class FlashBangStatsMixin {
-    @Unique private final Set<UUID> fpsmatch$countedTargets = new HashSet<>();
+
+    @Unique
+    private final Set<UUID> fpsmatch$countedTargets = new HashSet<>();
 
     @Inject(method = "calculateAffectedPlayers", at = @At("RETURN"))
     private void fpsmatch$countFlashedEnemies(CallbackInfoReturnable<List<AffectedPlayerInfo>> cir) {

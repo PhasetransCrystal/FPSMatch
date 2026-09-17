@@ -1,7 +1,10 @@
 package com.ptcrys.fpsmatch.common.mapselect;
 
-import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+
 import com.ptcrys.fpsmatch.common.capability.map.DemolitionModeCapability;
+import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
 import com.ptcrys.fpsmatch.common.packet.mapselect.EditableShopInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
@@ -13,18 +16,15 @@ import com.ptcrys.fpsmatch.core.data.PlayerData;
 import com.ptcrys.fpsmatch.core.data.Setting;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
-import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 public final class MapRoomQueryService {
-    private MapRoomQueryService() {
-    }
+
+    private MapRoomQueryService() {}
 
     public static Optional<BaseMap> findMap(String gameType, String mapName) {
         if (!FPSMCore.initialized()) {
@@ -86,8 +86,7 @@ public final class MapRoomQueryService {
                 map.getCapabilityMap().get(DemolitionModeCapability.class).isPresent(),
                 "gui.fpsm.map_select.rules." + map.getGameType(),
                 map.getIconTexture(),
-                map.getBackgroundTexture()
-        );
+                map.getBackgroundTexture());
     }
 
     public static MapRoomSummary summary(ServerPlayer viewer, BaseMap map) {
@@ -115,8 +114,7 @@ public final class MapRoomQueryService {
                 joinedMap,
                 spectating,
                 viewer.hasPermissions(2),
-                map.getReadyCountdownSeconds()
-        );
+                map.getReadyCountdownSeconds());
     }
 
     public static List<MapRoomPlayerInfo> players(BaseMap map) {
@@ -160,8 +158,7 @@ public final class MapRoomQueryService {
                 .map(ServerPlayer::getUUID)
                 .sorted()
                 .reduce(0xcbf29ce484222325L,
-                        (hash, uuid) -> ((hash ^ uuid.getMostSignificantBits()) * 0x100000001b3L
-                                ^ uuid.getLeastSignificantBits()) * 0x100000001b3L,
+                        (hash, uuid) -> ((hash ^ uuid.getMostSignificantBits()) * 0x100000001b3L ^ uuid.getLeastSignificantBits()) * 0x100000001b3L,
                         (left, right) -> (left ^ right) * 0x100000001b3L);
     }
 
@@ -181,8 +178,7 @@ public final class MapRoomQueryService {
                 team.getName(),
                 team.isSpectator(),
                 data.getPlayer().isPresent(),
-                map.isReady(data.getOwner())
-        );
+                map.isReady(data.getOwner()));
     }
 
     public static List<MapRoomTeamInfo> teams(BaseMap map) {
@@ -191,8 +187,7 @@ public final class MapRoomQueryService {
                         team.getName(),
                         team.getPlayerCount(),
                         team.getPlayerLimit(),
-                        team.isSpectator()
-                ))
+                        team.isSpectator()))
                 .sorted(Comparator.comparing(MapRoomTeamInfo::spectator).thenComparing(MapRoomTeamInfo::name))
                 .toList();
     }
@@ -216,9 +211,7 @@ public final class MapRoomQueryService {
             type = MapRoomSettingInfo.SettingType.OTHER;
         }
 
-        NumericPresentation numeric = value instanceof Number number
-                ? numericPresentation(configName, number.doubleValue(), defaultValue)
-                : NumericPresentation.none();
+        NumericPresentation numeric = value instanceof Number number ? numericPresentation(configName, number.doubleValue(), defaultValue) : NumericPresentation.none();
         return new MapRoomSettingInfo(configName, setting.toString(), String.valueOf(defaultValue), editable,
                 translationKey, type, translationKey + ".desc", numeric.slider(),
                 numeric.min(), numeric.max(), numeric.step(), setting.getCategory());
@@ -226,9 +219,7 @@ public final class MapRoomQueryService {
 
     private static boolean isBaseSetting(String name) {
         return switch (name) {
-            case "minAssistDamageRatio", "allowJoinInProgress", "teammateGlow", "enemyGlow",
-                    "hideEnemyNameTag", "displayName", "iconTexture", "backgroundTexture",
-                    "autoStart", "autoStartTime", "readyStartEnabled", "readyStartTime" -> true;
+            case "minAssistDamageRatio", "allowJoinInProgress", "teammateGlow", "enemyGlow", "hideEnemyNameTag", "displayName", "iconTexture", "backgroundTexture", "autoStart", "autoStartTime", "readyStartEnabled", "readyStartTime" -> true;
             default -> false;
         };
     }
@@ -250,6 +241,7 @@ public final class MapRoomQueryService {
     }
 
     private record NumericPresentation(boolean slider, double min, double max, double step) {
+
         private static NumericPresentation none() {
             return new NumericPresentation(false, 0.0, 0.0, 1.0);
         }

@@ -1,13 +1,15 @@
 package com.ptcrys.fpsmatch.common.command;
 
-import com.mojang.brigadier.Command;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+
 /** Shared paths keep client execution and server-side help in sync. */
 public final class FPSMClientCommands {
+
     private FPSMClientCommands() {}
 
     public static void append(LiteralArgumentBuilder<CommandSourceStack> root,

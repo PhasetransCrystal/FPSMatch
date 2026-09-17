@@ -10,8 +10,8 @@ import java.util.UUID;
 
 /** Client-side affordance model. The server remains authoritative for every action. */
 public final class TeamActionModel {
-    private TeamActionModel() {
-    }
+
+    private TeamActionModel() {}
 
     public static List<String> availableTargetTeams(MapRoomDetail detail, UUID player) {
         if (detail == null || player == null || !canSwitchInRoom(detail)) {

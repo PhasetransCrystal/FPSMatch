@@ -1,13 +1,5 @@
 package com.ptcrys.fpsmatch.common.item.tool;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.item.tool.handler.ClickAction;
-import com.ptcrys.fpsmatch.common.item.tool.handler.ClickActionContext;
-import com.ptcrys.fpsmatch.common.item.tool.handler.EditToolClickHandler;
-import com.ptcrys.fpsmatch.common.packet.EditToolClickC2SPacket;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -21,6 +13,14 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.item.tool.handler.ClickAction;
+import com.ptcrys.fpsmatch.common.item.tool.handler.ClickActionContext;
+import com.ptcrys.fpsmatch.common.packet.EditToolClickC2SPacket;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
+import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,6 +31,7 @@ import java.util.function.Function;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public abstract class EditToolItem extends FPSMToolItem {
+
     public static final String TYPE_TAG = "SelectedType";
     public static final String MAP_TAG = "SelectedMap";
     public static final String TEAM_TAG = "SelectedTeam";
@@ -46,27 +47,28 @@ public abstract class EditToolItem extends FPSMToolItem {
 
     @Override
     protected void onLeftClick(ClickActionContext context) {
-        if(context.isDoubleClicked()){
+        if (context.isDoubleClicked()) {
             if (context.isShiftKeyDown()) {
                 clearAllSelections(context);
             }
-        }else{
+        } else {
             EditMode currentMode = this.getCurrentEditMode(context.stack());
             EditMode nextMode = getNextEditMode(currentMode);
             this.setEditMode(context.stack(), nextMode);
             context.player().displayClientMessage(
                     Component.translatable("message.fpsm.edit_tool.switch_mode",
-                            getModeName(nextMode)).withStyle(ChatFormatting.DARK_AQUA), true);
+                            getModeName(nextMode)).withStyle(ChatFormatting.DARK_AQUA),
+                    true);
         }
     }
 
     @Override
     protected void onRightClick(ClickActionContext context) {
-        if(context.isShiftKeyDown()){
+        if (context.isShiftKeyDown()) {
             EditMode currentMode = this.getCurrentEditMode(context.stack());
             this.modifyCurrentModeContent(context.stack(),
                     context.player(), currentMode);
-        }else{
+        } else {
             this.doEdit(context);
         }
     }
@@ -97,7 +99,6 @@ public abstract class EditToolItem extends FPSMToolItem {
                 Component.translatable("message.fpsm.edit_tool.clear").withStyle(ChatFormatting.DARK_AQUA), true);
     }
 
-
     public EditMode getCurrentEditMode(ItemStack stack) {
         CompoundTag tag = stack.getOrCreateTag();
         if (!tag.contains(EDIT_MODE_TAG)) {
@@ -125,11 +126,11 @@ public abstract class EditToolItem extends FPSMToolItem {
 
     public abstract List<String> getTeamsByMap(String type, String mapName);
 
-    public List<String> getTeamsByMap(String type, String mapName, Function<ServerTeam,Boolean> checker) {
+    public List<String> getTeamsByMap(String type, String mapName, Function<ServerTeam, Boolean> checker) {
         List<String> teamList = new ArrayList<>();
         Optional<BaseMap> map = FPSMCore.getInstance().getMapByTypeWithName(type, mapName);
         map.ifPresent(baseMap -> baseMap.getMapTeams().getNormalTeams().forEach(team -> {
-            if(checker.apply(team)) {
+            if (checker.apply(team)) {
                 teamList.add(team.name);
             }
         }));
@@ -162,8 +163,7 @@ public abstract class EditToolItem extends FPSMToolItem {
                 String type = this.getTag(stack, TYPE_TAG);
                 String map = this.getTag(stack, MAP_TAG);
                 if (type.isEmpty() || map.isEmpty()) {
-                    MutableComponent msg = type.isEmpty() ? Component.translatable("message.fpsm.edit_tool.missing_type")
-                            : Component.translatable("message.fpsm.edit_tool.missing_map");
+                    MutableComponent msg = type.isEmpty() ? Component.translatable("message.fpsm.edit_tool.missing_type") : Component.translatable("message.fpsm.edit_tool.missing_map");
                     player.displayClientMessage(msg
                             .withStyle(ChatFormatting.RED), true);
                     return;
@@ -321,19 +321,19 @@ public abstract class EditToolItem extends FPSMToolItem {
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.edit_tool.selected.type")
                 .append(": ")
                 .append(Component.literal(selectedType.isEmpty() ?
-                                Component.translatable("tooltip.fpsm.none").getString() : selectedType)
+                        Component.translatable("tooltip.fpsm.none").getString() : selectedType)
                         .withStyle(ChatFormatting.LIGHT_PURPLE)));
 
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.edit_tool.selected.map")
                 .append(": ")
                 .append(Component.literal(selectedMap.isEmpty() ?
-                                Component.translatable("tooltip.fpsm.none").getString() : selectedMap)
+                        Component.translatable("tooltip.fpsm.none").getString() : selectedMap)
                         .withStyle(ChatFormatting.AQUA)));
 
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.edit_tool.selected.team")
                 .append(": ")
                 .append(Component.literal(selectedShop.isEmpty() ?
-                                Component.translatable("tooltip.fpsm.none").getString() : selectedShop)
+                        Component.translatable("tooltip.fpsm.none").getString() : selectedShop)
                         .withStyle(ChatFormatting.GREEN)));
 
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
@@ -351,7 +351,6 @@ public abstract class EditToolItem extends FPSMToolItem {
 
         FPSMatch.sendToServer(new EditToolClickC2SPacket(
                 ClickAction.LEFT_CLICK,
-                player.isShiftKeyDown()
-        ));
+                player.isShiftKeyDown()));
     }
 }

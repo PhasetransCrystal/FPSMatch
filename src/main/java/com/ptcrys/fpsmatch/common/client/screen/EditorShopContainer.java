@@ -1,17 +1,5 @@
 package com.ptcrys.fpsmatch.common.client.screen;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
-import com.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorValues;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
-import com.ptcrys.fpsmatch.core.shop.FPSMShop;
-import com.ptcrys.fpsmatch.core.shop.INamedType;
-import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
-import com.ptcrys.fpsmatch.util.FPSMCodec;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,11 +12,25 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.network.NetworkHooks;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
+import com.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorValues;
+import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.shop.FPSMShop;
+import com.ptcrys.fpsmatch.core.shop.INamedType;
+import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
+import com.ptcrys.fpsmatch.util.FPSMCodec;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
 public class EditorShopContainer extends AbstractContainerMenu {
+
     public static final int SLOT_SIZE = 18;
     public static final int SLOT_GAP = 10;
     public static final int SLOT_SPACING_X = SLOT_SIZE + 4 * SLOT_GAP;
@@ -48,8 +50,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
     private final Map<String, TypeInfo> types = new LinkedHashMap<>();
     private final List<ShopSlot> allShopSlots;
 
-    public record TypeInfo(String name, int slotCount, int startIndex) {
-    }
+    public record TypeInfo(String name, int slotCount, int startIndex) {}
 
     // Server-side constructor
     public EditorShopContainer(int containerId, Inventory playerInventory, FPSMShop<?> shop, String gameType, String mapName, String teamName) {
@@ -91,8 +92,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
                         itemStackHandler,
                         slotIndex,
                         getGridLeft() + col * SLOT_SPACING_X,
-                        getGridTop() + row * SLOT_SPACING_Y
-                );
+                        getGridTop() + row * SLOT_SPACING_Y);
                 this.addSlot(customSlot);
                 if (!slotItem.isEmpty()) {
                     itemStackHandler.setStackInSlot(slotIndex, slotItem);
@@ -137,8 +137,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
                 if (!json.isEmpty()) {
                     try {
                         shopSlot = FPSMCodec.decodeFromJson(ShopSlot.CODEC, new Gson().fromJson(json, JsonElement.class));
-                    } catch (Exception ignored) {
-                    }
+                    } catch (Exception ignored) {}
                 }
                 if (shopSlot != null) {
                     this.allShopSlots.set(slotIndex, shopSlot);
@@ -147,8 +146,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
                         itemStackHandler,
                         slotIndex,
                         getGridLeft() + col * SLOT_SPACING_X,
-                        getGridTop() + row * SLOT_SPACING_Y
-                );
+                        getGridTop() + row * SLOT_SPACING_Y);
                 this.addSlot(customSlot);
                 if (!slotItem.isEmpty()) {
                     itemStackHandler.setStackInSlot(slotIndex, slotItem);
@@ -218,9 +216,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
         if (player.level().isClientSide) {
             return true;
         }
-        return player instanceof ServerPlayer serverPlayer
-                && MapRoomQueryService.isMapOperator(serverPlayer)
-                && resolveCurrentShop().isPresent();
+        return player instanceof ServerPlayer serverPlayer && MapRoomQueryService.isMapOperator(serverPlayer) && resolveCurrentShop().isPresent();
     }
 
     @Override
@@ -264,8 +260,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
 
     @Override
     public void clicked(int slotIndex, int button, @NotNull ClickType clickType, @NotNull Player player) {
-        if (player instanceof ServerPlayer serverPlayer
-                && (!MapRoomQueryService.isMapOperator(serverPlayer) || resolveCurrentShop().isEmpty())) {
+        if (player instanceof ServerPlayer serverPlayer && (!MapRoomQueryService.isMapOperator(serverPlayer) || resolveCurrentShop().isEmpty())) {
             FPSMatch.sendToPlayer(serverPlayer, new MapRoomToastS2CPacket(
                     Component.translatable("gui.fpsm.shop_editor.open.no_permission"), true));
             return;
@@ -307,14 +302,19 @@ public class EditorShopContainer extends AbstractContainerMenu {
             SlotRef ref = getShopSlotRef(index);
             if (ref == null) return EditShopSlotMenu.SaveResult.INVALID_SLOT;
             final List<ShopSlot> current;
-            try { current = shop.getDefaultShopSlotListByType(ref.type()); }
-            catch (IllegalArgumentException invalid) { return EditShopSlotMenu.SaveResult.INVALID_SLOT; }
+            try {
+                current = shop.getDefaultShopSlotListByType(ref.type());
+            } catch (IllegalArgumentException invalid) {
+                return EditShopSlotMenu.SaveResult.INVALID_SLOT;
+            }
             if (current == null || ref.slotNum() >= current.size() || current.get(ref.slotNum()) == null)
                 return EditShopSlotMenu.SaveResult.INVALID_SLOT;
             if (current.get(ref.slotNum()) != allShopSlots.get(index)) return EditShopSlotMenu.SaveResult.STALE_SLOT;
             ShopSlot replacement = current.get(ref.slotNum()).copy();
             replacement.setGroupId(groupId);
-            refs.add(ref); lists.add(current); replacements.add(replacement);
+            refs.add(ref);
+            lists.add(current);
+            replacements.add(replacement);
         }
         for (int i = 0; i < indices.length; i++) {
             lists.get(i).set(refs.get(i).slotNum(), replacements.get(i));
@@ -339,8 +339,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
             NetworkHooks.openScreen(serverPlayer,
                     new SimpleMenuProvider(
                             (windowId, inv, p) -> new EditShopSlotMenu(windowId, inv, shopSlot, gameType, mapName, teamName, slotRef.type(), slotRef.slotNum()),
-                            Component.translatable("gui.fpsm.edit_shop_slot.title")
-                    ),
+                            Component.translatable("gui.fpsm.edit_shop_slot.title")),
                     buf -> {
                         String json = "";
                         try {
@@ -357,8 +356,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
                         buf.writeCollection(shopSlot.getListenerNames(), (out, name) -> out.writeUtf(name, 256));
                         buf.writeCollection(com.ptcrys.fpsmatch.core.FPSMCore.getInstance().getListenerModuleManager()
                                 .getListenerModules().stream().sorted().toList(), (out, name) -> out.writeUtf(name, 256));
-                    }
-            );
+                    });
         }
     }
 
@@ -368,6 +366,5 @@ public class EditorShopContainer extends AbstractContainerMenu {
                 .flatMap(ShopCapability::getShop);
     }
 
-    private record SlotRef(String type, int slotNum) {
-    }
+    private record SlotRef(String type, int slotNum) {}
 }

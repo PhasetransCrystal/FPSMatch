@@ -1,19 +1,21 @@
 package com.ptcrys.fpsmatch.core.team;
 
-import com.ptcrys.fpsmatch.core.capability.CapabilityMap;
-import com.ptcrys.fpsmatch.core.data.PlayerData;
-import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
-import com.ptcrys.fpsmatch.common.event.FPSMTeamEvent;
-import com.ptcrys.fpsmatch.util.RenderUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.common.MinecraftForge;
+
+import com.ptcrys.fpsmatch.common.event.FPSMTeamEvent;
+import com.ptcrys.fpsmatch.core.capability.CapabilityMap;
+import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
+import com.ptcrys.fpsmatch.core.data.PlayerData;
+import com.ptcrys.fpsmatch.util.RenderUtil;
 import org.joml.Vector3f;
 
 import java.util.*;
 
 public abstract class BaseTeam {
+
     public final String name;
     public final String gameType;
     public final String mapName;
@@ -37,23 +39,32 @@ public abstract class BaseTeam {
         return capabilities;
     }
 
-
-    public boolean join(Player player){
-       return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.JoinEvent(this,player));
+    public boolean join(Player player) {
+        return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.JoinEvent(this, player));
     };
 
-    public boolean leave(Player player){
-        return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.LeaveEvent(this,player));
+    public boolean leave(Player player) {
+        return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.LeaveEvent(this, player));
     };
+
     public abstract void delPlayer(UUID player);
+
     public abstract void resetLiving();
+
     public abstract Optional<PlayerData> getPlayerData(UUID player);
+
     public abstract List<PlayerData> getPlayersData();
+
     public abstract List<UUID> getPlayerList();
+
     public abstract boolean hasPlayer(UUID uuid);
+
     public abstract int getPlayerCount();
+
     public abstract boolean isEmpty();
+
     public abstract Map<UUID, PlayerData> getPlayers();
+
     public abstract void clearAndPutPlayers(Map<UUID, PlayerData> players);
 
     public abstract void sendMessage(Component message, boolean onlyLiving);
@@ -70,8 +81,8 @@ public abstract class BaseTeam {
     }
 
     /**
-     * @apiNote  只在服务端返回不为null
-     * */
+     * @apiNote 只在服务端返回不为null
+     */
     public PlayerTeam getPlayerTeam() {
         return playerTeam;
     }
@@ -88,7 +99,7 @@ public abstract class BaseTeam {
         return this.gameType + "_" + this.mapName + "_" + this.name;
     }
 
-    public String getName(){
+    public String getName() {
         return this.name;
     }
 
@@ -96,7 +107,7 @@ public abstract class BaseTeam {
         return color;
     }
 
-    public int getColor(){
+    public int getColor() {
         return RenderUtil.color(color);
     }
 
@@ -104,11 +115,11 @@ public abstract class BaseTeam {
         this.color = color;
     }
 
-    public void resetCapabilities(){
+    public void resetCapabilities() {
         this.capabilities.resetAll();
     }
 
-    public void clean(){
+    public void clean() {
         this.resetCapabilities();
         this.setScores(0);
         this.getPlayers().clear();
@@ -116,7 +127,7 @@ public abstract class BaseTeam {
 
     @Override
     public boolean equals(Object obj) {
-        if(obj instanceof BaseTeam team){
+        if (obj instanceof BaseTeam team) {
             return this.gameType.equals(team.gameType) && this.mapName.equals(team.mapName) && this.name.equals(team.name);
         }
         return false;
@@ -130,7 +141,7 @@ public abstract class BaseTeam {
         return isSpectator;
     }
 
-    public boolean isNormal(){
+    public boolean isNormal() {
         return !isSpectator;
     }
 }

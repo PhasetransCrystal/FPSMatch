@@ -7,6 +7,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public class ClientFakeItemManager {
+
     private static ItemStack oldStack = ItemStack.EMPTY;
     private static ItemStack mirrorStack = ItemStack.EMPTY;
     private static boolean isHoldingFake = false;
@@ -100,10 +101,19 @@ public class ClientFakeItemManager {
     }
 
     // Getter方法
-    public static boolean isHoldingFakeItem() { return isHoldingFake; }
-    public static int getFakeSlotIndex() { return fakeSlotIndex; }
-    public static ItemStack getCurrentFakeStack() { return mirrorStack; }
-    public static boolean isFakeGun() { 
-        return isHoldingFake && mirrorStack.getItem() instanceof com.tacz.guns.api.item.IGun; 
+    public static boolean isHoldingFakeItem() {
+        return isHoldingFake;
+    }
+
+    public static int getFakeSlotIndex() {
+        return fakeSlotIndex;
+    }
+
+    public static ItemStack getCurrentFakeStack() {
+        return mirrorStack;
+    }
+
+    public static boolean isFakeGun() {
+        return isHoldingFake && mirrorStack.getItem() instanceof com.tacz.guns.api.item.IGun;
     }
 }

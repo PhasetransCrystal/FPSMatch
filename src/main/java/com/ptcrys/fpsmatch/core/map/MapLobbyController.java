@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 对局中状态由 {@link BaseMap} 本身和回合生命周期负责，本类只处理“开始前的等待大厅”。
  */
 public class MapLobbyController {
+
     private final BaseMap map;
 
     // 已准备玩家集合（旁观者不计入）

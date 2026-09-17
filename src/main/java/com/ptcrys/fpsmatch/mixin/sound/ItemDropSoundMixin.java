@@ -1,17 +1,18 @@
 package com.ptcrys.fpsmatch.mixin.sound;
 
-import com.ptcrys.fpsmatch.common.sound.FPSMSoundRegister;
-import com.ptcrys.fpsmatch.compat.LrtacticalCompat;
-import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
-import com.ptcrys.fpsmatch.compat.gun.GunTabTypeEnum;
-import com.ptcrys.fpsmatch.compat.gun.IGunProvider;
-import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+
+import com.ptcrys.fpsmatch.common.sound.FPSMSoundRegister;
+import com.ptcrys.fpsmatch.compat.LrtacticalCompat;
+import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
+import com.ptcrys.fpsmatch.compat.gun.GunTabTypeEnum;
+import com.ptcrys.fpsmatch.compat.gun.IGunProvider;
+import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -21,24 +22,26 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ItemEntity.class)
 public abstract class ItemDropSoundMixin extends Entity {
+
     public ItemDropSoundMixin(EntityType<?> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
 
     @Shadow
     public abstract ItemStack getItem();
+
     @Unique
     private boolean fpsmatch$hasPlayedLandSound = false;
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void onTick(CallbackInfo ci) {
-        if(this.level().isClientSide) return;
+        if (this.level().isClientSide) return;
 
         if (this.onGround() && !fpsmatch$hasPlayedLandSound) {
             fpsmatch$playLandSound(this.getItem());
             fpsmatch$hasPlayedLandSound = true;
-        }else{
-            if(!this.onGround()) fpsmatch$hasPlayedLandSound = false;
+        } else {
+            if (!this.onGround()) fpsmatch$hasPlayedLandSound = false;
         }
     }
 
@@ -53,9 +56,9 @@ public abstract class ItemDropSoundMixin extends Entity {
                         this.getSoundSource(), 0.3F, 0.8F + this.random.nextFloat() * 0.4F);
             } else {
                 SoundEvent sound;
-                if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack.getItem())){
+                if (FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack.getItem())) {
                     sound = FPSMSoundRegister.getKnifeDropSound();
-                }else{
+                } else {
                     sound = FPSMSoundRegister.getItemDropSound(itemStack.getItem());
                 }
 

@@ -1,9 +1,5 @@
 package com.ptcrys.fpsmatch.common.event;
 
-import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.core.data.PlayerData;
-import com.ptcrys.fpsmatch.core.team.ServerTeam;
-import com.ptcrys.fpsmatch.util.FPSMUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -11,6 +7,10 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.eventbus.api.Event;
+
+import com.ptcrys.fpsmatch.core.data.PlayerData;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
+import com.ptcrys.fpsmatch.core.team.ServerTeam;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class FPSMapEvent extends Event {
+
     private final BaseMap map;
 
     public FPSMapEvent(BaseMap map) {
@@ -32,6 +33,7 @@ public class FPSMapEvent extends Event {
     }
 
     public static class VictoryEvent extends FPSMapEvent {
+
         private final Map<UUID, PlayerScoreSnapshot> scoreboard;
         private final Map<String, TeamScoreSummary> teamSummaries;
 
@@ -76,21 +78,16 @@ public class FPSMapEvent extends Event {
 
         private static Map<UUID, PlayerScoreSnapshot> buildScoreboardSnapshot(BaseMap map) {
             List<PlayerScoreSnapshot> snapshots = new ArrayList<>();
-            map.getMapTeams().getNormalTeams().forEach(team ->
-                    team.getPlayers().forEach((uuid, data) ->
-                            snapshots.add(new PlayerScoreSnapshot(
-                                    uuid,
-                                    data.name().copy(),
-                                    team.getName(),
-                                    data.getScores(),
-                                    data.getKills(),
-                                    data.getDeaths(),
-                                    data.getAssists(),
-                                    data.getDamage(),
-                                    data.getHeadshotRate()
-                            ))
-                    )
-            );
+            map.getMapTeams().getNormalTeams().forEach(team -> team.getPlayers().forEach((uuid, data) -> snapshots.add(new PlayerScoreSnapshot(
+                    uuid,
+                    data.name().copy(),
+                    team.getName(),
+                    data.getScores(),
+                    data.getKills(),
+                    data.getDeaths(),
+                    data.getAssists(),
+                    data.getDamage(),
+                    data.getHeadshotRate()))));
 
             snapshots.sort(Comparator
                     .comparingInt(PlayerScoreSnapshot::scores).reversed()
@@ -133,8 +130,7 @@ public class FPSMapEvent extends Event {
                         totalDeaths,
                         totalAssists,
                         totalDamage,
-                        averageHeadshotRate
-                ));
+                        averageHeadshotRate));
             });
 
             return Map.copyOf(summaries);
@@ -142,30 +138,29 @@ public class FPSMapEvent extends Event {
     }
 
     public record PlayerScoreSnapshot(
-            UUID player,
-            Component name,
-            String team,
-            int scores,
-            int kills,
-            int deaths,
-            int assists,
-            float damage,
-            float headshotRate
-    ) {}
+                                      UUID player,
+                                      Component name,
+                                      String team,
+                                      int scores,
+                                      int kills,
+                                      int deaths,
+                                      int assists,
+                                      float damage,
+                                      float headshotRate) {}
 
     public record TeamScoreSummary(
-            String team,
-            int roundScores,
-            int playerCount,
-            int totalPlayerScores,
-            int totalKills,
-            int totalDeaths,
-            int totalAssists,
-            float totalDamage,
-            float averageHeadshotRate
-    ) {}
+                                   String team,
+                                   int roundScores,
+                                   int playerCount,
+                                   int totalPlayerScores,
+                                   int totalKills,
+                                   int totalDeaths,
+                                   int totalAssists,
+                                   float totalDamage,
+                                   float averageHeadshotRate) {}
 
     public static class ClearEvent extends FPSMapEvent {
+
         public ClearEvent(BaseMap map) {
             super(map);
         }
@@ -177,12 +172,14 @@ public class FPSMapEvent extends Event {
     }
 
     public static class ResetEvent extends FPSMapEvent {
+
         public ResetEvent(BaseMap map) {
             super(map);
         }
     }
 
     public static class StartEvent extends FPSMapEvent {
+
         public StartEvent(BaseMap map) {
             super(map);
         }
@@ -194,6 +191,7 @@ public class FPSMapEvent extends Event {
     }
 
     public static class ReloadEvent extends FPSMapEvent {
+
         public ReloadEvent(BaseMap map) {
             super(map);
         }
@@ -205,6 +203,7 @@ public class FPSMapEvent extends Event {
     }
 
     public static class LoadEvent extends FPSMapEvent {
+
         public LoadEvent(BaseMap map) {
             super(map);
         }
@@ -213,7 +212,7 @@ public class FPSMapEvent extends Event {
     /**
      * 你不能直接监听这个Event!!!!
      * 未在游戏中的地图不会发布这个事件
-     * */
+     */
     public static class PlayerEvent extends FPSMapEvent {
 
         private final ServerPlayer player;
@@ -251,7 +250,8 @@ public class FPSMapEvent extends Event {
             }
         }
 
-        public static class HurtEvent extends PlayerEvent{
+        public static class HurtEvent extends PlayerEvent {
+
             private final DamageSource source;
             private float amount;
 
@@ -264,10 +264,10 @@ public class FPSMapEvent extends Event {
             public DamageSource getSource() {
                 return source;
             }
+
             public Optional<ServerPlayer> getAttacker() {
                 return this.getMap().getAttackerFromDamageSource(this.source);
             }
-
 
             public float getAmount() {
                 return amount;
@@ -284,6 +284,7 @@ public class FPSMapEvent extends Event {
         }
 
         public static class DeathEvent extends PlayerEvent {
+
             private final DamageSource source;
 
             public DeathEvent(BaseMap map, ServerPlayer dead, DamageSource source) {
@@ -306,6 +307,7 @@ public class FPSMapEvent extends Event {
         }
 
         public static class KillEvent extends PlayerEvent {
+
             private final DamageSource source;
             private final ServerPlayer dead;
             private final boolean headshot;
@@ -347,6 +349,7 @@ public class FPSMapEvent extends Event {
          * 取消该事件将阻止本次“击杀数/爆头击杀数”写入，但不影响后续 KillEvent 广播。
          */
         public static class KillRecordEvent extends PlayerEvent {
+
             private final DamageSource source;
             private final ServerPlayer dead;
 
@@ -371,15 +374,17 @@ public class FPSMapEvent extends Event {
         }
 
         public static class LoggedInEvent extends PlayerEvent {
+
             public LoggedInEvent(BaseMap map, ServerPlayer player) {
                 super(map, player);
             }
         }
 
         /*
-        * 可以被取消，取消后不会退出队伍，需要额外处理一些逻辑来应对这个情况
-        * */
+         * 可以被取消，取消后不会退出队伍，需要额外处理一些逻辑来应对这个情况
+         */
         public static class LoggedOutEvent extends PlayerEvent {
+
             public LoggedOutEvent(BaseMap map, ServerPlayer player) {
                 super(map, player);
             }
@@ -391,6 +396,7 @@ public class FPSMapEvent extends Event {
         }
 
         public static class PickupItemEvent extends PlayerEvent {
+
             private final ItemEntity itemEntity;
             private final ItemStack stack;
 
@@ -415,7 +421,9 @@ public class FPSMapEvent extends Event {
         }
 
         public static class TossItemEvent extends PlayerEvent {
+
             private final ItemEntity item;
+
             public TossItemEvent(BaseMap map, ServerPlayer player, ItemEntity item) {
                 super(map, player);
                 this.item = item;
@@ -432,9 +440,10 @@ public class FPSMapEvent extends Event {
         }
 
         public static class ChatEvent extends PlayerEvent {
+
             private final String message;
 
-            public ChatEvent(BaseMap map, ServerPlayer player,String message) {
+            public ChatEvent(BaseMap map, ServerPlayer player, String message) {
                 super(map, player);
                 this.message = message;
             }

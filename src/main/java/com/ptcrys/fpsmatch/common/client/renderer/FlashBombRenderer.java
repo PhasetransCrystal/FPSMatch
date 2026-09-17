@@ -1,8 +1,5 @@
 package com.ptcrys.fpsmatch.common.client.renderer;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.ptcrys.fpsmatch.common.entity.throwable.FlashBombEntity;
-import com.ptcrys.fpsmatch.common.item.FPSMItemRegister;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -11,6 +8,10 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.ptcrys.fpsmatch.common.entity.throwable.FlashBombEntity;
+import com.ptcrys.fpsmatch.common.item.FPSMItemRegister;
 import org.jetbrains.annotations.NotNull;
 
 public class FlashBombRenderer implements EntityRendererProvider<FlashBombEntity> {
@@ -18,6 +19,7 @@ public class FlashBombRenderer implements EntityRendererProvider<FlashBombEntity
     @Override
     public @NotNull EntityRenderer<FlashBombEntity> create(@NotNull Context context) {
         return new EntityRenderer<>(context) {
+
             ItemEntity item = null;
             ItemEntityRenderer itemRender = null;
 
@@ -29,10 +31,10 @@ public class FlashBombRenderer implements EntityRendererProvider<FlashBombEntity
             @Override
             public void render(@NotNull FlashBombEntity entity, float pEntityYaw, float pPartialTicks, @NotNull PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
                 super.render(entity, pEntityYaw, pPartialTicks, pPoseStack, pBuffer, pPackedLight);
-                if(entity.getState() == 2) return;
+                if (entity.getState() == 2) return;
                 pPoseStack.pushPose();
                 pPoseStack.translate(0.0F, -0.25F, 0.0F);
-                if(item == null) {
+                if (item == null) {
                     item = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), new ItemStack(FPSMItemRegister.FLASH_BOMB.get()));
                     itemRender = new ItemEntityRenderer(context);
                 }
@@ -41,7 +43,6 @@ public class FlashBombRenderer implements EntityRendererProvider<FlashBombEntity
                 itemRender.render(item, pEntityYaw, 0, pPoseStack, pBuffer, pPackedLight);
                 pPoseStack.popPose();
             }
-
         };
     }
 }

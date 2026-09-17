@@ -1,12 +1,5 @@
 package com.ptcrys.fpsmatch.compat;
 
-import me.xjqsh.lrtactical.api.LrTacticalAPI;
-import me.xjqsh.lrtactical.api.item.IMeleeWeapon;
-import me.xjqsh.lrtactical.api.item.IThrowable;
-import me.xjqsh.lrtactical.client.resource.display.MeleeDisplayInstance;
-import me.xjqsh.lrtactical.entity.SmokeGrenadeEntity;
-import me.xjqsh.lrtactical.entity.ThrowableItemEntity;
-import me.xjqsh.lrtactical.entity.sp.SpEffectCloudEntity;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
@@ -14,10 +7,17 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import me.xjqsh.lrtactical.api.LrTacticalAPI;
+import me.xjqsh.lrtactical.api.item.IMeleeWeapon;
+import me.xjqsh.lrtactical.api.item.IThrowable;
+import me.xjqsh.lrtactical.client.resource.display.MeleeDisplayInstance;
+import me.xjqsh.lrtactical.entity.SmokeGrenadeEntity;
+import me.xjqsh.lrtactical.entity.ThrowableItemEntity;
+import me.xjqsh.lrtactical.entity.sp.SpEffectCloudEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -25,10 +25,10 @@ import java.util.Locale;
 import java.util.Optional;
 
 public class LrtacticalCompat {
+
     /** Includes all data-pack throwable variants and their lingering effect clouds. */
     public static boolean isUtilityDamage(DamageSource source) {
-        return isProjectile(source) || source.getDirectEntity() instanceof SpEffectCloudEntity
-                || source.getEntity() instanceof SpEffectCloudEntity;
+        return isProjectile(source) || source.getDirectEntity() instanceof SpEffectCloudEntity || source.getEntity() instanceof SpEffectCloudEntity;
     }
 
     public static boolean isProjectile(DamageSource source) {
@@ -87,7 +87,7 @@ public class LrtacticalCompat {
             ResourceLocation id = melee.getDisplayId(itemStack);
             if (id == null || "lrtactical:empty".equals(id.toString())) id = melee.getId(itemStack);
             if (id != null) {
-                String[] keys = new String[]{
+                String[] keys = new String[] {
                         "item." + id.getNamespace() + "." + id.getPath(),
                         "melee." + id.getNamespace() + "." + id.getPath(),
                         id.getNamespace() + "." + id.getPath(),
@@ -104,7 +104,7 @@ public class LrtacticalCompat {
             ResourceLocation id = thr.getDisplayId(itemStack);
             if (id == null || "lrtactical:empty".equals(id.toString())) id = thr.getId(itemStack);
             if (id != null) {
-                String[] keys = new String[]{
+                String[] keys = new String[] {
                         "item." + id.getNamespace() + "." + id.getPath(),
                         "throwable." + id.getNamespace() + "." + id.getPath(),
                         id.getNamespace() + "." + id.getPath(),
@@ -118,14 +118,14 @@ public class LrtacticalCompat {
         return null;
     }
 
-    public static boolean isInSmokeGrenadeArea(List<Entity> entities , AABB checker){
+    public static boolean isInSmokeGrenadeArea(List<Entity> entities, AABB checker) {
         List<SmokeGrenadeEntity> smokes = entities.stream()
                 .filter(entity -> entity instanceof SmokeGrenadeEntity)
-                .map(entity -> (SmokeGrenadeEntity)entity)
+                .map(entity -> (SmokeGrenadeEntity) entity)
                 .toList();
 
         for (SmokeGrenadeEntity smoke : smokes) {
-            if(isInSmokeGrenadeArea(smoke,checker)) {
+            if (isInSmokeGrenadeArea(smoke, checker)) {
                 return true;
             }
         }
@@ -152,8 +152,7 @@ public class LrtacticalCompat {
                 grenadeZ - maxOffsetZ,
                 grenadeX + maxOffsetX,
                 grenadeY + maxOffsetY,
-                grenadeZ + maxOffsetZ
-        );
+                grenadeZ + maxOffsetZ);
         return smokeArea.intersects(areaToCheck);
     }
 }

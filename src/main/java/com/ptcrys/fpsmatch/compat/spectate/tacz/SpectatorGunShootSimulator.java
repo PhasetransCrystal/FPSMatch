@@ -1,5 +1,13 @@
 package com.ptcrys.fpsmatch.compat.spectate.tacz;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+
+import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.client.animation.statemachine.LuaAnimationStateMachine;
 import com.tacz.guns.api.entity.IGunOperator;
@@ -11,25 +19,19 @@ import com.tacz.guns.client.resource.GunDisplayInstance;
 import com.tacz.guns.client.resource.index.ClientGunIndex;
 import com.tacz.guns.resource.pojo.data.gun.Bolt;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
+
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
 
 /**
  * Simulates TACZ shooting locally while spectating another player.
  */
 public final class SpectatorGunShootSimulator {
-    private SpectatorGunShootSimulator() {
-    }
+
+    private SpectatorGunShootSimulator() {}
 
     public static ShootResult shootAsSpectator(LocalPlayerDataHolder data, LocalPlayer self) {
         if (System.currentTimeMillis() - LocalPlayerDataHolder.clientClickButtonTimestamp < 50L) {
@@ -130,9 +132,7 @@ public final class SpectatorGunShootSimulator {
     private static long getVisualCooldown(LivingEntity shooter, IGun iGun, ItemStack stack, GunData gunData, LocalPlayerDataHolder data) {
         FireMode mode = iGun.getFireMode(stack);
         long elapsed = System.currentTimeMillis() - data.clientShootTimestamp;
-        long cd = mode == FireMode.BURST
-                ? (long) (gunData.getBurstData().getMinInterval() * 1000.0) - elapsed
-                : gunData.getShootInterval(shooter, mode, stack) - elapsed;
+        long cd = mode == FireMode.BURST ? (long) (gunData.getBurstData().getMinInterval() * 1000.0) - elapsed : gunData.getShootInterval(shooter, mode, stack) - elapsed;
         return Math.max(cd, 0L);
     }
 

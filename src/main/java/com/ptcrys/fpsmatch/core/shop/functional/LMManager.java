@@ -1,7 +1,8 @@
 package com.ptcrys.fpsmatch.core.shop.functional;
 
-import com.ptcrys.fpsmatch.common.event.register.RegisterListenerModuleEvent;
 import net.minecraftforge.common.MinecraftForge;
+
+import com.ptcrys.fpsmatch.common.event.register.RegisterListenerModuleEvent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ import java.util.Map;
  * 同时支持将监听模块的数据保存到游戏中。
  */
 public class LMManager {
+
     /**
      * 存储所有注册的监听模块。
      */
@@ -32,6 +34,7 @@ public class LMManager {
 
     /**
      * 添加一个新的监听模块。
+     * 
      * @param listenerModule 要添加的监听模块
      */
     public void addListenerType(ListenerModule listenerModule) {
@@ -41,6 +44,7 @@ public class LMManager {
 
     /**
      * 获取指定名称的监听模块。
+     * 
      * @param name 监听模块的名称
      * @return 如果找到对应的监听模块，返回该模块；否则返回 null
      */
@@ -51,6 +55,7 @@ public class LMManager {
 
     /**
      * 获取所有注册的监听模块名称列表。
+     * 
      * @return 监听模块名称列表
      */
     public List<String> getListenerModules() {
@@ -59,6 +64,7 @@ public class LMManager {
 
     /**
      * 获取所有注册的监听模块。
+     * 
      * @return 监听模块的 Map（键为模块名称，值为模块实例）
      */
     public Map<String, ListenerModule> getRegistry() {

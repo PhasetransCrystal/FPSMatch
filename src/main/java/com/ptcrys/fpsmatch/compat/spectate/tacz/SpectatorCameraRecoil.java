@@ -1,16 +1,5 @@
 package com.ptcrys.fpsmatch.compat.spectate.tacz;
 
-import com.tacz.guns.api.TimelessAPI;
-import com.tacz.guns.api.entity.IGunOperator;
-import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.api.modifier.ParameterizedCache;
-import com.tacz.guns.api.modifier.ParameterizedCachePair;
-import com.tacz.guns.client.resource.index.ClientGunIndex;
-import com.tacz.guns.resource.modifier.AttachmentCacheProperty;
-import com.tacz.guns.resource.modifier.custom.RecoilModifier;
-import com.tacz.guns.resource.pojo.data.gun.GunData;
-import java.util.Optional;
-import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
@@ -21,20 +10,33 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.event.ViewportEvent;
+
+import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
+import com.tacz.guns.api.TimelessAPI;
+import com.tacz.guns.api.entity.IGunOperator;
+import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.api.modifier.ParameterizedCache;
+import com.tacz.guns.api.modifier.ParameterizedCachePair;
+import com.tacz.guns.client.resource.index.ClientGunIndex;
+import com.tacz.guns.resource.modifier.AttachmentCacheProperty;
+import com.tacz.guns.resource.modifier.custom.RecoilModifier;
+import com.tacz.guns.resource.pojo.data.gun.GunData;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
+
+import java.util.Optional;
 
 /**
  * Applies TACZ camera recoil while spectating another player.
  */
 public final class SpectatorCameraRecoil {
+
     private static PolynomialSplineFunction specPitchSplineFunction;
     private static PolynomialSplineFunction specYawSplineFunction;
     private static long specShootTimeStamp = -1L;
     private static double specXRotO = 0.0;
     private static double specYRotO = 0.0;
 
-    private SpectatorCameraRecoil() {
-    }
+    private SpectatorCameraRecoil() {}
 
     public static boolean trigger(LivingEntity shooter) {
         if (shooter == null) {

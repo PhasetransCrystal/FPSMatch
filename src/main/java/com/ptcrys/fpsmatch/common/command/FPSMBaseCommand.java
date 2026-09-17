@@ -1,16 +1,5 @@
 package com.ptcrys.fpsmatch.common.command;
 
-import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.builder.ArgumentBuilder;
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.shop.functional.ChangeShopItemModule;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.common.event.FPSMReloadEvent;
-import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
-import com.ptcrys.fpsmatch.compat.gun.IGunProvider;
-import com.ptcrys.fpsmatch.compat.gun.GunDataDTO;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -19,30 +8,42 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.event.FPSMReloadEvent;
+import com.ptcrys.fpsmatch.common.shop.functional.ChangeShopItemModule;
+import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
+import com.ptcrys.fpsmatch.compat.gun.GunDataDTO;
+import com.ptcrys.fpsmatch.compat.gun.IGunProvider;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+
 import java.util.Optional;
 
 import static com.ptcrys.fpsmatch.common.command.FPSMCommand.*;
 
 public class FPSMBaseCommand {
 
-    public static <T extends ArgumentBuilder<CommandSourceStack, T>> ArgumentBuilder<CommandSourceStack, T> init(ArgumentBuilder<CommandSourceStack, T> builder){        // 获取HelpManager实例
+    public static <T extends ArgumentBuilder<CommandSourceStack, T>> ArgumentBuilder<CommandSourceStack, T> init(ArgumentBuilder<CommandSourceStack, T> builder) {        // 获取HelpManager实例
         FPSMHelpManager helpManager = FPSMHelpManager.getInstance();
-        
+
         // 注册基本命令帮助
         helpManager.registerCommandHelp("fpsm save", Component.translatable("commands.fpsm.help.basic.save"));
         helpManager.registerCommandHelp("fpsm reload", Component.translatable("commands.fpsm.help.basic.reload"));
         helpManager.registerCommandHelp("fpsm debug", Component.translatable("commands.fpsm.help.basic.debug"));
-        
+
         // 注册tacz命令帮助
         helpManager.registerCommandHelp("fpsm tacz dummy", Component.translatable("commands.fpsm.help.tacz.dummy"));
         helpManager.registerCommandParameters("fpsm tacz dummy", "*amount");
-        
+
         // 注册listener_module命令帮助
         helpManager.registerCommandHelp("fpsm listener_module");
         helpManager.registerCommandHelp("fpsm listener_module add", Component.translatable("commands.fpsm.help.listener.add"));
         helpManager.registerCommandHelp("fpsm listener_module add change_item_module", Component.translatable("commands.fpsm.help.listener.add_change_item"), Component.translatable("commands.fpsm.help.listener.add_change_item.hover"));
         helpManager.registerCommandParameters("fpsm listener_module add change_item_module", "*changed_cost", "*default_cost");
-        
+
         return builder
                 .then(Commands.literal("save").requires(source -> source.hasPermission(2)).executes(FPSMBaseCommand::handleSave))
                 .then(Commands.literal("reload").requires(source -> source.hasPermission(2)).executes(FPSMBaseCommand::handleReLoad))
@@ -57,9 +58,7 @@ public class FPSMBaseCommand {
                                         .then(Commands.argument("changed_cost", IntegerArgumentType.integer(1))
                                                 .then(Commands.argument("default_cost", IntegerArgumentType.integer(1))
                                                         .executes(FPSMBaseCommand::handleChangeItemModule))))));
-
     }
-
 
     // 命令处理方法
     private static int handleSave(CommandContext<CommandSourceStack> context) {

@@ -12,6 +12,7 @@ import javax.annotation.Nullable;
  * 由 TACZ 兼容层（TACZGunEventBridge）桥接触发。
  */
 public class FPSMGunKillEvent extends Event {
+
     private final LivingEntity attacker;
     private final LivingEntity killedEntity;
     private final boolean isHeadShot;
@@ -28,9 +29,24 @@ public class FPSMGunKillEvent extends Event {
         this.gunItemStack = gunItemStack;
     }
 
-    public LivingEntity getAttacker() { return attacker; }
-    public LivingEntity getKilledEntity() { return killedEntity; }
-    public boolean isHeadShot() { return isHeadShot; }
-    @Nullable public Entity getBullet() { return bullet; }
-    public ItemStack getGunItemStack() { return gunItemStack; }
+    public LivingEntity getAttacker() {
+        return attacker;
+    }
+
+    public LivingEntity getKilledEntity() {
+        return killedEntity;
+    }
+
+    public boolean isHeadShot() {
+        return isHeadShot;
+    }
+
+    @Nullable
+    public Entity getBullet() {
+        return bullet;
+    }
+
+    public ItemStack getGunItemStack() {
+        return gunItemStack;
+    }
 }

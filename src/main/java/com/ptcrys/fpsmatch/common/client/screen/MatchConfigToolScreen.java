@@ -1,16 +1,17 @@
 package com.ptcrys.fpsmatch.common.client.screen;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMGuiTheme;
-import com.ptcrys.fpsmatch.common.packet.MatchConfigToolActionC2SPacket;
-import com.ptcrys.fpsmatch.common.packet.OpenMatchConfigToolScreenS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSettingInfo;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMGuiTheme;
+import com.ptcrys.fpsmatch.common.packet.MatchConfigToolActionC2SPacket;
+import com.ptcrys.fpsmatch.common.packet.OpenMatchConfigToolScreenS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSettingInfo;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class MatchConfigToolScreen extends Screen {
+
     // 统一设计 Token：颜色全部引用 FPSMGuiTheme，消除与主界面割裂的私有色板
     private static final int PANEL_BACKGROUND = FPSMGuiTheme.BG_PANEL;
     private static final int PANEL_BORDER = FPSMGuiTheme.BORDER_INNER;
@@ -84,7 +86,7 @@ public class MatchConfigToolScreen extends Screen {
                 valueFields.add(null);
                 applyButtons.add(null);
                 Button toggleButton = addRenderableWidget(Button.builder(toggleLabel(Boolean.parseBoolean(setting.value())),
-                                button -> toggleSetting(setting, button))
+                        button -> toggleSetting(setting, button))
                         .bounds(valueX, rowY + 2, FIELD_WIDTH + 66, BUTTON_HEIGHT)
                         .build());
                 toggleButton.active = setting.editable();
@@ -98,7 +100,7 @@ public class MatchConfigToolScreen extends Screen {
                 valueFields.add(field);
 
                 Button applyButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.match_config.apply"),
-                                button -> applySetting(setting, field))
+                        button -> applySetting(setting, field))
                         .bounds(buttonX, rowY + 2, 62, BUTTON_HEIGHT)
                         .build());
                 applyButton.active = setting.editable();

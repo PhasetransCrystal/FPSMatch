@@ -1,27 +1,27 @@
 package com.ptcrys.fpsmatch.compat.spectate.tacz;
 
-import com.mojang.logging.LogUtils;
-import java.util.UUID;
-import java.util.function.Supplier;
-import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
-import com.ptcrys.fpsmatch.compat.spectate.net.SpectatorInspectPackets.S2CWatchedPlayerInspectPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+
+import com.mojang.logging.LogUtils;
+import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
+import com.ptcrys.fpsmatch.compat.spectate.net.SpectatorInspectPackets.S2CWatchedPlayerInspectPacket;
 import org.slf4j.Logger;
+
+import java.util.UUID;
 
 /**
  * Handles inspect sync packets for local and spectated players.
  */
 public final class SpectatorGunInspectNet {
+
     private static final Logger LOGGER = LogUtils.getLogger();
     public static final String DEBUG_SYS_PROP = "fpsm.spectate.tacz.inspect.debug";
     private static volatile boolean DEBUG_ENABLED = Boolean.parseBoolean(System.getProperty(DEBUG_SYS_PROP, "false"));
 
-    private SpectatorGunInspectNet() {
-    }
+    private SpectatorGunInspectNet() {}
 
     public static void setDebugEnabled(boolean enabled) {
         DEBUG_ENABLED = enabled;

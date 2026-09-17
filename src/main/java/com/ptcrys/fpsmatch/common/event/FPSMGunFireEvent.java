@@ -8,6 +8,7 @@ import net.minecraftforge.eventbus.api.Event;
  * 由 TACZ 兼容层（TACZGunEventBridge）桥接触发。
  */
 public class FPSMGunFireEvent extends Event {
+
     private final LivingEntity shooter;
 
     public FPSMGunFireEvent(LivingEntity shooter) {

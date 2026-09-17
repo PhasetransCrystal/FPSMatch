@@ -1,10 +1,11 @@
 package com.ptcrys.fpsmatch.compat.cloth;
 
+import net.minecraft.network.chat.Component;
+
 import com.ptcrys.fpsmatch.config.FPSMConfig;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
-import net.minecraft.network.chat.Component;
 
 public class FPSMClothConfig {
 
@@ -13,7 +14,7 @@ public class FPSMClothConfig {
 
         // 客户端配置项（目前为空）
         clientCategory.addEntry(entryBuilder.startTextDescription(
-                        Component.translatable("config.fpsmatch.client.no_settings"))
+                Component.translatable("config.fpsmatch.client.no_settings"))
                 .build());
     }
 
@@ -22,8 +23,8 @@ public class FPSMClothConfig {
         ConfigCategory dropsCategory = root.getOrCreateCategory(Component.translatable("config.fpsmatch.common.drops"));
 
         dropsCategory.addEntry(entryBuilder.startIntField(
-                        Component.translatable("config.fpsmatch.common.drops.main_weapon_count"),
-                        FPSMConfig.common.mainWeaponCount.get())
+                Component.translatable("config.fpsmatch.common.drops.main_weapon_count"),
+                FPSMConfig.common.mainWeaponCount.get())
                 .setMin(0).setMax(10)
                 .setDefaultValue(1)
                 .setTooltip(Component.translatable("config.fpsmatch.common.drops.main_weapon_count.tooltip"))
@@ -31,8 +32,8 @@ public class FPSMClothConfig {
                 .build());
 
         dropsCategory.addEntry(entryBuilder.startIntField(
-                        Component.translatable("config.fpsmatch.common.drops.secondary_weapon_count"),
-                        FPSMConfig.common.secondaryWeaponCount.get())
+                Component.translatable("config.fpsmatch.common.drops.secondary_weapon_count"),
+                FPSMConfig.common.secondaryWeaponCount.get())
                 .setMin(0).setMax(10)
                 .setDefaultValue(1)
                 .setTooltip(Component.translatable("config.fpsmatch.common.drops.secondary_weapon_count.tooltip"))
@@ -40,8 +41,8 @@ public class FPSMClothConfig {
                 .build());
 
         dropsCategory.addEntry(entryBuilder.startIntField(
-                        Component.translatable("config.fpsmatch.common.drops.throwable_count"),
-                        FPSMConfig.common.throwableCount.get())
+                Component.translatable("config.fpsmatch.common.drops.throwable_count"),
+                FPSMConfig.common.throwableCount.get())
                 .setMin(0).setMax(10)
                 .setDefaultValue(4)
                 .setTooltip(Component.translatable("config.fpsmatch.common.drops.throwable_count.tooltip"))
@@ -49,8 +50,8 @@ public class FPSMClothConfig {
                 .build());
 
         dropsCategory.addEntry(entryBuilder.startIntField(
-                        Component.translatable("config.fpsmatch.common.drops.third_weapon_count"),
-                        FPSMConfig.common.thirdWeaponCount.get())
+                Component.translatable("config.fpsmatch.common.drops.third_weapon_count"),
+                FPSMConfig.common.thirdWeaponCount.get())
                 .setMin(0).setMax(10)
                 .setDefaultValue(1)
                 .setTooltip(Component.translatable("config.fpsmatch.common.drops.third_weapon_count.tooltip"))
@@ -62,8 +63,8 @@ public class FPSMClothConfig {
 
         // 闪光弹配置
         throwableCategory.addEntry(entryBuilder.startIntField(
-                        Component.translatable("config.fpsmatch.common.throwable.flash_bomb_radius"),
-                        FPSMConfig.common.flashBombRadius.get())
+                Component.translatable("config.fpsmatch.common.throwable.flash_bomb_radius"),
+                FPSMConfig.common.flashBombRadius.get())
                 .setMin(0).setMax(48)
                 .setDefaultValue(48)
                 .setTooltip(Component.translatable("config.fpsmatch.common.throwable.flash_bomb_radius.tooltip"))
@@ -72,8 +73,8 @@ public class FPSMClothConfig {
 
         // 手雷配置
         throwableCategory.addEntry(entryBuilder.startIntField(
-                        Component.translatable("config.fpsmatch.common.throwable.grenade_radius"),
-                        FPSMConfig.common.grenadeRadius.get())
+                Component.translatable("config.fpsmatch.common.throwable.grenade_radius"),
+                FPSMConfig.common.grenadeRadius.get())
                 .setMin(0).setMax(10)
                 .setDefaultValue(3)
                 .setTooltip(Component.translatable("config.fpsmatch.common.throwable.grenade_radius.tooltip"))
@@ -81,8 +82,8 @@ public class FPSMClothConfig {
                 .build());
 
         throwableCategory.addEntry(entryBuilder.startIntField(
-                        Component.translatable("config.fpsmatch.common.throwable.grenade_fuse_time"),
-                        FPSMConfig.common.grenadeFuseTime.get())
+                Component.translatable("config.fpsmatch.common.throwable.grenade_fuse_time"),
+                FPSMConfig.common.grenadeFuseTime.get())
                 .setMin(0).setMax(200)
                 .setDefaultValue(30)
                 .setTooltip(Component.translatable("config.fpsmatch.common.throwable.grenade_fuse_time.tooltip"))
@@ -90,8 +91,8 @@ public class FPSMClothConfig {
                 .build());
 
         throwableCategory.addEntry(entryBuilder.startIntField(
-                        Component.translatable("config.fpsmatch.common.throwable.grenade_damage"),
-                        FPSMConfig.common.grenadeDamage.get())
+                Component.translatable("config.fpsmatch.common.throwable.grenade_damage"),
+                FPSMConfig.common.grenadeDamage.get())
                 .setMin(0).setMax(9999)
                 .setDefaultValue(20)
                 .setTooltip(Component.translatable("config.fpsmatch.common.throwable.grenade_damage.tooltip"))
@@ -100,8 +101,8 @@ public class FPSMClothConfig {
 
         // 燃烧弹配置
         throwableCategory.addEntry(entryBuilder.startIntField(
-                        Component.translatable("config.fpsmatch.common.throwable.incendiary_grenade_out_time"),
-                        FPSMConfig.common.incendiaryGrenadeOutTime.get())
+                Component.translatable("config.fpsmatch.common.throwable.incendiary_grenade_out_time"),
+                FPSMConfig.common.incendiaryGrenadeOutTime.get())
                 .setMin(0).setMax(200)
                 .setDefaultValue(40)
                 .setTooltip(Component.translatable("config.fpsmatch.common.throwable.incendiary_grenade_out_time.tooltip"))
@@ -109,8 +110,8 @@ public class FPSMClothConfig {
                 .build());
 
         throwableCategory.addEntry(entryBuilder.startIntField(
-                        Component.translatable("config.fpsmatch.common.throwable.incendiary_grenade_living_time"),
-                        FPSMConfig.common.incendiaryGrenadeLivingTime.get())
+                Component.translatable("config.fpsmatch.common.throwable.incendiary_grenade_living_time"),
+                FPSMConfig.common.incendiaryGrenadeLivingTime.get())
                 .setMin(0).setMax(400)
                 .setDefaultValue(140)
                 .setTooltip(Component.translatable("config.fpsmatch.common.throwable.incendiary_grenade_living_time.tooltip"))
@@ -118,8 +119,8 @@ public class FPSMClothConfig {
                 .build());
 
         throwableCategory.addEntry(entryBuilder.startIntField(
-                        Component.translatable("config.fpsmatch.common.throwable.incendiary_grenade_damage"),
-                        FPSMConfig.common.incendiaryGrenadeDamage.get())
+                Component.translatable("config.fpsmatch.common.throwable.incendiary_grenade_damage"),
+                FPSMConfig.common.incendiaryGrenadeDamage.get())
                 .setMin(0).setMax(9999)
                 .setDefaultValue(2)
                 .setTooltip(Component.translatable("config.fpsmatch.common.throwable.incendiary_grenade_damage.tooltip"))
@@ -128,8 +129,8 @@ public class FPSMClothConfig {
 
         // 烟雾弹配置
         throwableCategory.addEntry(entryBuilder.startIntField(
-                        Component.translatable("config.fpsmatch.common.throwable.smoke_shell_living_time"),
-                        FPSMConfig.common.smokeShellLivingTime.get())
+                Component.translatable("config.fpsmatch.common.throwable.smoke_shell_living_time"),
+                FPSMConfig.common.smokeShellLivingTime.get())
                 .setMin(0).setMax(900)
                 .setDefaultValue(300)
                 .setTooltip(Component.translatable("config.fpsmatch.common.throwable.smoke_shell_living_time.tooltip"))
@@ -140,8 +141,8 @@ public class FPSMClothConfig {
         ConfigCategory armorCategory = root.getOrCreateCategory(Component.translatable("config.fpsmatch.common.armor"));
 
         armorCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.fpsmatch.common.armor.base_armor_penetration"),
-                        FPSMConfig.common.baseArmorPenetration.get())
+                Component.translatable("config.fpsmatch.common.armor.base_armor_penetration"),
+                FPSMConfig.common.baseArmorPenetration.get())
                 .setMin(0.1).setMax(5.0)
                 .setDefaultValue(1.4)
                 .setTooltip(Component.translatable("config.fpsmatch.common.armor.base_armor_penetration.tooltip"))
@@ -149,14 +150,13 @@ public class FPSMClothConfig {
                 .build());
 
         armorCategory.addEntry(entryBuilder.startDoubleField(
-                        Component.translatable("config.fpsmatch.common.armor.headshot_multiplier"),
-                        FPSMConfig.common.headshotMultiplier.get())
+                Component.translatable("config.fpsmatch.common.armor.headshot_multiplier"),
+                FPSMConfig.common.headshotMultiplier.get())
                 .setMin(1.0).setMax(10.0)
                 .setDefaultValue(4.0)
                 .setTooltip(Component.translatable("config.fpsmatch.common.armor.headshot_multiplier.tooltip"))
                 .setSaveConsumer(FPSMConfig.common.headshotMultiplier::set)
                 .build());
-
     }
 
     // 主入口方法

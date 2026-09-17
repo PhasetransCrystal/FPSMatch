@@ -1,43 +1,44 @@
 package com.ptcrys.fpsmatch.common.client.net;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.contents.TranslatableContents;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.FPSMClient;
 import com.ptcrys.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.ptcrys.fpsmatch.common.client.data.RenderableArea;
 import com.ptcrys.fpsmatch.common.client.data.RenderablePoint;
+import com.ptcrys.fpsmatch.common.client.music.FPSClientMusicManager;
 import com.ptcrys.fpsmatch.common.client.screen.MapCreatorToolScreen;
 import com.ptcrys.fpsmatch.common.client.screen.MatchConfigToolScreen;
 import com.ptcrys.fpsmatch.common.client.screen.SpawnPointToolScreen;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.modernui.*;
 import com.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernEditShopSlotScreen;
 import com.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernEditorShopScreen;
 import com.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernShopConfigToolScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.modernui.*;
+import com.ptcrys.fpsmatch.common.client.shop.ShopActionResultListener;
 import com.ptcrys.fpsmatch.common.packet.AddAreaDataS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.AddPointDataS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.FPSMInventorySelectedS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.FPSMSoundPlayS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.FPSMusicPlayS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.FPSMusicStopS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.FPSMatchRespawnS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.FPSMusicPlayS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.FPSMusicStopS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.OpenMapCreatorToolScreenS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.OpenMatchConfigToolScreenS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.OpenSpawnPointToolScreenS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.RemoveDebugDataByPrefixS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapImportSourcesS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomReadyStateS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapImportSourcesS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionAccessS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
-import com.ptcrys.fpsmatch.common.client.music.FPSClientMusicManager;
-import com.ptcrys.fpsmatch.common.client.shop.ShopActionResultListener;
-import com.ptcrys.fpsmatch.common.client.spec.SpectateMode;
-import com.ptcrys.fpsmatch.common.client.spec.SpectateState;
-import com.ptcrys.fpsmatch.common.client.spec.SpectatorCameraController;
 import com.ptcrys.fpsmatch.common.packet.shop.OpenShopConfigToolScreenS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.shop.ShopActionResultS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.shop.ShopDataSlotS2CPacket;
@@ -50,15 +51,12 @@ import com.ptcrys.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
 import com.ptcrys.fpsmatch.core.data.PlayerData;
 import com.ptcrys.fpsmatch.core.team.ClientTeam;
 import com.ptcrys.fpsmatch.util.RenderUtil;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.contents.TranslatableContents;
 
 import java.util.Optional;
 
 public final class FPSMClientPacketHandlers {
-    private FPSMClientPacketHandlers() {
-    }
+
+    private FPSMClientPacketHandlers() {}
 
     public static void handleOpenMapCreatorToolScreen(OpenMapCreatorToolScreenS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -122,8 +120,7 @@ public final class FPSMClientPacketHandlers {
 
     public static void handleGameType(FPSMatchGameTypeS2CPacket packet) {
         FPSMClientGlobalData data = FPSMClient.getGlobalData();
-        if (!data.getCurrentMap().equals(packet.getMapName())
-                || !data.getCurrentGameType().equals(packet.getGameType())) {
+        if (!data.getCurrentMap().equals(packet.getMapName()) || !data.getCurrentGameType().equals(packet.getGameType())) {
             resetCameraToPlayer(Minecraft.getInstance());
         }
         data.setCurrentGameType(packet.getGameType());
@@ -205,7 +202,7 @@ public final class FPSMClientPacketHandlers {
         Minecraft mc = Minecraft.getInstance();
         FPSMClient.getGlobalData().removePlayer(packet.player());
 
-        // Leaving a team ends any active spectator view.  The target entity can
+        // Leaving a team ends any active spectator view. The target entity can
         // still exist on the client, so merely clearing team data leaves the
         // camera attached to the previous game's player until another target
         // packet arrives.
@@ -278,47 +275,34 @@ public final class FPSMClientPacketHandlers {
 
     public static void handleMapRoomToast(MapRoomToastS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        String toastKey = packet.message().getContents() instanceof TranslatableContents contents
-                ? contents.getKey()
-                : "";
+        String toastKey = packet.message().getContents() instanceof TranslatableContents contents ? contents.getKey() : "";
         boolean isShopSaveToast = toastKey.startsWith("gui.fpsm.shop_editor.save.");
         boolean isShopOpenToast = toastKey.startsWith("gui.fpsm.shop_editor.open.");
-        boolean isMapSettingToast = toastKey.equals("gui.fpsm.map_select.action.no_permission")
-                || toastKey.equals("gui.fpsm.map_select.action.map_not_found")
-                || toastKey.equals("gui.fpsm.map_select.action.setting.invalid")
-                || toastKey.equals("gui.fpsm.map_select.action.setting.not_found");
-        boolean isRegionToast = toastKey.startsWith("gui.fpsm.map_regions.action.")
-                || toastKey.equals("gui.fpsm.map_select.action.no_permission")
-                || toastKey.equals("gui.fpsm.map_select.action.map_not_found");
-        boolean isMapImportToast = toastKey.startsWith("gui.fpsm.map_import.")
-                || toastKey.equals("gui.fpsm.map_select.action.no_permission")
-                || toastKey.equals("gui.fpsm.map_select.action.map_not_found");
-        if (isShopSaveToast && minecraft.screen instanceof ModernEditShopSlotScreen screen
-                && screen.isSaveResultRelevant()) {
+        boolean isMapSettingToast = toastKey.equals("gui.fpsm.map_select.action.no_permission") || toastKey.equals("gui.fpsm.map_select.action.map_not_found") || toastKey.equals("gui.fpsm.map_select.action.setting.invalid") || toastKey.equals("gui.fpsm.map_select.action.setting.not_found");
+        boolean isRegionToast = toastKey.startsWith("gui.fpsm.map_regions.action.") || toastKey.equals("gui.fpsm.map_select.action.no_permission") || toastKey.equals("gui.fpsm.map_select.action.map_not_found");
+        boolean isMapImportToast = toastKey.startsWith("gui.fpsm.map_import.") || toastKey.equals("gui.fpsm.map_select.action.no_permission") || toastKey.equals("gui.fpsm.map_select.action.map_not_found");
+        if (isShopSaveToast && minecraft.screen instanceof ModernEditShopSlotScreen screen && screen.isSaveResultRelevant()) {
             screen.applySaveResult(packet);
             if (minecraft.player != null) {
                 minecraft.player.displayClientMessage(packet.message(), packet.error());
             }
             return;
         }
-        if (isShopOpenToast && minecraft.screen instanceof ModernEditorShopScreen screen
-                && screen.isSlotOpenPending()) {
+        if (isShopOpenToast && minecraft.screen instanceof ModernEditorShopScreen screen && screen.isSlotOpenPending()) {
             screen.applySlotOpenFailure(packet.message());
             if (minecraft.player != null) {
                 minecraft.player.displayClientMessage(packet.message(), packet.error());
             }
             return;
         }
-        if (isShopOpenToast && minecraft.screen instanceof ModernShopConfigToolScreen screen
-                && screen.isEditorOpenPending()) {
+        if (isShopOpenToast && minecraft.screen instanceof ModernShopConfigToolScreen screen && screen.isEditorOpenPending()) {
             screen.applyEditorOpenFailure(packet.message());
             if (minecraft.player != null) {
                 minecraft.player.displayClientMessage(packet.message(), packet.error());
             }
             return;
         }
-        if (isShopOpenToast && minecraft.screen instanceof ModernEditShopSlotScreen screen
-                && screen.isReturnPending()) {
+        if (isShopOpenToast && minecraft.screen instanceof ModernEditShopSlotScreen screen && screen.isReturnPending()) {
             screen.applyReturnFailure(packet.message());
             if (minecraft.player != null) {
                 minecraft.player.displayClientMessage(packet.message(), packet.error());

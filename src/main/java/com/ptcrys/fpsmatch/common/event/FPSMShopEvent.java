@@ -1,15 +1,17 @@
 package com.ptcrys.fpsmatch.common.event;
 
+import net.minecraftforge.eventbus.api.Event;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.ptcrys.fpsmatch.core.shop.FPSMShop;
 import com.ptcrys.fpsmatch.core.shop.INamedType;
 import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
-import net.minecraftforge.eventbus.api.Event;
 
 import java.util.UUID;
 
 public class FPSMShopEvent extends Event {
+
     private final FPSMShop<?> shop;
     private final UUID playerUUID;
 
@@ -31,6 +33,7 @@ public class FPSMShopEvent extends Event {
      * 在创建新的玩家商店数据前触发，允许修改即将用于创建的参数
      */
     public static class DataInit<T extends Enum<T> & INamedType> extends FPSMShopEvent {
+
         private int money;
         private final ImmutableMap<T, ImmutableList<ShopSlot>> data;
 

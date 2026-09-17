@@ -5,6 +5,7 @@ import com.ptcrys.fpsmatch.compat.kubejs.events.FPSMatchKubeJSEvents;
 import dev.latvian.mods.kubejs.KubeJSPlugin;
 
 public class FPSMatchKubeJSPlugin extends KubeJSPlugin {
+
     @Override
     public void registerEvents() {
         try {

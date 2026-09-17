@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceLocation;
  * 由 IGunProvider 实现负责填充。
  */
 public class GunDataDTO {
+
     private final ResourceLocation gunId;
     private final int ammoAmount;       // 弹匣容量
     private final int maxDummyAmmo;     // 最大备弹
@@ -21,9 +22,23 @@ public class GunDataDTO {
         this.gunType = gunType;
     }
 
-    public ResourceLocation getGunId() { return gunId; }
-    public int getAmmoAmount() { return ammoAmount; }
-    public int getMaxDummyAmmo() { return maxDummyAmmo; }
-    public GunTabTypeEnum getGunTabType() { return gunTabType; }
-    public String getGunType() { return gunType; }
+    public ResourceLocation getGunId() {
+        return gunId;
+    }
+
+    public int getAmmoAmount() {
+        return ammoAmount;
+    }
+
+    public int getMaxDummyAmmo() {
+        return maxDummyAmmo;
+    }
+
+    public GunTabTypeEnum getGunTabType() {
+        return gunTabType;
+    }
+
+    public String getGunType() {
+        return gunType;
+    }
 }

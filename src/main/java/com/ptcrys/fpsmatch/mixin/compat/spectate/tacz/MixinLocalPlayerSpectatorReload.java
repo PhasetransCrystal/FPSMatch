@@ -1,11 +1,11 @@
 package com.ptcrys.fpsmatch.mixin.compat.spectate.tacz;
 
-import com.tacz.guns.api.entity.IGunOperator;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.entity.player.Player;
+
 import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
 import com.ptcrys.fpsmatch.compat.spectate.tacz.SpectatorGunReloadMirror;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
+import com.tacz.guns.api.entity.IGunOperator;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(LocalPlayer.class)
 public abstract class MixinLocalPlayerSpectatorReload {
+
     private static boolean lastTargetReloading = false;
     private static int lastTargetId = -1;
 

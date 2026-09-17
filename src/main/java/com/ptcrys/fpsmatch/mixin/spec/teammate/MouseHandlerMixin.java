@@ -1,16 +1,16 @@
 package com.ptcrys.fpsmatch.mixin.spec.teammate;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
+import net.minecraft.world.level.GameType;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.camera.CameraDirector;
 import com.ptcrys.fpsmatch.common.client.camera.CameraPolicy;
 import com.ptcrys.fpsmatch.common.client.spec.SpectateMode;
 import com.ptcrys.fpsmatch.common.client.spec.SpectateState;
-import com.ptcrys.fpsmatch.common.client.spec.SpectatorCameraController;
 import com.ptcrys.fpsmatch.common.client.spec.SpectatorSwitchDirection;
 import com.ptcrys.fpsmatch.common.packet.spec.SpectatorSwitchC2SPacket;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.MouseHandler;
-import net.minecraft.world.level.GameType;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -24,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(MouseHandler.class)
 public abstract class MouseHandlerMixin {
+
     @Inject(method = "onPress", at = @At("HEAD"), cancellable = true)
     private void fpsmatch$handleRestrictedClick(long window, int button, int action, int modifiers, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();

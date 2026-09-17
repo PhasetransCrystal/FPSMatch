@@ -22,6 +22,7 @@ import java.util.function.Consumer;
  * 下载构建器内部类
  */
 public class DownloadBuilder<T> {
+
     private final RequestBuilder<T> parent;
     private Path downloadPath;
     private Consumer<DownloadProgress> progressCallback;
@@ -77,8 +78,7 @@ public class DownloadBuilder<T> {
             // 获取文件信息
             HttpResponse<Void> headResponse = parent.getClient().send(
                     HttpRequest.newBuilder(request.uri()).method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
-                    HttpResponse.BodyHandlers.discarding()
-            );
+                    HttpResponse.BodyHandlers.discarding());
 
             if (!isSuccessful(headResponse.statusCode())) {
                 throw new DownloadException("Failed to get file info: HTTP " + headResponse.statusCode());
@@ -96,8 +96,7 @@ public class DownloadBuilder<T> {
                 // 执行下载
                 HttpResponse<InputStream> response = parent.getClient().send(
                         request,
-                        HttpResponse.BodyHandlers.ofInputStream()
-                );
+                        HttpResponse.BodyHandlers.ofInputStream());
 
                 if (!isSuccessful(response.statusCode())) {
                     throw new DownloadException("Download failed: HTTP " + response.statusCode());
@@ -105,8 +104,8 @@ public class DownloadBuilder<T> {
 
                 // 下载并保存文件
                 try (InputStream inputStream = response.body();
-                     OutputStream outputStream = Files.newOutputStream(tempFile,
-                             StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
+                        OutputStream outputStream = Files.newOutputStream(tempFile,
+                                StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
                     long downloadedBytes = existingFileSize;
                     byte[] buffer = new byte[8192];
                     int bytesRead;
@@ -120,13 +119,12 @@ public class DownloadBuilder<T> {
                             progressCallback.accept(new DownloadProgress(
                                     downloadedBytes,
                                     totalSize,
-                                    (double) downloadedBytes / (totalSize > 0 ? totalSize : downloadedBytes)
-                            ));
+                                    (double) downloadedBytes / (totalSize > 0 ? totalSize : downloadedBytes)));
                         }
                     }
                 }
 
-                if(parent.getModule().isClosed()){
+                if (parent.getModule().isClosed()) {
                     Files.deleteIfExists(tempFile);
                     return DownloadResult.empty();
                 }
@@ -139,8 +137,7 @@ public class DownloadBuilder<T> {
                         downloadPath,
                         totalSize,
                         getFileNameFromResponse(headResponse),
-                        headResponse.headers().map()
-                );
+                        headResponse.headers().map());
             } finally {
                 // 确保临时文件被删除
                 Files.deleteIfExists(tempFile);
@@ -173,11 +170,10 @@ public class DownloadBuilder<T> {
             } catch (DownloadException e) {
                 throw new CompletionException(e);
             }
-        },executor).whenComplete(
+        }, executor).whenComplete(
                 (result, error) -> {
                     NetworkModule.shutdown(executor);
-                }
-        );
+                });
     }
 
     public CompletableFuture<DownloadResult> downloadAsyncAndClose(Executor executor) {

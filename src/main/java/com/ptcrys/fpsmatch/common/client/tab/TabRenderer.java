@@ -8,6 +8,8 @@ import net.minecraft.world.scores.Scoreboard;
 import java.util.List;
 
 public interface TabRenderer {
-    void render(GuiGraphics graphics, int windowWidth, List<PlayerInfo> players,Scoreboard scoreboard, Objective objective);
+
+    void render(GuiGraphics graphics, int windowWidth, List<PlayerInfo> players, Scoreboard scoreboard, Objective objective);
+
     String getGameType();
-} 
+}

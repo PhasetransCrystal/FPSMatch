@@ -1,8 +1,5 @@
 package com.ptcrys.fpsmatch.common.item.tool;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.packet.ToolInteractionC2SPacket;
-import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -13,15 +10,19 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import com.mojang.blaze3d.platform.InputConstants;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.packet.ToolInteractionC2SPacket;
 import org.lwjgl.glfw.GLFW;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ToolInteractionClientHandler {
+
     private static boolean isControlDown() {
         Minecraft minecraft = Minecraft.getInstance();
         long window = minecraft.getWindow().getWindow();
-        return InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_CONTROL)
-                || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_CONTROL);
+        return InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_CONTROL) || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_CONTROL);
     }
 
     private static boolean isMenuModifierDown(Player player) {
@@ -58,9 +59,7 @@ public class ToolInteractionClientHandler {
             return;
         }
 
-        ToolInteractionAction action = isMenuModifierDown(player)
-                ? ToolInteractionAction.CTRL_RIGHT_CLICK
-                : ToolInteractionAction.RIGHT_CLICK_BLOCK;
+        ToolInteractionAction action = isMenuModifierDown(player) ? ToolInteractionAction.CTRL_RIGHT_CLICK : ToolInteractionAction.RIGHT_CLICK_BLOCK;
         FPSMatch.sendToServer(new ToolInteractionC2SPacket(action, event.getPos()));
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);

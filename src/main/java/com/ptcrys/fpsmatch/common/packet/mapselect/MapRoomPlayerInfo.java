@@ -5,6 +5,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import java.util.UUID;
 
 public record MapRoomPlayerInfo(UUID uuid, String name, String teamName, boolean spectator, boolean online, boolean ready) {
+
     private static final int NAME_MAX_LENGTH = 128;
 
     public static void encode(MapRoomPlayerInfo info, FriendlyByteBuf buf) {

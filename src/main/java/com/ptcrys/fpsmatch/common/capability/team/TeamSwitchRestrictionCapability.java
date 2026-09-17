@@ -1,12 +1,13 @@
 package com.ptcrys.fpsmatch.common.capability.team;
 
-import com.ptcrys.fpsmatch.common.event.FPSMapEvent;
-import com.ptcrys.fpsmatch.core.team.BaseTeam;
-import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
-import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import com.ptcrys.fpsmatch.common.event.FPSMapEvent;
+import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
+import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
+import com.ptcrys.fpsmatch.core.team.BaseTeam;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,13 +26,13 @@ public class TeamSwitchRestrictionCapability extends TeamCapability {
     public static void onJoin(FPSMapEvent.PlayerEvent.LoggedInEvent event) {
         ServerPlayer player = event.getPlayer();
         UUID playerUUID = player.getUUID();
-        event.getMap().getMapTeams().getTeamByPlayer(player).ifPresent(t->{
+        event.getMap().getMapTeams().getTeamByPlayer(player).ifPresent(t -> {
             t.getCapabilityMap().get(TeamSwitchRestrictionCapability.class)
-                    .ifPresent(cap->{
-                        if(cap.isUnableToSwitch(playerUUID)){
+                    .ifPresent(cap -> {
+                        if (cap.isUnableToSwitch(playerUUID)) {
                             player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), t.getPlayerTeam());
                             cap.removeUnableToSwitchPlayer(playerUUID);
-                        };
+                        } ;
                     });
         });
     }

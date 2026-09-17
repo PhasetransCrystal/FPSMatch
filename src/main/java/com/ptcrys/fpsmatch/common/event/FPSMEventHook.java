@@ -1,11 +1,5 @@
 package com.ptcrys.fpsmatch.common.event;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.config.FPSMConfig;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.core.map.BaseRoundMap;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.common.MinecraftForge;
@@ -15,6 +9,12 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.config.FPSMConfig;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
+import com.ptcrys.fpsmatch.core.map.BaseRoundMap;
 
 import java.util.Optional;
 
@@ -120,16 +120,16 @@ public class FPSMEventHook {
         ServerPlayer player = event.getPlayer();
         map.getMapTeams().getTeamByPlayer(player)
                 .ifPresent(team -> team.getPlayerData(player.getUUID()).ifPresent(playerData -> {
-                        player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), team.getPlayerTeam());
-                        playerData.setLiving(false);
-                        player.setGameMode(GameType.SPECTATOR);
-                        map.pullGameInfo(player);
-                        map.getMapTeams().sync(player);
-                        team.syncCapabilities(player);
-                        // The reconnecting player already received a full snapshot
-                        // above. Existing clients only need the dirty state change.
-                        map.getMapTeams().sync(map.getMapTeams().getOnlineWithSpec());
-                    }));
+                    player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), team.getPlayerTeam());
+                    playerData.setLiving(false);
+                    player.setGameMode(GameType.SPECTATOR);
+                    map.pullGameInfo(player);
+                    map.getMapTeams().sync(player);
+                    team.syncCapabilities(player);
+                    // The reconnecting player already received a full snapshot
+                    // above. Existing clients only need the dirty state change.
+                    map.getMapTeams().sync(map.getMapTeams().getOnlineWithSpec());
+                }));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -147,5 +147,4 @@ public class FPSMEventHook {
             }
         });
     }
-
 }

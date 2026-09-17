@@ -1,4 +1,5 @@
 package com.ptcrys.fpsmatch.common.shop.functional;
+
 import com.ptcrys.fpsmatch.core.shop.event.CheckCostEvent;
 import com.ptcrys.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.ptcrys.fpsmatch.core.shop.functional.ListenerModule;
@@ -11,6 +12,7 @@ import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
  * 如果允许退货，会将物品退回玩家的背包，并返还相应的金钱。
  */
 public class ReturnGoodsModule implements ListenerModule {
+
     /**
      * 处理商店槽位变更事件。
      * <p>
@@ -29,8 +31,8 @@ public class ReturnGoodsModule implements ListenerModule {
     }
 
     @Override
-    public void onCostCheck(CheckCostEvent event,ShopSlot slot){
-        if(slot.canReturn(event.player())){
+    public void onCostCheck(CheckCostEvent event, ShopSlot slot) {
+        if (slot.canReturn(event.player())) {
             event.addCost(slot.getCost());
         }
     }
@@ -39,6 +41,7 @@ public class ReturnGoodsModule implements ListenerModule {
      * 获取模块名称。
      * <p>
      * 该模块的名称为 "returnGoods"，表示其功能是处理退货逻辑。
+     * 
      * @return 模块名称
      */
     @Override
@@ -49,6 +52,7 @@ public class ReturnGoodsModule implements ListenerModule {
     /**
      * 获取模块优先级。
      * <p>
+     * 
      * @return 模块优先级
      */
     @Override

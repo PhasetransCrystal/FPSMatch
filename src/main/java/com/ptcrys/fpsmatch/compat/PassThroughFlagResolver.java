@@ -1,25 +1,26 @@
 package com.ptcrys.fpsmatch.compat;
 
-import com.ptcrys.fpsmatch.common.entity.throwable.SmokeShellEntity;
-import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import javax.annotation.Nullable;
+import com.ptcrys.fpsmatch.common.entity.throwable.SmokeShellEntity;
+import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
+
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 public final class PassThroughFlagResolver {
-    private PassThroughFlagResolver() {
-    }
+
+    private PassThroughFlagResolver() {}
 
     public static Flags fromBullet(@Nullable Entity bullet) {
         if (bullet instanceof IPassThroughEntity passThrough) {
             return new Flags(
                     passThrough.fpsmatch$isWall(),
                     passThrough.fpsmatch$isSmoke(),
-                    passThrough.fpsmatch$isScoped()
-            );
+                    passThrough.fpsmatch$isScoped());
         }
         return Flags.NONE;
     }
@@ -60,13 +61,11 @@ public final class PassThroughFlagResolver {
     }
 
     public static boolean isSmokeInArea(List<Entity> entities, AABB checker) {
-        if (FPSMImpl.findCounterStrikeGrenadesMod()
-                && CounterStrikeGrenadesCompat.isInSmokeGrenadeArea(entities, checker)) {
+        if (FPSMImpl.findCounterStrikeGrenadesMod() && CounterStrikeGrenadesCompat.isInSmokeGrenadeArea(entities, checker)) {
             return true;
         }
 
-        if (FPSMImpl.findLrtacticalMod()
-                && LrtacticalCompat.isInSmokeGrenadeArea(entities, checker)) {
+        if (FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isInSmokeGrenadeArea(entities, checker)) {
             return true;
         }
 
@@ -104,6 +103,7 @@ public final class PassThroughFlagResolver {
     }
 
     public record Flags(boolean passWall, boolean passSmoke, boolean scoped) {
+
         public static final Flags NONE = new Flags(false, false, false);
 
         public Flags withPassSmoke(boolean passSmoke) {
@@ -114,8 +114,7 @@ public final class PassThroughFlagResolver {
             return new Flags(
                     passWall || other.passWall,
                     passSmoke || other.passSmoke,
-                    scoped || other.scoped
-            );
+                    scoped || other.scoped);
         }
     }
 }

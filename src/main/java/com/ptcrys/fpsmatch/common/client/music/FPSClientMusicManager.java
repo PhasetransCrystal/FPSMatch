@@ -1,7 +1,5 @@
 package com.ptcrys.fpsmatch.common.client.music;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.core.data.music.OnlineMusic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -9,12 +7,15 @@ import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraftforge.common.MinecraftForge;
 
-import javax.sound.sampled.*;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.core.data.music.OnlineMusic;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import javax.sound.sampled.*;
 
 /**
  * 客户端音乐管理器，用于播放和停止音乐。
@@ -23,6 +24,7 @@ import java.io.InputStream;
  * 提供了播放音乐和停止当前音乐的功能。
  */
 public class FPSClientMusicManager {
+
     static Minecraft mc = Minecraft.getInstance();
     private static final float FADE_DURATION_SECONDS = 1f; // 淡入淡出时长，单位秒
     private static Thread playThread;
@@ -31,6 +33,7 @@ public class FPSClientMusicManager {
 
     /**
      * 播放指定的音乐资源。
+     * 
      * @param musicResource 音乐资源的 ResourceLocation
      */
     public static void playMusic(ResourceLocation musicResource) {
@@ -73,6 +76,7 @@ public class FPSClientMusicManager {
 
     /**
      * 开始播放音频流
+     * 
      * @param music 音频
      */
     public static void play(OnlineMusic music) {
@@ -80,9 +84,9 @@ public class FPSClientMusicManager {
 
         playThread = new Thread(() -> {
             InputStream stream = music.stream();
-            if(stream == null) return;
+            if (stream == null) return;
             try (BufferedInputStream bis = new BufferedInputStream(stream);
-                 AudioInputStream ais = AudioSystem.getAudioInputStream(bis)) {
+                    AudioInputStream ais = AudioSystem.getAudioInputStream(bis)) {
 
                 AudioFormat format = ais.getFormat();
                 DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
@@ -98,8 +102,8 @@ public class FPSClientMusicManager {
                         volumeControl.setValue(dB);
                     }
                     float sampleRate = format.getSampleRate();
-                    int fadeInFrames  = (int)(FADE_DURATION_SECONDS * sampleRate);
-                    int fadeOutFrames = (int)(FADE_DURATION_SECONDS * sampleRate);
+                    int fadeInFrames = (int) (FADE_DURATION_SECONDS * sampleRate);
+                    int fadeOutFrames = (int) (FADE_DURATION_SECONDS * sampleRate);
 
                     long totalFrames = ais.getFrameLength();
 
@@ -123,8 +127,7 @@ public class FPSClientMusicManager {
                                 // 淡入
                                 if (frameIndex < fadeInFrames) {
                                     fadeFactor = frameIndex / (float) fadeInFrames; // 0 ~ 1 线性上升
-                                }
-                                else if (frameIndex > fadeOutStart) {
+                                } else if (frameIndex > fadeOutStart) {
                                     long framesIntoFadeOut = frameIndex - fadeOutStart;
                                     float fraction = framesIntoFadeOut / (float) fadeOutFrames; // 0 ~ 1
                                     fadeFactor = 1.0f - fraction; // 1 ~ 0 线性下降
@@ -141,7 +144,7 @@ public class FPSClientMusicManager {
                                 float processed = sample * fadeFactor;
                                 short newSample = (short) Math.max(Short.MIN_VALUE,
                                         Math.min(Short.MAX_VALUE, (int) processed));
-                                buffer[sampleIndex]     = (byte) (newSample & 0xFF);
+                                buffer[sampleIndex] = (byte) (newSample & 0xFF);
                                 buffer[sampleIndex + 1] = (byte) ((newSample >> 8) & 0xFF);
                             }
                         }
@@ -169,7 +172,7 @@ public class FPSClientMusicManager {
     public static void stopMusic() {
         if (playing) {
             mc.getMusicManager().stopPlaying();
-            if(lastMusic != null) mc.getSoundManager().stop(lastMusic,SoundSource.VOICE);
+            if (lastMusic != null) mc.getSoundManager().stop(lastMusic, SoundSource.VOICE);
         }
 
         playing = false;
@@ -178,5 +181,4 @@ public class FPSClientMusicManager {
         }
         playThread = null;
     }
-
 }

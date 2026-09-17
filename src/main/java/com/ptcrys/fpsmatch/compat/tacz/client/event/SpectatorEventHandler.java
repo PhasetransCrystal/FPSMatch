@@ -1,11 +1,5 @@
 package com.ptcrys.fpsmatch.compat.tacz.client.event;
 
-import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
-import com.ptcrys.fpsmatch.compat.tacz.client.animation.GunAnimationController;
-import com.ptcrys.fpsmatch.compat.tacz.client.fakeitem.ClientFakeItemManager;
-import com.ptcrys.fpsmatch.compat.tacz.client.test.TaczSpecScreenShake;
-import com.tacz.guns.api.event.common.GunFireEvent;
-import com.tacz.guns.api.event.common.GunReloadEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
@@ -14,6 +8,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
+import com.ptcrys.fpsmatch.compat.tacz.client.animation.GunAnimationController;
+import com.ptcrys.fpsmatch.compat.tacz.client.fakeitem.ClientFakeItemManager;
+import com.ptcrys.fpsmatch.compat.tacz.client.test.TaczSpecScreenShake;
+import com.tacz.guns.api.event.common.GunFireEvent;
+import com.tacz.guns.api.event.common.GunReloadEvent;
 
 /**
  * TACZ 旁观者事件处理。
@@ -25,7 +26,7 @@ public class SpectatorEventHandler {
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
-        if(shouldSkipSpecHandlers()) return;
+        if (shouldSkipSpecHandlers()) return;
 
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) return;
@@ -48,7 +49,7 @@ public class SpectatorEventHandler {
     @SubscribeEvent
     public static void onGunFire(GunFireEvent event) {
         if (!event.getLogicalSide().isClient()) return;
-        if(shouldSkipSpecHandlers()) return;
+        if (shouldSkipSpecHandlers()) return;
 
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || !player.isSpectator()) return;
@@ -63,7 +64,7 @@ public class SpectatorEventHandler {
     @SubscribeEvent
     public static void onGunReload(GunReloadEvent event) {
         if (!event.getLogicalSide().isClient()) return;
-        if(shouldSkipSpecHandlers()) return;
+        if (shouldSkipSpecHandlers()) return;
 
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || !player.isSpectator()) return;
@@ -95,7 +96,7 @@ public class SpectatorEventHandler {
     // 处理震屏逻辑
     @SubscribeEvent
     public static void onComputeCameraAngles(ViewportEvent.ComputeCameraAngles event) {
-        if(shouldSkipSpecHandlers()) return;
+        if (shouldSkipSpecHandlers()) return;
         TaczSpecScreenShake.handleCameraAngles(event);
     }
 

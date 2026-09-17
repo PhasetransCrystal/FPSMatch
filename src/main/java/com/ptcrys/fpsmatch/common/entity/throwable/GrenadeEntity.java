@@ -1,13 +1,5 @@
 package com.ptcrys.fpsmatch.common.entity.throwable;
 
-import com.ptcrys.fpsmatch.config.FPSMConfig;
-import com.ptcrys.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
-import com.ptcrys.fpsmatch.common.attributes.ammo.GunDamageHandler;
-import com.ptcrys.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
-import com.ptcrys.fpsmatch.common.entity.EntityRegister;
-import com.ptcrys.fpsmatch.common.item.FPSMItemRegister;
-import com.ptcrys.fpsmatch.common.sound.FPSMSoundRegister;
-import com.ptcrys.fpsmatch.util.FPSMUtil;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,9 +12,19 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+
+import com.ptcrys.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
+import com.ptcrys.fpsmatch.common.attributes.ammo.GunDamageHandler;
+import com.ptcrys.fpsmatch.common.entity.EntityRegister;
+import com.ptcrys.fpsmatch.common.item.FPSMItemRegister;
+import com.ptcrys.fpsmatch.common.sound.FPSMSoundRegister;
+import com.ptcrys.fpsmatch.config.FPSMConfig;
+import com.ptcrys.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
+import com.ptcrys.fpsmatch.util.FPSMUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
+
     private final int explosionRadius = FPSMConfig.common.grenadeRadius.get();
     private final int baseDamage = FPSMConfig.common.grenadeDamage.get();
     private static final double HEAD_DAMAGE_BOOST = 1.5;
@@ -41,7 +43,7 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
     }
 
     @Override
-    protected void onTimeOut(){
+    protected void onTimeOut() {
         explode();
     }
 
@@ -61,7 +63,7 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
         discard();
     }
 
-    private void applyStopSmokeShell(){
+    private void applyStopSmokeShell() {
         AABB smokeCheckArea = getBoundingBox().inflate(explosionRadius);
 
         SmokeShellEntity[] a = level().getEntitiesOfClass(SmokeShellEntity.class, smokeCheckArea)
@@ -90,7 +92,7 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
         AABB explosionArea = getBoundingBox().inflate(explosionRadius);
 
         for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, explosionArea)) {
-            if(entity instanceof ServerPlayer player && !player.gameMode.isSurvival()){
+            if (entity instanceof ServerPlayer player && !player.gameMode.isSurvival()) {
                 continue;
             }
 
@@ -108,7 +110,7 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
             return;
         }
 
-        float armorValue = GunDamageHandler.getArmorValue(player,false);
+        float armorValue = GunDamageHandler.getArmorValue(player, false);
 
         if (armorValue > 0) {
             float finalDamage = (float) (calculatedDamage * (EXPLOSION_ARMOR_PENETRATION / 2.0F));
@@ -174,8 +176,7 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
                 endPos,
                 ClipContext.Block.COLLIDER,
                 ClipContext.Fluid.NONE,
-                this
-        );
+                this);
         HitResult result = level().clip(context);
         return result.getType() != HitResult.Type.MISS;
     }
@@ -194,7 +195,6 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
 
         return baseDmg * distanceFactor;
     }
-
 
     private void playExplosionSound() {
         level().playSound(null, getX(), getY(), getZ(),

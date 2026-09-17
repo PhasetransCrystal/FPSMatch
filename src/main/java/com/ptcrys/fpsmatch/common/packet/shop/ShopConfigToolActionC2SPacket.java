@@ -1,11 +1,12 @@
 package com.ptcrys.fpsmatch.common.packet.shop;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.item.ShopConfigTool;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.item.ShopConfigTool;
 
 import java.util.function.Supplier;
 
@@ -15,10 +16,10 @@ import java.util.function.Supplier;
  * 处理客户端在商店配置工具界面中的选择变更和刷新操作。
  */
 public record ShopConfigToolActionC2SPacket(
-        Action action,
-        String selectedType,
-        String selectedMap
-) {
+                                            Action action,
+                                            String selectedType,
+                                            String selectedMap) {
+
     private static final int ID_MAX_LENGTH = 128;
 
     public enum Action {
@@ -36,8 +37,7 @@ public record ShopConfigToolActionC2SPacket(
         return new ShopConfigToolActionC2SPacket(
                 buf.readEnum(Action.class),
                 buf.readUtf(ID_MAX_LENGTH),
-                buf.readUtf(ID_MAX_LENGTH)
-        );
+                buf.readUtf(ID_MAX_LENGTH));
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {

@@ -1,7 +1,8 @@
 package com.ptcrys.fpsmatch.mixin.spec.glow;
 
-import com.ptcrys.fpsmatch.common.client.spec.PlayerOutlineRenderer;
 import net.minecraft.world.entity.Entity;
+
+import com.ptcrys.fpsmatch.common.client.spec.PlayerOutlineRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

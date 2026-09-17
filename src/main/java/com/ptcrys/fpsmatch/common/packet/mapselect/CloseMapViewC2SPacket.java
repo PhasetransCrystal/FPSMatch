@@ -1,9 +1,10 @@
 package com.ptcrys.fpsmatch.common.packet.mapselect;
 
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager;
 
 import java.util.function.Supplier;
 
@@ -12,8 +13,8 @@ import java.util.function.Supplier;
  * 避免服务端向已离开界面的玩家继续计算/广播被动同步包。
  */
 public record CloseMapViewC2SPacket() {
-    public static void encode(CloseMapViewC2SPacket packet, FriendlyByteBuf buf) {
-    }
+
+    public static void encode(CloseMapViewC2SPacket packet, FriendlyByteBuf buf) {}
 
     public static CloseMapViewC2SPacket decode(FriendlyByteBuf buf) {
         return new CloseMapViewC2SPacket();

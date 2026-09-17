@@ -1,5 +1,14 @@
 package com.ptcrys.fpsmatch.common.capability.map;
 
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.serialization.Codec;
@@ -19,14 +28,6 @@ import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.map.BlastBombState;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import com.ptcrys.fpsmatch.util.PreviewColorUtil;
-import net.minecraft.commands.CommandBuildContext;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
-import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -36,13 +37,14 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
 
     public static void register() {
         FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.MAP, DemolitionModeCapability.class, new Factory<>() {
+
             @Override
             public DemolitionModeCapability create(BaseMap map) {
                 return new DemolitionModeCapability(map);
             }
 
             @Override
-            public Command command(){
+            public Command command() {
                 return new DemolitionCommand();
             }
         });
@@ -106,9 +108,7 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
     }
 
     public boolean isBombAreaInsideMap(AreaData area) {
-        return area != null
-                && map.getMapArea().isBlockPosInArea(area.pos1())
-                && map.getMapArea().isBlockPosInArea(area.pos2());
+        return area != null && map.getMapArea().isBlockPosInArea(area.pos1()) && map.getMapArea().isBlockPosInArea(area.pos2());
     }
 
     /**
@@ -185,8 +185,7 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
                     prefix + index,
                     Component.translatable("blockoffensive.bomb.area"),
                     PreviewColorUtil.getMapPreviewColor(map.getGameType()),
-                    area
-            ));
+                    area));
             index++;
         }
     }
@@ -239,6 +238,7 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
     }
 
     public static class Data {
+
         public static final Codec<Data> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 // 炸弹区域数据
                 AreaData.CODEC.listOf().fieldOf("bombAreas")
@@ -246,8 +246,8 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
 
                 // 爆破队伍
                 Codec.STRING.fieldOf("blastTeam")
-                        .forGetter(Data::getDemolitionTeam)
-        ).apply(instance, Data::new));
+                        .forGetter(Data::getDemolitionTeam))
+                .apply(instance, Data::new));
 
         private final List<AreaData> bombAreas;
 
@@ -278,6 +278,7 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
     }
 
     public static class DemolitionCommand implements Factory.Command {
+
         @Override
         public String getName() {
             return "demolition";
@@ -332,16 +333,14 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
         private static int handleBombAreaDisplay(CommandContext<CommandSourceStack> context) {
             ServerPlayer player = context.getSource().getPlayer();
             if (player == null) {
-                context.getSource().sendSuccess(() ->
-                        Component.translatable("commands.fpsm.only.player"), true);
+                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.only.player"), true);
                 return 0;
             }
 
             return FPSMCommand.getMapCapability(context, DemolitionModeCapability.class)
                     .map(cap -> {
                         cap.syncBombAreasToClient(player);
-                        context.getSource().sendSuccess(() ->
-                                Component.translatable("commands.fpsm.modify.bombarea.display.success"), true);
+                        context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.bombarea.display.success"), true);
                         return 1;
                     })
                     .orElseGet(() -> {

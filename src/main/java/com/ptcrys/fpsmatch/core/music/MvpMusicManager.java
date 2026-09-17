@@ -10,12 +10,12 @@ import net.minecraft.resources.ResourceLocation;
  * 也可直接使用 FPSMatch 注册的 {@code fpsmatch:mvp.default} 声音事件。
  */
 public final class MvpMusicManager {
+
     private static final ResourceLocation BUILTIN_DEFAULT = ResourceLocation.tryBuild("fpsmatch", "mvp.default");
 
     private static ResourceLocation defaultMvpMusic = BUILTIN_DEFAULT;
 
-    private MvpMusicManager() {
-    }
+    private MvpMusicManager() {}
 
     /**
      * 获取当前默认 MVP 音乐的 ResourceLocation。

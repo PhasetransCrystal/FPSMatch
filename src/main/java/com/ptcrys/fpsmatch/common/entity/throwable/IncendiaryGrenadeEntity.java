@@ -1,9 +1,5 @@
 package com.ptcrys.fpsmatch.common.entity.throwable;
 
-import com.ptcrys.fpsmatch.config.FPSMConfig;
-import com.ptcrys.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
-import com.ptcrys.fpsmatch.core.function.IHolder;
-import com.ptcrys.fpsmatch.common.entity.EntityRegister;
 import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -19,15 +15,22 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+
+import com.ptcrys.fpsmatch.common.entity.EntityRegister;
+import com.ptcrys.fpsmatch.config.FPSMConfig;
+import com.ptcrys.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
+import com.ptcrys.fpsmatch.core.function.IHolder;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.util.Random;
 
 public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
+
     private static final EntityDataAccessor<ItemStack> ITEM = SynchedEntityData.defineId(IncendiaryGrenadeEntity.class, EntityDataSerializers.ITEM_STACK);
     private final int effectRadius;
     private final int damage = FPSMConfig.common.incendiaryGrenadeDamage.get();
+
     public IncendiaryGrenadeEntity(EntityType<? extends IncendiaryGrenadeEntity> type, Level level) {
         super(type, level);
         this.effectRadius = 3;
@@ -45,14 +48,13 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        entityData.define(ITEM,new ItemStack(Items.BARRIER));
+        entityData.define(ITEM, new ItemStack(Items.BARRIER));
     }
 
     private void applyFireEffect() {
         AABB effectArea = new AABB(
                 getX() - effectRadius, getY() - effectRadius, getZ() - effectRadius,
-                getX() + effectRadius, getY() + effectRadius, getZ() + effectRadius
-        );
+                getX() + effectRadius, getY() + effectRadius, getZ() + effectRadius);
 
         for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, effectArea)) {
             applyPlayerDamage(entity);
@@ -61,7 +63,7 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
 
     private void applyPlayerDamage(LivingEntity entity) {
         entity.setSecondsOnFire(1);
-        if(entity instanceof ServerPlayer player && !player.gameMode.isSurvival()){
+        if (entity instanceof ServerPlayer player && !player.gameMode.isSurvival()) {
             return;
         }
         entity.hurt(this.damageSource(), damage);
@@ -92,25 +94,25 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
     protected void onActiveTick() {
         handleParticleTiming();
         handleSmokeInteraction();
-        if(tickCount % 4 == 0){
+        if (tickCount % 4 == 0) {
             applyFireEffect();
         }
     }
 
     @Override
-    public void onTimeOut(){
+    public void onTimeOut() {
         if (level() instanceof ServerLevel serverLevel) {
-            spawnRadialParticles(new AABB(this.getX() - 2, this.getY() - 2, this.getZ() - 2, this.getX() + 2, this.getY() + 2, this.getZ() + 2),serverLevel,5);
+            spawnRadialParticles(new AABB(this.getX() - 2, this.getY() - 2, this.getZ() - 2, this.getX() + 2, this.getY() + 2, this.getZ() + 2), serverLevel, 5);
         }
     }
 
     private void spawnBurstParticles() {
         if (level() instanceof ServerLevel serverLevel) {
-            spawnRadialParticles(getParticleArea(), serverLevel,20);
+            spawnRadialParticles(getParticleArea(), serverLevel, 20);
         }
     }
 
-    private void spawnRadialParticles(AABB area ,ServerLevel level,int time) {
+    private void spawnRadialParticles(AABB area, ServerLevel level, int time) {
         Random random = new Random();
 
         for (int i = 0; i < time; i++) {
@@ -121,8 +123,7 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
             DustColorTransitionOptions options = new DustColorTransitionOptions(
                     new Vector3f(1, 0.25f, 0.25f),
                     new Vector3f(1, 1f, 0.1F),
-                    random.nextFloat() * 3f
-            );
+                    random.nextFloat() * 3f);
 
             level.sendParticles(options, x, y, z, 2, 0, 0.2, 0, 1);
         }
@@ -144,12 +145,11 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
         return getHoldItem();
     }
 
-    public Item getHoldItem(){
+    public Item getHoldItem() {
         return entityData.get(ITEM).getItem();
     }
 
-    public void setSyncItem(Item item){
-        entityData.set(ITEM,new ItemStack(item));
+    public void setSyncItem(Item item) {
+        entityData.set(ITEM, new ItemStack(item));
     }
-
 }

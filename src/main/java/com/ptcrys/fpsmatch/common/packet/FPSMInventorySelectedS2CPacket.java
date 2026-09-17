@@ -6,6 +6,7 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public record FPSMInventorySelectedS2CPacket(int selected) {
+
     public static void encode(FPSMInventorySelectedS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeInt(packet.selected);
     }

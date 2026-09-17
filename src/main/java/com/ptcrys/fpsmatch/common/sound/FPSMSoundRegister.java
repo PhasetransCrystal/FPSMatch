@@ -1,8 +1,5 @@
 package com.ptcrys.fpsmatch.common.sound;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.compat.gun.GunTabTypeEnum;
-import com.tacz.guns.api.item.GunTabType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -11,11 +8,16 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.compat.gun.GunTabTypeEnum;
+import com.tacz.guns.api.item.GunTabType;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings("all")
 public class FPSMSoundRegister {
+
     public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, FPSMatch.MODID);
 
     public static final RegistryObject<SoundEvent> VOICE_SMOKE = SOUNDS.register("voice_smoke", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(FPSMatch.MODID, "voice_smoke")));
@@ -153,5 +155,4 @@ public class FPSMSoundRegister {
         }
         return GunTabTypeEnum.fromString(gunType.name());
     }
-
 }

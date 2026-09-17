@@ -1,16 +1,17 @@
 package com.ptcrys.fpsmatch.mixin.compat.spectate.tacz;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+
 import com.tacz.guns.api.event.common.GunFireEvent;
 import com.tacz.guns.client.event.FirstPersonRenderGunEvent;
 import com.tacz.guns.client.model.BedrockGunModel;
 import com.tacz.guns.client.model.bedrock.BedrockPart;
 import com.tacz.guns.client.model.functional.MuzzleFlashRender;
 import com.tacz.guns.util.math.SecondOrderDynamics;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = FirstPersonRenderGunEvent.class, remap = false)
 public abstract class FirstPersonRenderGunEventMixin {
+
     @Final
     @Shadow
     private static SecondOrderDynamics JUMPING_DYNAMICS;
@@ -73,7 +75,7 @@ public abstract class FirstPersonRenderGunEventMixin {
         }
         float safePartial = partialTicks <= 0.0f ? 0.05f : partialTicks;
         double posY = Mth.lerp(safePartial, target.yOld, target.getY());
-        float velocityY = (float)(posY - target.yOld) / safePartial;
+        float velocityY = (float) (posY - target.yOld) / safePartial;
         if (target.onGround()) {
             if (!lastOnGround) {
                 jumpingSwayProgress = velocityY / -0.1f;
@@ -81,7 +83,7 @@ public abstract class FirstPersonRenderGunEventMixin {
                     jumpingSwayProgress = 1.0f;
                 }
                 lastOnGround = true;
-            } else if ((jumpingSwayProgress -= (float)(now - jumpingTimeStamp) / 150.0f) < 0.0f) {
+            } else if ((jumpingSwayProgress -= (float) (now - jumpingTimeStamp) / 150.0f) < 0.0f) {
                 jumpingSwayProgress = 0.0f;
             }
         } else if (lastOnGround) {
@@ -90,7 +92,7 @@ public abstract class FirstPersonRenderGunEventMixin {
                 jumpingSwayProgress = 1.0f;
             }
             lastOnGround = false;
-        } else if ((jumpingSwayProgress -= (float)(now - jumpingTimeStamp) / 300.0f) < 0.0f) {
+        } else if ((jumpingSwayProgress -= (float) (now - jumpingTimeStamp) / 300.0f) < 0.0f) {
             jumpingSwayProgress = 0.0f;
         }
         jumpingTimeStamp = now;

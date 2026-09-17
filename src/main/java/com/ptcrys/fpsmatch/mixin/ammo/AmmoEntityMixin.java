@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = EntityKineticBullet.class, remap = false)
 public abstract class AmmoEntityMixin implements IPassThroughEntity {
+
     @Unique
     private boolean fpsmatch$passedThroughWall = false;
 
@@ -22,7 +23,7 @@ public abstract class AmmoEntityMixin implements IPassThroughEntity {
 
     @Inject(method = "onBulletTick", at = @At(value = "HEAD"))
     private void fpsmatch$checkPassedSmoke(CallbackInfo ci) {
-        EntityKineticBullet bullet = (EntityKineticBullet)(Object)this;
+        EntityKineticBullet bullet = (EntityKineticBullet) (Object) this;
         if (bullet.level().isClientSide()) return;
         if (fpsmatch$passedThroughSmoke) return;
 

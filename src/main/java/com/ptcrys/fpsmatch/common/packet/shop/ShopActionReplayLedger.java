@@ -5,13 +5,12 @@ import java.util.Map;
 import java.util.UUID;
 
 final class ShopActionReplayLedger {
+
     private static final int MAX_REQUESTS_PER_PLAYER = 256;
     private static final int MAX_PLAYERS = 1024;
-    private static final Map<UUID, LinkedHashMap<Long, ShopActionResultS2CPacket>> RESULTS =
-            new LinkedHashMap<>(16, 0.75f, true);
+    private static final Map<UUID, LinkedHashMap<Long, ShopActionResultS2CPacket>> RESULTS = new LinkedHashMap<>(16, 0.75f, true);
 
-    private ShopActionReplayLedger() {
-    }
+    private ShopActionReplayLedger() {}
 
     static synchronized ShopActionResultS2CPacket find(UUID player, long requestId) {
         Map<Long, ShopActionResultS2CPacket> results = RESULTS.get(player);
@@ -19,12 +18,10 @@ final class ShopActionReplayLedger {
     }
 
     static synchronized ShopActionResultS2CPacket record(
-            UUID player,
-            ShopActionResultS2CPacket packet
-    ) {
+                                                         UUID player,
+                                                         ShopActionResultS2CPacket packet) {
         LinkedHashMap<Long, ShopActionResultS2CPacket> results = RESULTS.computeIfAbsent(
-                player, ignored -> new LinkedHashMap<>()
-        );
+                player, ignored -> new LinkedHashMap<>());
         while (RESULTS.size() > MAX_PLAYERS) {
             RESULTS.remove(RESULTS.keySet().iterator().next());
         }

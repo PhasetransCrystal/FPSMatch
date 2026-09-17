@@ -1,7 +1,5 @@
 package com.ptcrys.fpsmatch.mixin.compat.spectate.tacz;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -10,6 +8,9 @@ import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.world.level.GameType;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,6 +25,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(GameRenderer.class)
 public abstract class MixinGameRendererSpectatorHands {
+
     @Final
     @Shadow
     public ItemInHandRenderer itemInHandRenderer;
@@ -33,10 +35,9 @@ public abstract class MixinGameRendererSpectatorHands {
     private RenderBuffers renderBuffers;
 
     @Redirect(
-            method = "renderItemInHand(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/Camera;F)V",
-            at = @At(value = "FIELD", opcode = Opcodes.GETSTATIC, target = "Lnet/minecraft/world/level/GameType;SPECTATOR:Lnet/minecraft/world/level/GameType;"),
-            require = 0
-    )
+              method = "renderItemInHand(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/Camera;F)V",
+              at = @At(value = "FIELD", opcode = Opcodes.GETSTATIC, target = "Lnet/minecraft/world/level/GameType;SPECTATOR:Lnet/minecraft/world/level/GameType;"),
+              require = 0)
     private GameType fpsmatch$allowSpectatorHands() {
         if (Minecraft.getInstance().options.getCameraType().isFirstPerson() && SpectatorView.shouldRenderHands()) {
             return GameType.SURVIVAL;

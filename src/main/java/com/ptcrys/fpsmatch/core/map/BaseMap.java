@@ -1,40 +1,14 @@
 package com.ptcrys.fpsmatch.core.map;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
-import com.ptcrys.fpsmatch.common.capability.team.SpawnPointCapability;
-import com.ptcrys.fpsmatch.common.packet.AddAreaDataS2CPacket;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.core.capability.CapabilityMap;
-import com.ptcrys.fpsmatch.core.capability.map.MapCapability;
-import com.ptcrys.fpsmatch.core.data.AreaData;
-import com.ptcrys.fpsmatch.core.data.PlayerData;
-import com.ptcrys.fpsmatch.core.data.Setting;
-import com.ptcrys.fpsmatch.core.data.SpawnPointData;
-import com.ptcrys.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
-import com.ptcrys.fpsmatch.common.event.FPSMapEvent;
-import com.ptcrys.fpsmatch.core.persistence.ISavePort;
-import com.ptcrys.fpsmatch.core.team.BaseTeam;
-import com.ptcrys.fpsmatch.core.team.MapTeams;
-import com.ptcrys.fpsmatch.core.team.ServerTeam;
-import com.ptcrys.fpsmatch.core.team.TeamData;
-import com.ptcrys.fpsmatch.util.FPSMUtil;
-import com.ptcrys.fpsmatch.util.PreviewColorUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -42,13 +16,39 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
+import com.ptcrys.fpsmatch.common.capability.team.SpawnPointCapability;
+import com.ptcrys.fpsmatch.common.event.FPSMapEvent;
+import com.ptcrys.fpsmatch.common.packet.AddAreaDataS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.capability.CapabilityMap;
+import com.ptcrys.fpsmatch.core.capability.map.MapCapability;
+import com.ptcrys.fpsmatch.core.data.AreaData;
+import com.ptcrys.fpsmatch.core.data.PlayerData;
+import com.ptcrys.fpsmatch.core.data.Setting;
+import com.ptcrys.fpsmatch.core.data.SpawnPointData;
+import com.ptcrys.fpsmatch.core.persistence.ISavePort;
+import com.ptcrys.fpsmatch.core.team.BaseTeam;
+import com.ptcrys.fpsmatch.core.team.MapTeams;
+import com.ptcrys.fpsmatch.core.team.ServerTeam;
+import com.ptcrys.fpsmatch.core.team.TeamData;
+import com.ptcrys.fpsmatch.util.FPSMUtil;
+import com.ptcrys.fpsmatch.util.PreviewColorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -57,16 +57,29 @@ import java.util.function.Predicate;
  */
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public abstract class BaseMap {
+
     // 地图名称
     public final String mapName;
     // 游戏是否开始
     protected boolean isStart = false;
     private final com.ptcrys.fpsmatch.core.data.MatchClock matchClock = new com.ptcrys.fpsmatch.core.data.MatchClock();
 
-    public final int getElapsedMatchSeconds() { return matchClock.seconds(); }
-    public final long getElapsedMatchTicks() { return matchClock.ticks(); }
-    public final void resetMatchClock() { matchClock.reset(); }
-    protected boolean shouldCountMatchTime() { return isStart; }
+    public final int getElapsedMatchSeconds() {
+        return matchClock.seconds();
+    }
+
+    public final long getElapsedMatchTicks() {
+        return matchClock.ticks();
+    }
+
+    public final void resetMatchClock() {
+        matchClock.reset();
+    }
+
+    protected boolean shouldCountMatchTime() {
+        return isStart;
+    }
+
     // 是否处于调试模式
     private boolean isDebug = false;
     // 服务器世界
@@ -331,16 +344,14 @@ public abstract class BaseMap {
     /**
      * 同步数据到客户端
      */
-    public void syncToClient() {
-    }
+    public void syncToClient() {}
 
     ;
 
     /**
      * 每个 tick 的操作
      */
-    public void tick() {
-    }
+    public void tick() {}
 
     /**
      * 检查胜利条件
@@ -394,9 +405,7 @@ public abstract class BaseMap {
     /**
      * 开始新一轮游戏
      */
-    public void startNewRound() {
-    }
-
+    public void startNewRound() {}
 
     /**
      * 当对局内玩家死亡
@@ -495,7 +504,6 @@ public abstract class BaseMap {
         }
     }
 
-
     public MapTeams.JoinTeamResult join(ServerPlayer player) {
         MapTeams mapTeams = this.getMapTeams();
         List<ServerTeam> baseTeams = mapTeams.getNormalTeams();
@@ -514,9 +522,7 @@ public abstract class BaseMap {
                 teams.add(t);
             }
         }
-        ServerTeam team = teams.size() == 1
-                ? teams.get(0)
-                : teams.get(new Random().nextInt(0, teams.size()));
+        ServerTeam team = teams.size() == 1 ? teams.get(0) : teams.get(new Random().nextInt(0, teams.size()));
 
         return this.join(team.name, player);
     }
@@ -689,7 +695,6 @@ public abstract class BaseMap {
         FPSMCore.getInstance().registerMap(this.getGameType(), this);
     }
 
-
     /**
      * 获取地图的所有能力
      *
@@ -725,7 +730,6 @@ public abstract class BaseMap {
         }
     }
 
-
     /**
      * 获取地图区域数据
      *
@@ -746,29 +750,19 @@ public abstract class BaseMap {
      * @param <MSG>  数据包类型
      */
     public <MSG> void sendPacketToAllPlayer(MSG packet) {
-        this.getMapTeams().getJoinedPlayersWithSpec().forEach(uuid ->
-                this.getPlayerByUUID(uuid).ifPresent(player ->
-                        this.sendPacketToJoinedPlayer(player, packet, true)
-                )
-        );
+        this.getMapTeams().getJoinedPlayersWithSpec().forEach(uuid -> this.getPlayerByUUID(uuid).ifPresent(player -> this.sendPacketToJoinedPlayer(player, packet, true)));
     }
 
     public <MSG> void sendPacketToSpecPlayer(MSG packet) {
-        this.getMapTeams().getSpecPlayers().forEach(uuid ->
-                this.getPlayerByUUID(uuid).ifPresent(player ->
-                        this.sendPacketToJoinedPlayer(player, packet, true)
-                )
-        );
+        this.getMapTeams().getSpecPlayers().forEach(uuid -> this.getPlayerByUUID(uuid).ifPresent(player -> this.sendPacketToJoinedPlayer(player, packet, true)));
     }
 
     public <MSG> void sendPacketToTeamPlayer(ServerTeam team, MSG packet, boolean living) {
-        team.getPlayersData().forEach(data ->
-                data.getPlayer().ifPresent(player -> {
-                    if (data.isLiving() || !living) {
-                        this.sendPacketToJoinedPlayer(player, packet, true);
-                    }
-                })
-        );
+        team.getPlayersData().forEach(data -> data.getPlayer().ifPresent(player -> {
+            if (data.isLiving() || !living) {
+                this.sendPacketToJoinedPlayer(player, packet, true);
+            }
+        }));
     }
 
     public <MSG> void sendPacketToTeamLivingPlayer(ServerTeam team, MSG packet) {
@@ -825,16 +819,8 @@ public abstract class BaseMap {
             if (!getMapTeams().isSameTeam(attacker, hurt)) {
                 getMapTeams().addHurtData(attacker, hurt, amount);
                 var category = com.ptcrys.fpsmatch.core.damage.MinecraftDamageSourceClassifier.classify(source);
-                if (category == com.ptcrys.fpsmatch.core.damage.DamageSourceCategory.EXPLOSIVE
-                        || category == com.ptcrys.fpsmatch.core.damage.DamageSourceCategory.INCENDIARY
-                        || category == com.ptcrys.fpsmatch.core.damage.DamageSourceCategory.FIRE
-                        || source.getDirectEntity() instanceof com.ptcrys.fpsmatch.core.entity.BaseProjectileLifeTimeEntity
-                        || (com.ptcrys.fpsmatch.compat.impl.FPSMImpl.findLrtacticalMod()
-                        && com.ptcrys.fpsmatch.compat.LrtacticalCompat.isUtilityDamage(source))
-                        || (com.ptcrys.fpsmatch.compat.impl.FPSMImpl.findCounterStrikeGrenadesMod()
-                        && !com.ptcrys.fpsmatch.compat.CounterStrikeGrenadesCompat.getItemFromDamageSource(source).isEmpty())) {
-                    getMapTeams().getPlayerData(attacker).ifPresent(data ->
-                            data.addUtilityDamage(Math.min(hurt.getHealth(), amount)));
+                if (category == com.ptcrys.fpsmatch.core.damage.DamageSourceCategory.EXPLOSIVE || category == com.ptcrys.fpsmatch.core.damage.DamageSourceCategory.INCENDIARY || category == com.ptcrys.fpsmatch.core.damage.DamageSourceCategory.FIRE || source.getDirectEntity() instanceof com.ptcrys.fpsmatch.core.entity.BaseProjectileLifeTimeEntity || (com.ptcrys.fpsmatch.compat.impl.FPSMImpl.findLrtacticalMod() && com.ptcrys.fpsmatch.compat.LrtacticalCompat.isUtilityDamage(source)) || (com.ptcrys.fpsmatch.compat.impl.FPSMImpl.findCounterStrikeGrenadesMod() && !com.ptcrys.fpsmatch.compat.CounterStrikeGrenadesCompat.getItemFromDamageSource(source).isEmpty())) {
+                    getMapTeams().getPlayerData(attacker).ifPresent(data -> data.addUtilityDamage(Math.min(hurt.getHealth(), amount)));
                 }
             }
         });
@@ -842,10 +828,7 @@ public abstract class BaseMap {
 
     /** Called once per affected enemy per flash, after the grenade resolves visibility and duration. */
     public void recordFlashedEnemy(ServerPlayer thrower, ServerPlayer target) {
-        if (!isStart || thrower == target || target.isSpectator()
-                || !checkGameHasPlayer(thrower) || !checkGameHasPlayer(target)
-                || getMapTeams().isSameTeam(thrower, target)
-                || !getMapTeams().getPlayerData(target).map(PlayerData::isLiving).orElse(false)) return;
+        if (!isStart || thrower == target || target.isSpectator() || !checkGameHasPlayer(thrower) || !checkGameHasPlayer(target) || getMapTeams().isSameTeam(thrower, target) || !getMapTeams().getPlayerData(target).map(PlayerData::isLiving).orElse(false)) return;
         getMapTeams().getPlayerData(thrower).ifPresent(PlayerData::addFlashedEnemy);
     }
 
@@ -919,7 +902,6 @@ public abstract class BaseMap {
         } else {
             return new File(file, this.getMapName() + ".cfg");
         }
-
     }
 
     /**
@@ -1118,7 +1100,6 @@ public abstract class BaseMap {
                 "map_preview:" + this.getGameType() + ":" + this.getMapName(),
                 Component.literal(this.getMapName()),
                 PreviewColorUtil.getMapPreviewColor(this.getGameType()),
-                this.mapArea
-        ));
+                this.mapArea));
     }
 }

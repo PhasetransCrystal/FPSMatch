@@ -1,12 +1,13 @@
 package com.ptcrys.fpsmatch.core.data;
 
-import com.google.gson.Gson;
-import com.ptcrys.fpsmatch.core.FPSMCore;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import com.google.gson.Gson;
+import com.ptcrys.fpsmatch.core.FPSMCore;
 
 import java.util.*;
 
@@ -19,10 +20,11 @@ import java.util.*;
  * 4. 同步逻辑通过SyncFieldType枚举管控，仅同步需要的字段
  */
 public class PlayerData {
+
     private static final Gson GSON = new Gson();
     private final UUID owner;
     private final Component name;
-    //基础字段（客户端/服务端共用，客户端仅访问）
+    // 基础字段（客户端/服务端共用，客户端仅访问）
     private int scores = 0;
     private int kills = 0;
     private int deaths = 0;
@@ -34,7 +36,7 @@ public class PlayerData {
     private float utilityDamage;
     private int flashedEnemies;
 
-    //回合临时字段（仅服务端使用，enableRounds=true时生效）
+    // 回合临时字段（仅服务端使用，enableRounds=true时生效）
     private int _kills = 0; // 本回合击杀
     private int _deaths = 0; // 本回合死亡
     private int _assists = 0; // 本回合助攻
@@ -43,16 +45,19 @@ public class PlayerData {
     private float _utilityDamage;
     private int _flashedEnemies;
 
-    //服务端独有字段
+    // 服务端独有字段
     private final Map<UUID, Damage> damageData = new HashMap<>(); // 伤害明细
     private SpawnPointData spawnPointsData;
     private boolean dirty = true; // 脏数据标记
     public final boolean enableRounds; // 是否启用回合模式
-    private boolean lastDeath = false; //上次死亡标记 用于复活后判别发放物资
+    private boolean lastDeath = false; // 上次死亡标记 用于复活后判别发放物资
     private long combatRevision;
-    public long getCombatRevision() { return combatRevision; }
 
-    //客户端独有字段
+    public long getCombatRevision() {
+        return combatRevision;
+    }
+
+    // 客户端独有字段
     @OnlyIn(Dist.CLIENT)
     private float hp; // 生命值百分比
 
@@ -74,7 +79,7 @@ public class PlayerData {
         this(owner.getUUID(), owner.getDisplayName(), enableRounds);
     }
 
-    //  基础状态
+    // 基础状态
     public boolean isDirty() {
         return dirty;
     }
@@ -87,7 +92,7 @@ public class PlayerData {
         this.dirty = dirty;
     }
 
-    //  客户端可访问的字段 
+    // 客户端可访问的字段
     public Component name() {
         return this.name;
     }
@@ -100,8 +105,8 @@ public class PlayerData {
         return scores;
     }
 
-    public float getHpServer(){
-        return getPlayer().map(p->this.isLivingOnServer() ? p.getHealth() : 0.0f).orElse(0.0f);
+    public float getHpServer() {
+        return getPlayer().map(p -> this.isLivingOnServer() ? p.getHealth() : 0.0f).orElse(0.0f);
     }
 
     // 击杀数
@@ -109,7 +114,7 @@ public class PlayerData {
         return kills + (enableRounds ? _kills : 0);
     }
 
-    public int getTempKills(){
+    public int getTempKills() {
         return _kills;
     }
 
@@ -118,7 +123,7 @@ public class PlayerData {
         return deaths + (enableRounds ? _deaths : 0);
     }
 
-    public int getTempDeaths(){
+    public int getTempDeaths() {
         return _deaths;
     }
 
@@ -127,7 +132,7 @@ public class PlayerData {
         return assists + (enableRounds ? _assists : 0);
     }
 
-    public int getTempAssists(){
+    public int getTempAssists() {
         return _assists;
     }
 
@@ -144,7 +149,9 @@ public class PlayerData {
         return flashedEnemies + (enableRounds ? _flashedEnemies : 0);
     }
 
-    public int getTempFlashedEnemies() { return _flashedEnemies; }
+    public int getTempFlashedEnemies() {
+        return _flashedEnemies;
+    }
 
     public void addUtilityDamage(float amount) {
         if (!Float.isFinite(amount) || amount <= 0) return;
@@ -172,7 +179,7 @@ public class PlayerData {
         markDirty();
     }
 
-    public float getTempDamage(){
+    public float getTempDamage() {
         return _damage;
     }
 
@@ -190,7 +197,7 @@ public class PlayerData {
         return _kills > 0 ? (float) _headshotKills / _kills : 0.0f;
     }
 
-    //KD
+    // KD
     public float getKD() {
         int Deaths = getDeaths();
         return Deaths > 0 ? (float) getKills() / Deaths : 0.0f;
@@ -219,7 +226,7 @@ public class PlayerData {
         return hp;
     }
 
-    //  服务端字段操作 
+    // 服务端字段操作
     public void addKill() {
         if (enableRounds) {
             _kills++;
@@ -303,7 +310,6 @@ public class PlayerData {
         }
         markDirty();
     }
-    
 
     public void setTempKills(int tempKills) {
         this._kills = tempKills;
@@ -370,7 +376,7 @@ public class PlayerData {
         markDirty();
     }
 
-    //  服务端独有方法（不同步） 
+    // 服务端独有方法（不同步）
     public void setSpawnPointsData(SpawnPointData spawnPointsData) {
         this.spawnPointsData = spawnPointsData;
     }
@@ -383,14 +389,14 @@ public class PlayerData {
         return damageData;
     }
 
-    public boolean isHurtTo(UUID player){
+    public boolean isHurtTo(UUID player) {
         return damageData.containsKey(player);
     }
 
-    public Map<UUID, Float> getDamages(){
+    public Map<UUID, Float> getDamages() {
         Map<UUID, Float> damages = new HashMap<>();
         for (Map.Entry<UUID, Damage> entry : damageData.entrySet()) {
-            damages.put(entry.getKey(),entry.getValue().damage);
+            damages.put(entry.getKey(), entry.getValue().damage);
         }
         return damages;
     }
@@ -401,7 +407,7 @@ public class PlayerData {
     }
 
     public void addDamageData(UUID hurtPlayer, float damage) {
-        this.getDamageData().computeIfAbsent(hurtPlayer,k->new Damage()).addDamage(damage);
+        this.getDamageData().computeIfAbsent(hurtPlayer, k -> new Damage()).addDamage(damage);
         addDamage(damage);
     }
 
@@ -551,7 +557,8 @@ public class PlayerData {
         return maxHealth <= 0 ? 0.0f : currentHealth / maxHealth;
     }
 
-    public static class Damage{
+    public static class Damage {
+
         public int count = 0;
         public float damage = 0;
 

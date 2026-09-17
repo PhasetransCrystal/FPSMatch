@@ -1,13 +1,15 @@
 package com.ptcrys.fpsmatch.compat.tacz.client.test;
 
-import com.tacz.guns.api.entity.IGunOperator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.client.event.ViewportEvent;
 
+import com.tacz.guns.api.entity.IGunOperator;
+
 public final class TaczSpecScreenShake {
+
     public static boolean ENABLE = true;
     private static final float FREQ = 8.0f;   // 震动频率(Hz)
     private static final float DAMP = 6.0f;   // 衰减系数
@@ -34,7 +36,7 @@ public final class TaczSpecScreenShake {
         // 计算最终振幅
         float scaled = baseDeg * adsScale * rpmScale;
         amplitudeDeg = Math.max(amplitudeDeg * 0.5f, Math.min(scaled, MAX_AMPLITUDE_DEG));
-        
+
         startMs = now;
         lastKickMs = now;
     }
@@ -59,9 +61,9 @@ public final class TaczSpecScreenShake {
 
         // 计算震动角度
         double omega = 2.0 * Math.PI * FREQ;
-        event.setPitch(event.getPitch() + (float)(amplitude * env * Math.sin(omega * t)));
-        event.setYaw(event.getYaw() + (float)(amplitude * 0.35f * env * Math.cos(omega * t)));
-        event.setRoll(event.getRoll() + (float)(amplitude * 0.25f * env * Math.sin(omega * t)));
+        event.setPitch(event.getPitch() + (float) (amplitude * env * Math.sin(omega * t)));
+        event.setYaw(event.getYaw() + (float) (amplitude * 0.35f * env * Math.cos(omega * t)));
+        event.setRoll(event.getRoll() + (float) (amplitude * 0.25f * env * Math.sin(omega * t)));
     }
 
     private static float calculateAdsScale() {

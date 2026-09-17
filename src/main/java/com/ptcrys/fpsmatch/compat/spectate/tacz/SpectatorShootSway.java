@@ -2,21 +2,22 @@ package com.ptcrys.fpsmatch.compat.spectate.tacz;
 
 import com.mojang.logging.LogUtils;
 import com.tacz.guns.client.event.FirstPersonRenderGunEvent;
+import org.slf4j.Logger;
+
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.slf4j.Logger;
 
 /**
  * Marks TACZ first-person shoot sway for spectator views.
  */
 public final class SpectatorShootSway {
+
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final AtomicBoolean LOGGED_FAILURE = new AtomicBoolean(false);
     private static volatile Field shootTimeField;
     private static volatile boolean initDone;
 
-    private SpectatorShootSway() {
-    }
+    private SpectatorShootSway() {}
 
     public static void markShoot() {
         Field field = resolveField();

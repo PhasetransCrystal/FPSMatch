@@ -1,13 +1,11 @@
 package com.ptcrys.fpsmatch.core.entity;
 
-import com.ptcrys.fpsmatch.common.gamerule.FPSMatchRule;
 import net.minecraft.core.Direction;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
@@ -19,6 +17,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+
+import com.ptcrys.fpsmatch.common.gamerule.FPSMatchRule;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
  * 提供了对地面碰撞、水平和垂直碰撞的处理，以及可扩展的激活逻辑。
  */
 public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
+
     // 状态同步字段
     /**
      * 实体数据访问器，用于同步投掷物的状态（0: 初始状态，1: 碰撞后，2: 激活状态）。
@@ -62,7 +63,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
     /**
      * 构造函数，用于创建投掷物实体。
      *
-     * @param type 投掷物的实体类型
+     * @param type  投掷物的实体类型
      * @param level 投掷物所在的层级
      */
     public BaseProjectileEntity(EntityType<? extends BaseProjectileEntity> type, Level level) {
@@ -72,9 +73,9 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
     /**
      * 构造函数，用于创建投掷物实体并指定发射者。
      *
-     * @param type 投掷物的实体类型
+     * @param type    投掷物的实体类型
      * @param shooter 投掷物的发射者
-     * @param level 投掷物所在的层级
+     * @param level   投掷物所在的层级
      */
     public BaseProjectileEntity(EntityType<? extends BaseProjectileEntity> type, LivingEntity shooter, Level level) {
         super(type, shooter, level);
@@ -113,8 +114,8 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
         if (this.getState() == 2) return;
         super.onHit(r);
 
-        if(r instanceof EntityHitResult entityHitResult) {
-            entityHitResult.getEntity().hurt(this.damageSource(),1);
+        if (r instanceof EntityHitResult entityHitResult) {
+            entityHitResult.getEntity().hurt(this.damageSource(), 1);
         }
 
         if (!(r instanceof BlockHitResult result)) return;
@@ -143,7 +144,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
                     handleVerticalCollision(delta);
                 }
             }
-        }else{
+        } else {
             handleGeneralCollision(result, delta);
         }
 
@@ -154,7 +155,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
      * 处理通用碰撞逻辑。
      *
      * @param result 碰撞结果
-     * @param delta 碰撞时的速度向量
+     * @param delta  碰撞时的速度向量
      */
     private void handleGeneralCollision(BlockHitResult result, Vec3 delta) {
         Direction dir = result.getDirection();
@@ -196,7 +197,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
      * 反转水平方向的速度，并根据减速系数调整速度大小。
      *
      * @param direction 碰撞方向
-     * @param delta 碰撞时的速度向量
+     * @param delta     碰撞时的速度向量
      */
     private void handleHorizontalCollision(Direction direction, Vec3 delta) {
         // 只反转水平方向速度，保留垂直速度
@@ -222,8 +223,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
         this.setDeltaMovement(
                 delta.x * verticalReduction,
                 -(delta.y * verticalReduction),
-                delta.z * verticalReduction
-        );
+                delta.z * verticalReduction);
     }
 
     /**
@@ -256,6 +256,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
      * 子类可以通过覆盖该方法实现自定义的激活逻辑。
      */
     protected void onActivated() {}
+
     /**
      * 每次激活状态的 tick 调用。
      * <p>
@@ -272,6 +273,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
      * - 0: 初始状态（未碰撞）。
      * - 1: 碰撞后（未激活）。
      * - 2: 激活状态（如粘附到表面）。
+     * 
      * @return 投掷物的状态
      */
     public int getState() {
@@ -280,6 +282,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 设置投掷物的状态。
+     * 
      * @param state 新的状态值
      */
     protected void setState(int state) {
@@ -288,6 +291,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 检查投掷物是否已被激活。
+     * 
      * @return 如果投掷物已被激活，返回 true；否则返回 false
      */
     public boolean isActivated() {
@@ -296,6 +300,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 获取是否在地面碰撞时激活投掷物。
+     * 
      * @return 如果在地面碰撞时激活，返回 true；否则返回 false
      */
     public boolean isActivateOnGroundHit() {
@@ -304,6 +309,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 设置是否在地面碰撞时激活投掷物。
+     * 
      * @param activateOnGroundHit 是否在地面碰撞时激活
      */
     public void setActivateOnGroundHit(boolean activateOnGroundHit) {
@@ -312,6 +318,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 获取水平方向的减速系数。
+     * 
      * @return 水平方向的减速系数
      */
     public double getHorizontalReduction() {
@@ -320,6 +327,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 设置水平方向的减速系数。
+     * 
      * @param horizontalReduction 新的水平方向减速系数
      */
     public void setHorizontalReduction(double horizontalReduction) {
@@ -328,6 +336,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 获取垂直方向的减速系数。
+     * 
      * @return 垂直方向的减速系数
      */
     public double getVerticalReduction() {
@@ -336,6 +345,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 设置垂直方向的减速系数。
+     * 
      * @param verticalReduction 新的垂直方向减速系数
      */
     public void setVerticalReduction(double verticalReduction) {
@@ -350,16 +360,15 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
     }
 
     public DamageSource damageSource() {
-        if(this.getOwner() instanceof LivingEntity livingEntity) {
+        if (this.getOwner() instanceof LivingEntity livingEntity) {
             return this.damageSources().mobProjectile(this, livingEntity);
-        }else{
-            return this.damageSources().mobProjectile(this,null);
+        } else {
+            return this.damageSources().mobProjectile(this, null);
         }
     }
 
     @Override
-    public @NotNull ItemStack getItem(){
+    public @NotNull ItemStack getItem() {
         return new ItemStack(this.getDefaultItem());
     }
-
 }

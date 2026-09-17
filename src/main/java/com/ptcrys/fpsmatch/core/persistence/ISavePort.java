@@ -25,7 +25,8 @@ import java.util.function.Supplier;
  * 它使用 {@link Codec} 来实现数据的编解码，并通过 Gson 进行 JSON 操作。
  * 实现该接口的类需要提供一个具体的 {@link Codec} 实例，用于定义数据的编解码逻辑。
  */
-public interface    ISavePort<T> {
+public interface ISavePort<T> {
+
     /** Gson 线程安全，跨读写复用，避免每次构建新实例。 */
     Gson GSON = new Gson();
     Gson PRETTY_GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -64,16 +65,16 @@ public interface    ISavePort<T> {
     default T decodeFromJson(JsonElement json) {
         int oldVersion;
         JsonElement rawData;
-        if(!json.isJsonObject()){
+        if (!json.isJsonObject()) {
             oldVersion = 0;
             rawData = json;
-        }else{
+        } else {
             JsonObject wrapper = json.getAsJsonObject();
             oldVersion = wrapper.has("version") ? wrapper.get("version").getAsInt() : 0;
-            rawData =  wrapper.has("data") ? wrapper.get("data") : json;
+            rawData = wrapper.has("data") ? wrapper.get("data") : json;
         }
 
-        if(oldVersion == getVersion()) return decode(rawData);
+        if (oldVersion == getVersion()) return decode(rawData);
 
         return codec()
                 .decode(JsonOps.INSTANCE, DataFixer.getInstance().fixJson(getHolderClass(), rawData, oldVersion, getVersion()))
@@ -82,7 +83,7 @@ public interface    ISavePort<T> {
                 }).getFirst();
     }
 
-    default T decode(JsonElement jsonElement){
+    default T decode(JsonElement jsonElement) {
         return codec().decode(JsonOps.INSTANCE, jsonElement)
                 .getOrThrow(false, e -> {
                     throw new DataPersistenceException("Failed to decode fixed data", e);
@@ -107,13 +108,11 @@ public interface    ISavePort<T> {
         return wrapper;
     }
 
-
-
     /**
      * 从指定文件中读取特定文件名的数据。
      *
      * @param directory 数据目录
-     * @param fileName 文件名（不包含扩展名）
+     * @param fileName  文件名（不包含扩展名）
      * @return 读取到的数据，如果文件不存在则返回null
      */
     default T readSpecificFile(File directory, String fileName) {
@@ -133,8 +132,8 @@ public interface    ISavePort<T> {
     /**
      * 创建新的数据文件并写入初始数据。
      *
-     * @param directory 数据目录
-     * @param fileName 文件名（不包含扩展名）
+     * @param directory   数据目录
+     * @param fileName    文件名（不包含扩展名）
      * @param initialData 初始数据
      * @return 是否创建成功
      */
@@ -166,26 +165,29 @@ public interface    ISavePort<T> {
         }
     }
 
-
-
     /**
      * 获取目录读取器。
      * <p>
-     * <p>该方法返回一个 Consumer，用于遍历指定目录中的所有文件，并尝试从中读取数据。
-     * <p>每个文件的内容将被解析为 JSON，然后通过 {@link #decodeFromJson(JsonElement)} 解码为数据对象。
-     * <p>解码后的数据将通过 {@link #readHandler()} 进行处理。
-     * <p>只读取json文件。
+     * <p>
+     * 该方法返回一个 Consumer，用于遍历指定目录中的所有文件，并尝试从中读取数据。
+     * <p>
+     * 每个文件的内容将被解析为 JSON，然后通过 {@link #decodeFromJson(JsonElement)} 解码为数据对象。
+     * <p>
+     * 解码后的数据将通过 {@link #readHandler()} 进行处理。
+     * <p>
+     * 只读取json文件。
+     * 
      * @return 目录读取器
      */
     default Consumer<File> getReader() {
         return (directory) -> {
-            if(!directory.exists()){
+            if (!directory.exists()) {
                 if (!directory.mkdirs()) throw new RuntimeException("error : can't create " + directory.getName() + " data folder.");
                 return;
             }
             if (directory.exists() && directory.isDirectory()) {
                 for (File file : Objects.requireNonNull(directory.listFiles())) {
-                    if (file.isFile() && file.getName().endsWith("."+this.getFileType())) {
+                    if (file.isFile() && file.getName().endsWith("." + this.getFileType())) {
                         try {
                             FileReader reader = new FileReader(file);
                             JsonElement element = GSON.fromJson(reader, JsonElement.class);
@@ -211,7 +213,7 @@ public interface    ISavePort<T> {
      * 数据将通过 {@link #encodeToJson(T)} 编码为 JSON，然后写入文件。
      * 如果文件已存在，则会尝试读取旧数据并与新数据合并，合并逻辑由 {@link #mergeHandler(T, T)} 定义。
      *
-     * @param data 待写入的数据
+     * @param data     待写入的数据
      * @param fileName 文件名（不包含扩展名）
      * @return 文件写入器
      */
@@ -279,7 +281,7 @@ public interface    ISavePort<T> {
         return newData;
     }
 
-    default String getFileType(){
+    default String getFileType() {
         return "json";
     }
 

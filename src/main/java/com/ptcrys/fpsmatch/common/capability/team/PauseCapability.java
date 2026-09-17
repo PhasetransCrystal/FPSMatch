@@ -1,13 +1,14 @@
 package com.ptcrys.fpsmatch.common.capability.team;
 
-import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
-import com.ptcrys.fpsmatch.core.team.BaseTeam;
-
-import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
-import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.network.FriendlyByteBuf;
 
+import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
+import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
+import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
+import com.ptcrys.fpsmatch.core.team.BaseTeam;
+
 public class PauseCapability extends TeamCapability implements FPSMCapability.CapabilitySynchronizable {
+
     private boolean dirty = false;
     private int pauseTime = 0;
     private boolean needPause = false;
@@ -92,5 +93,4 @@ public class PauseCapability extends TeamCapability implements FPSMCapability.Ca
         buf.writeBoolean(this.needPause);
         this.dirty = false;
     }
-
 }

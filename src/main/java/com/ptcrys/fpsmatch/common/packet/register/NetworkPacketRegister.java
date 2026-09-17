@@ -2,9 +2,9 @@ package com.ptcrys.fpsmatch.common.packet.register;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 import java.lang.reflect.Method;
@@ -20,16 +20,16 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-
 public class NetworkPacketRegister {
+
     private static final Map<NetworkPacketRegister, List<Class<?>>> CACHED = new ConcurrentHashMap<>();
     private final AtomicInteger idCounter = new AtomicInteger(0);
     private final SimpleChannel channel;
     private final ResourceLocation name;
     private final RegistrationSink registrationSink;
 
-    public NetworkPacketRegister(ResourceLocation channel,String version) {
-        this(channel,() -> version,version::equals,version::equals);
+    public NetworkPacketRegister(ResourceLocation channel, String version) {
+        this(channel, () -> version, version::equals, version::equals);
     }
 
     public NetworkPacketRegister(ResourceLocation channel, Supplier<String> networkProtocolVersion, Predicate<String> clientAcceptedVersions, Predicate<String> serverAcceptedVersions) {
@@ -38,8 +38,7 @@ public class NetworkPacketRegister {
                 channel,
                 networkProtocolVersion,
                 clientAcceptedVersions,
-                serverAcceptedVersions
-        );
+                serverAcceptedVersions);
         this.registrationSink = this::registerWithForge;
     }
 
@@ -47,8 +46,7 @@ public class NetworkPacketRegister {
         this.name = null;
         this.channel = null;
         this.registrationSink = Objects.requireNonNull(
-                registrationSink, "registrationSink"
-        );
+                registrationSink, "registrationSink");
     }
 
     @SuppressWarnings("unchecked")
@@ -120,8 +118,7 @@ public class NetworkPacketRegister {
                         } catch (Exception e) {
                             throw new RuntimeException("Failed to handle packet", e);
                         }
-                    }
-            );
+                    });
             // LOGGER.info("{} registered", packetClass.getSimpleName());
 
             if (channel != null) {
@@ -135,17 +132,14 @@ public class NetworkPacketRegister {
 
     @SuppressWarnings("unchecked")
     private void registerWithForge(
-            int messageId,
-            Class<?> packetClass,
-            NetworkDirection direction,
-            BiConsumer<Object, FriendlyByteBuf> encoder,
-            Function<FriendlyByteBuf, Object> decoder,
-            BiConsumer<Object, Supplier<NetworkEvent.Context>> consumer
-    ) {
+                                   int messageId,
+                                   Class<?> packetClass,
+                                   NetworkDirection direction,
+                                   BiConsumer<Object, FriendlyByteBuf> encoder,
+                                   Function<FriendlyByteBuf, Object> decoder,
+                                   BiConsumer<Object, Supplier<NetworkEvent.Context>> consumer) {
         Class<Object> typedPacketClass = (Class<Object>) packetClass;
-        SimpleChannel.MessageBuilder<Object> builder = direction == null
-                ? channel.messageBuilder(typedPacketClass, messageId)
-                : channel.messageBuilder(typedPacketClass, messageId, direction);
+        SimpleChannel.MessageBuilder<Object> builder = direction == null ? channel.messageBuilder(typedPacketClass, messageId) : channel.messageBuilder(typedPacketClass, messageId, direction);
         builder.encoder(encoder)
                 .decoder(decoder)
                 .consumerNetworkThread(consumer)
@@ -160,7 +154,7 @@ public class NetworkPacketRegister {
         return name;
     }
 
-    public static SimpleChannel getChannelFromCache(Class<?> clazz){
+    public static SimpleChannel getChannelFromCache(Class<?> clazz) {
         if (clazz == null) throw new IllegalArgumentException("Packet class cannot be null");
 
         for (Map.Entry<NetworkPacketRegister, List<Class<?>>> entry : NetworkPacketRegister.CACHED.entrySet()) {
@@ -174,13 +168,13 @@ public class NetworkPacketRegister {
 
     @FunctionalInterface
     interface RegistrationSink {
+
         void register(
-                int messageId,
-                Class<?> packetClass,
-                NetworkDirection direction,
-                BiConsumer<Object, FriendlyByteBuf> encoder,
-                Function<FriendlyByteBuf, Object> decoder,
-                BiConsumer<Object, Supplier<NetworkEvent.Context>> consumer
-        );
+                      int messageId,
+                      Class<?> packetClass,
+                      NetworkDirection direction,
+                      BiConsumer<Object, FriendlyByteBuf> encoder,
+                      Function<FriendlyByteBuf, Object> decoder,
+                      BiConsumer<Object, Supplier<NetworkEvent.Context>> consumer);
     }
 }

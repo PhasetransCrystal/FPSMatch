@@ -1,13 +1,15 @@
 package com.ptcrys.fpsmatch.common.packet.shop;
 
-import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
 
 import java.util.UUID;
 import java.util.function.Supplier;
 
 public record ShopMoneyS2CPacket(UUID owner, int money) {
+
     public static void encode(ShopMoneyS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeUUID(packet.owner);
         buf.writeInt(packet.money);

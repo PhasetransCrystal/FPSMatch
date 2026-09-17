@@ -1,12 +1,13 @@
 package com.ptcrys.fpsmatch.core.map;
 
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+
 import com.ptcrys.fpsmatch.core.capability.map.MapCapability;
 import com.ptcrys.fpsmatch.core.data.AreaData;
 import com.ptcrys.fpsmatch.core.match.RoundContext;
 import com.ptcrys.fpsmatch.core.match.RoundLifecycle;
 import com.ptcrys.fpsmatch.core.match.RoundResult;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ import java.util.List;
  * 由基类统一驱动 tick、启动和重置。
  */
 public abstract class BaseRoundMap<W, R> extends BaseMap {
+
     protected RoundLifecycle<W, R> roundLifecycle;
 
     public BaseRoundMap(ServerLevel serverLevel, String mapName, AreaData areaData) {
@@ -50,32 +52,27 @@ public abstract class BaseRoundMap<W, R> extends BaseMap {
     /**
      * 子类可覆盖：回合开始回调。
      */
-    protected void onRoundStart() {
-    }
+    protected void onRoundStart() {}
 
     /**
      * 子类可覆盖：回合结束回调。
      */
-    protected void onRoundEnd(RoundResult<W, R> result) {
-    }
+    protected void onRoundEnd(RoundResult<W, R> result) {}
 
     /**
      * 子类可覆盖：请求进入下一回合回调。
      */
-    protected void onNextRoundRequested() {
-    }
+    protected void onNextRoundRequested() {}
 
     /**
      * 子类可覆盖：等待阶段每 tick 回调。
      */
-    protected void onWaitingTick(RoundContext ctx) {
-    }
+    protected void onWaitingTick(RoundContext ctx) {}
 
     /**
      * 子类可覆盖：回合进行中每 tick 回调。
      */
-    protected void onRoundTick(RoundContext ctx) {
-    }
+    protected void onRoundTick(RoundContext ctx) {}
 
     /**
      * 子类可覆盖：构造传入 lifecycle 的上下文。

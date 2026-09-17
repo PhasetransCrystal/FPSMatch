@@ -5,7 +5,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 public final class SpecRenderStacks {
-    private SpecRenderStacks(){}
+
+    private SpecRenderStacks() {}
 
     public static ItemStack current(LivingEntity spectated) {
         var mc = Minecraft.getInstance();

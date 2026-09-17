@@ -1,7 +1,5 @@
 package com.ptcrys.fpsmatch.core.data;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -9,18 +7,21 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
 import java.util.Objects;
 
 public class SpawnPointData {
+
     public static final Codec<SpawnPointData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("Dimension").forGetter(spawnPointData -> spawnPointData.getDimension().location().toString()),
             Vec3.CODEC.fieldOf("Position").forGetter(SpawnPointData::getPosition),
             Codec.FLOAT.fieldOf("Yaw").forGetter(SpawnPointData::getYaw),
-            Codec.FLOAT.fieldOf("Pitch").forGetter(SpawnPointData::getPitch)
-    ).apply(instance, (dimensionStr, position, yaw, pitch) -> {
-        ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(dimensionStr));
-        return new SpawnPointData(dimension, position, yaw, pitch);
-    }));
+            Codec.FLOAT.fieldOf("Pitch").forGetter(SpawnPointData::getPitch)).apply(instance, (dimensionStr, position, yaw, pitch) -> {
+                ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(dimensionStr));
+                return new SpawnPointData(dimension, position, yaw, pitch);
+            }));
 
     private final ResourceKey<Level> dimension;
     private final Vec3 position;
@@ -42,7 +43,7 @@ public class SpawnPointData {
         return position;
     }
 
-    public BlockPos getBlockPos(){
+    public BlockPos getBlockPos() {
         return BlockPos.containing(position);
     }
 
@@ -54,13 +55,15 @@ public class SpawnPointData {
         return pYaw;
     }
 
-    public double getX(){
+    public double getX() {
         return position.x();
     }
-    public double getY(){
+
+    public double getY() {
         return position.y();
     }
-    public double getZ(){
+
+    public double getZ() {
         return position.z();
     }
 
@@ -69,12 +72,7 @@ public class SpawnPointData {
         if (!(obj instanceof SpawnPointData other)) {
             return false;
         }
-        return Objects.equals(this.dimension, other.dimension)
-                && Double.compare(this.getX(), other.getX()) == 0
-                && Double.compare(this.getY(), other.getY()) == 0
-                && Double.compare(this.getZ(), other.getZ()) == 0
-                && Float.compare(this.getYaw(), other.getYaw()) == 0
-                && Float.compare(this.getPitch(), other.getPitch()) == 0;
+        return Objects.equals(this.dimension, other.dimension) && Double.compare(this.getX(), other.getX()) == 0 && Double.compare(this.getY(), other.getY()) == 0 && Double.compare(this.getZ(), other.getZ()) == 0 && Float.compare(this.getYaw(), other.getYaw()) == 0 && Float.compare(this.getPitch(), other.getPitch()) == 0;
     }
 
     @Override

@@ -1,14 +1,16 @@
 package com.ptcrys.fpsmatch.common.client.screen;
 
-import com.ptcrys.fpsmatch.common.client.tab.TabRenderer;
-import com.ptcrys.fpsmatch.util.RenderUtil;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.scores.Scoreboard;
+
+import com.ptcrys.fpsmatch.common.client.tab.TabRenderer;
+import com.ptcrys.fpsmatch.util.RenderUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class TabScreen extends Screen {
+
     public final TabRenderer tab;
     public final boolean shouldCloseOnEsc;
 
@@ -27,7 +29,7 @@ public class TabScreen extends Screen {
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         Scoreboard scoreboard = RenderUtil.getScoreboard();
-        tab.render(guiGraphics,this.width, RenderUtil.getPlayerInfos(), scoreboard, scoreboard.getDisplayObjective(0));
+        tab.render(guiGraphics, this.width, RenderUtil.getPlayerInfos(), scoreboard, scoreboard.getDisplayObjective(0));
     }
 
     @Override
@@ -36,8 +38,7 @@ public class TabScreen extends Screen {
     }
 
     @Override
-    public boolean isPauseScreen(){
+    public boolean isPauseScreen() {
         return false;
     }
-
 }

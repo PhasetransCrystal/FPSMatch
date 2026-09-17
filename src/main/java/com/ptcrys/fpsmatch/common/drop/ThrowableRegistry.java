@@ -1,14 +1,16 @@
 package com.ptcrys.fpsmatch.common.drop;
 
-import net.minecraft.world.item.Item;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.ForgeRegistries;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.annotation.Nullable;
+
 public class ThrowableRegistry {
+
     private static final Map<String, ThrowableSubType> SUBTYPES_BY_ID = new ConcurrentHashMap<>();
     private static final Map<Item, ThrowableSubType> ITEM_TO_SUBTYPE = new ConcurrentHashMap<>();
     private static final Map<ThrowableSubType, Set<Item>> SUBTYPE_TO_ITEMS = new ConcurrentHashMap<>();

@@ -1,9 +1,5 @@
 package com.ptcrys.fpsmatch.core.data;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -13,20 +9,24 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
 import javax.annotation.Nonnull;
 
-
 public class AreaData {
+
     public static final Codec<AreaData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             BlockPos.CODEC.optionalFieldOf("Position1", BlockPos.of(0L)).forGetter(AreaData::pos1),
-            BlockPos.CODEC.optionalFieldOf("Position2", BlockPos.of(0L)).forGetter(AreaData::pos2)
-    ).apply(instance, AreaData::new));
+            BlockPos.CODEC.optionalFieldOf("Position2", BlockPos.of(0L)).forGetter(AreaData::pos2)).apply(instance, AreaData::new));
 
     private final BlockPos pos1;
     private final BlockPos pos2;
     private final AABB aabb;
 
-    public AreaData(@Nonnull BlockPos pos1,@Nonnull BlockPos pos2){
+    public AreaData(@Nonnull BlockPos pos1, @Nonnull BlockPos pos2) {
         this.pos1 = pos1;
         this.pos2 = pos2;
         this.aabb = new AABB(pos1, pos2);
@@ -51,9 +51,7 @@ public class AreaData {
         int maxX = Math.max(pos1.getX(), pos2.getX());
         int maxY = Math.max(pos1.getY(), pos2.getY());
         int maxZ = Math.max(pos1.getZ(), pos2.getZ());
-        return blockPos.getX() >= minX && blockPos.getX() <= maxX
-                && blockPos.getY() >= minY && blockPos.getY() <= maxY
-                && blockPos.getZ() >= minZ && blockPos.getZ() <= maxZ;
+        return blockPos.getX() >= minX && blockPos.getX() <= maxX && blockPos.getY() >= minY && blockPos.getY() <= maxY && blockPos.getZ() >= minZ && blockPos.getZ() <= maxZ;
     }
 
     public boolean isBlockPosInPlacementArea(BlockPos blockPos) {
@@ -65,8 +63,7 @@ public class AreaData {
         int minZ = Math.min(pos1.getZ(), pos2.getZ());
         int maxX = Math.max(pos1.getX(), pos2.getX());
         int maxZ = Math.max(pos1.getZ(), pos2.getZ());
-        return blockPos.getX() >= minX && blockPos.getX() <= maxX
-                && blockPos.getZ() >= minZ && blockPos.getZ() <= maxZ;
+        return blockPos.getX() >= minX && blockPos.getX() <= maxX && blockPos.getZ() >= minZ && blockPos.getZ() <= maxZ;
     }
 
     public boolean isEntityInArea(Entity entity) {
@@ -77,7 +74,7 @@ public class AreaData {
         return aabb.contains(pos);
     }
 
-    public AABB aabb(){
+    public AABB aabb() {
         return aabb;
     }
 
@@ -98,7 +95,6 @@ public class AreaData {
                 red, green, blue, 1.0F,
                 Math.max(red * 0.55F, 0.1F),
                 Math.max(green * 0.55F, 0.1F),
-                Math.max(blue * 0.55F, 0.1F)
-        );
+                Math.max(blue * 0.55F, 0.1F));
     }
 }

@@ -7,10 +7,13 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public class FPSMSoundPlayS2CPacket {
+
     ResourceLocation location;
+
     public FPSMSoundPlayS2CPacket(ResourceLocation location) {
         this.location = location;
     }
+
     public static void encode(FPSMSoundPlayS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeResourceLocation(packet.location);
     }

@@ -1,6 +1,7 @@
 package com.ptcrys.fpsmatch.common.client.spec;
 
 public enum SpectateMode {
+
     ATTACH,
     FREE,
     TEAMMATE,

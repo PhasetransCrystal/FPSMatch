@@ -7,11 +7,11 @@ import net.minecraft.world.phys.Vec3;
  * Computes movement direction flags for a spectated entity.
  */
 public final class SpectatorMotion {
+
     private static final double SPEED_SQ_EPS = 1.0E-4;
     private static final double DIR_EPS = 0.01;
 
-    private SpectatorMotion() {
-    }
+    private SpectatorMotion() {}
 
     public static boolean isMoving(LivingEntity entity) {
         if (entity == null) {
@@ -55,6 +55,7 @@ public final class SpectatorMotion {
     }
 
     private static final class MotionAxes {
+
         private final double forward;
         private final double right;
 

@@ -1,15 +1,16 @@
 package com.ptcrys.fpsmatch.common.packet.shop;
 
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.network.NetworkEvent;
+
 import com.ptcrys.fpsmatch.common.item.ShopConfigTool;
 import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
 import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
 import com.ptcrys.fpsmatch.common.packet.mapselect.EditableShopInfo;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -23,11 +24,11 @@ import java.util.function.Supplier;
  * 发送可用地图列表和当前选中地图的可编辑商店列表到客户端。
  */
 public record OpenShopConfigToolScreenS2CPacket(
-        List<MapEntry> maps,
-        String selectedType,
-        String selectedMap,
-        List<EditableShopInfo> shops
-) {
+                                                List<MapEntry> maps,
+                                                String selectedType,
+                                                String selectedMap,
+                                                List<EditableShopInfo> shops) {
+
     private static final int ID_MAX_LENGTH = 128;
     private static final int TEXT_MAX_LENGTH = 1024;
 
@@ -49,8 +50,7 @@ public record OpenShopConfigToolScreenS2CPacket(
                 maps,
                 selectedType,
                 selectedMap,
-                collectShops(selectedType, selectedMap)
-        );
+                collectShops(selectedType, selectedMap));
     }
 
     public static OpenShopConfigToolScreenS2CPacket of(ServerPlayer viewer, ItemStack stack, String selectedType, String selectedMap) {
@@ -121,6 +121,5 @@ public record OpenShopConfigToolScreenS2CPacket(
         return MapRoomQueryService.listEditableShops(selectedType, selectedMap);
     }
 
-    public record MapEntry(String gameType, String mapName, String displayName) {
-    }
+    public record MapEntry(String gameType, String mapName, String displayName) {}
 }

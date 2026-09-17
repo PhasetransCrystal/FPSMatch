@@ -10,12 +10,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Server-side guard for client-requested match sounds. */
 final class SoundRequestPolicy {
+
     private static final int MAX_REQUESTS = 4;
     private static final long WINDOW_TICKS = 20L;
     private static final Map<UUID, ArrayDeque<Long>> REQUESTS = new ConcurrentHashMap<>();
 
-    private SoundRequestPolicy() {
-    }
+    private SoundRequestPolicy() {}
 
     static boolean allow(UUID player, ResourceLocation location, long now) {
         if (player == null || location == null || !isGameplaySound(location)) {
@@ -35,8 +35,6 @@ final class SoundRequestPolicy {
     }
 
     private static boolean isGameplaySound(ResourceLocation location) {
-        return (location.getNamespace().equals("fpsmatch")
-                || location.getNamespace().equals("blockoffensive"))
-                && ForgeRegistries.SOUND_EVENTS.containsKey(location);
+        return (location.getNamespace().equals("fpsmatch") || location.getNamespace().equals("blockoffensive")) && ForgeRegistries.SOUND_EVENTS.containsKey(location);
     }
 }

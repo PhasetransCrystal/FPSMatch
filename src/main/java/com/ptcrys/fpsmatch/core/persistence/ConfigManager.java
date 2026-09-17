@@ -1,9 +1,11 @@
 package com.ptcrys.fpsmatch.core.persistence;
 
+import net.minecraftforge.fml.loading.FMLLoader;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.ptcrys.fpsmatch.FPSMatch;
-import net.minecraftforge.fml.loading.FMLLoader;
+
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -14,6 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class ConfigManager {
+
     private static final Path CONFIG_DIR = Paths.get(FMLLoader.getGamePath().toString(), "fpsmatch");
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.json");
     private static final Gson GSON = new Gson();
@@ -70,8 +73,7 @@ public class ConfigManager {
                 if (isValidJson(content)) {
                     return content;
                 }
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
         }
 
         return null;

@@ -1,10 +1,12 @@
 package com.ptcrys.fpsmatch.bukkit;
 
-import com.ptcrys.fpsmatch.bukkit.event.FPSMBukkitEventBirge;
 import net.minecraft.server.level.ServerLevel;
 
+import com.ptcrys.fpsmatch.bukkit.event.FPSMBukkitEventBirge;
+
 public class FPSMBukkit {
-    public static void register(){
+
+    public static void register() {
         FPSMBukkitEventBirge.register();
     }
 

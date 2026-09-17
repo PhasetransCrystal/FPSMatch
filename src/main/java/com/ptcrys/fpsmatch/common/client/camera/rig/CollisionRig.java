@@ -1,21 +1,28 @@
 package com.ptcrys.fpsmatch.common.client.camera.rig;
 
-import com.ptcrys.fpsmatch.common.client.camera.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+
+import com.ptcrys.fpsmatch.common.client.camera.*;
+
 import java.util.function.Supplier;
 
 /** Optional collision constraint applied after all positional effects of a rig. */
 public record CollisionRig(CameraRig delegate, Supplier<Vec3> anchor, double inset) implements CameraRig {
+
     public CollisionRig {
         if (!Double.isFinite(inset) || inset < 0) throw new IllegalArgumentException("Invalid camera inset");
     }
 
-    @Override public void turn(float yaw, float pitch) { delegate.turn(yaw, pitch); }
+    @Override
+    public void turn(float yaw, float pitch) {
+        delegate.turn(yaw, pitch);
+    }
 
-    @Override public CameraFrame sample(double ticks) {
+    @Override
+    public CameraFrame sample(double ticks) {
         CameraFrame frame = delegate.sample(ticks);
         Minecraft mc = Minecraft.getInstance();
         if (frame == null || frame.pose() == null || mc.level == null || mc.player == null) return frame;

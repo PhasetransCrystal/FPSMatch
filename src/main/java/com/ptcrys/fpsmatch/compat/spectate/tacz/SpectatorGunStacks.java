@@ -8,8 +8,8 @@ import net.minecraft.world.item.ItemStack;
  * Resolves the item stack used for gun animations when spectating.
  */
 public final class SpectatorGunStacks {
-    private SpectatorGunStacks() {
-    }
+
+    private SpectatorGunStacks() {}
 
     public static ItemStack current(LivingEntity spectated) {
         Minecraft mc = Minecraft.getInstance();

@@ -1,14 +1,15 @@
 package com.ptcrys.fpsmatch.common.client.screen.hud;
 
-import com.ptcrys.fpsmatch.common.effect.FPSMEffectRegister;
-import com.ptcrys.fpsmatch.common.effect.FlashBlindnessMobEffect;
-import com.ptcrys.fpsmatch.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+
+import com.ptcrys.fpsmatch.common.effect.FPSMEffectRegister;
+import com.ptcrys.fpsmatch.common.effect.FlashBlindnessMobEffect;
+import com.ptcrys.fpsmatch.util.RenderUtil;
 
 public class FlashBombHud implements IGuiOverlay {
 
@@ -26,10 +27,10 @@ public class FlashBombHud implements IGuiOverlay {
             MobEffectInstance effectInstance = player.getEffect(FPSMEffectRegister.FLASH_BLINDNESS.get());
             if (effectInstance != null && effectInstance.getEffect() instanceof FlashBlindnessMobEffect flashBlindnessMobEffect) {
                 float fullBlindnessTime = flashBlindnessMobEffect.getFullBlindnessTime();
-                if(fullBlindnessTime > 0){
+                if (fullBlindnessTime > 0) {
                     int colorWithAlpha = RenderUtil.color(255, 255, 255, 255);
                     guiGraphics.fill(0, 0, screenWidth, screenHeight, colorWithAlpha);
-                }else{
+                } else {
                     float ticker = flashBlindnessMobEffect.getTicker();
                     if (ticker > 0) {
                         int alpha = (int) (ticker / flashBlindnessMobEffect.getTotalBlindnessTime() * 255);
@@ -40,5 +41,4 @@ public class FlashBombHud implements IGuiOverlay {
             }
         }
     }
-
 }

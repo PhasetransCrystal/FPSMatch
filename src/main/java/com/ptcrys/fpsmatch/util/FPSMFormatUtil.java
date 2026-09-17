@@ -1,19 +1,23 @@
 package com.ptcrys.fpsmatch.util;
 
-import com.ptcrys.fpsmatch.compat.LrtacticalCompat;
-import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
-import com.ptcrys.fpsmatch.compat.gun.IGunProvider;
-import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
+import com.ptcrys.fpsmatch.compat.LrtacticalCompat;
+import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
+import com.ptcrys.fpsmatch.compat.gun.IGunProvider;
+import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
+
 import java.util.Locale;
 
 public class FPSMFormatUtil {
-    public static String fmt2(double v){ return String.format(Locale.US, "%.2f", v); }
+
+    public static String fmt2(double v) {
+        return String.format(Locale.US, "%.2f", v);
+    }
 
     public static Component formatBoolean(boolean value) {
         return Component.literal(String.valueOf(value)).withStyle(value ? ChatFormatting.GREEN : ChatFormatting.RED);
@@ -42,7 +46,7 @@ public class FPSMFormatUtil {
         IGunProvider provider = GunCompatManager.findProvider(st);
         if (provider.isGun(st)) {
             ResourceLocation gid = provider.getGunId(st);
-            String[] keys = new String[]{
+            String[] keys = new String[] {
                     "item." + gid.getNamespace() + "." + gid.getPath(),
                     "gun." + gid.getNamespace() + "." + gid.getPath(),
                     gid.getNamespace() + "." + gid.getPath(),
@@ -53,9 +57,9 @@ public class FPSMFormatUtil {
             return gid.getPath().toUpperCase(Locale.ROOT);
         }
 
-        if(FPSMImpl.findLrtacticalMod()){
+        if (FPSMImpl.findLrtacticalMod()) {
             String i18n = LrtacticalCompat.i18n(st);
-            if(i18n != null) return i18n;
+            if (i18n != null) return i18n;
         }
 
         String desc = st.getDescriptionId();

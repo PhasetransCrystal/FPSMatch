@@ -1,5 +1,11 @@
 package com.ptcrys.fpsmatch.core.team;
 
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.scores.PlayerTeam;
+import net.minecraftforge.network.PacketDistributor;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.team.TeamCapabilitiesS2CPacket;
@@ -8,11 +14,6 @@ import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
 import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
 import com.ptcrys.fpsmatch.core.data.PlayerData;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.scores.PlayerTeam;
-import net.minecraftforge.network.PacketDistributor;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -34,21 +35,21 @@ public final class ServerTeam extends BaseTeam {
 
     @Override
     public boolean join(Player player) {
-        if(!super.join(player)) return false;
-        if(player.level().isClientSide()) return false;
+        if (!super.join(player)) return false;
+        if (player.level().isClientSide()) return false;
         String name = player.getScoreboardName();
-        if(!getPlayerTeam().getPlayers().contains(name)){
+        if (!getPlayerTeam().getPlayers().contains(name)) {
             player.getScoreboard().addPlayerToTeam(name, getPlayerTeam());
         }
-        players.put(player.getUUID(), new PlayerData(player,this.enableRounds));
+        players.put(player.getUUID(), new PlayerData(player, this.enableRounds));
         sync((ServerPlayer) player);
         return true;
     }
 
     @Override
     public boolean leave(Player player) {
-        if(!super.leave(player)) return false;
-        if(player.level().isClientSide()) return false;
+        if (!super.leave(player)) return false;
+        if (player.level().isClientSide()) return false;
         if (hasPlayer(player.getUUID())) {
             delPlayer(player.getUUID());
         }
@@ -143,42 +144,41 @@ public final class ServerTeam extends BaseTeam {
         return players;
     }
 
-    public List<ServerPlayer> getOnline(){
+    public List<ServerPlayer> getOnline() {
         List<ServerPlayer> onlinePlayers = new ArrayList<>();
-        players.values().forEach(data -> {data.getPlayer().ifPresent(onlinePlayers::add);});
+        players.values().forEach(data -> { data.getPlayer().ifPresent(onlinePlayers::add); });
         return onlinePlayers;
     }
 
     @Override
     public void clearAndPutPlayers(Map<UUID, PlayerData> players) {
-        this.clearAndPutPlayers(players,(t,d)->{});
+        this.clearAndPutPlayers(players, (t, d) -> {});
     }
 
-    public void clearAndPutPlayers(Map<UUID, PlayerData> players, BiConsumer<ServerTeam,PlayerData> offline) {
+    public void clearAndPutPlayers(Map<UUID, PlayerData> players, BiConsumer<ServerTeam, PlayerData> offline) {
         this.players.clear();
         this.players.putAll(players);
         players.values().forEach(data -> {
             data.getPlayer().ifPresentOrElse(onlinePlayer -> {
                 onlinePlayer.level().getScoreboard().addPlayerToTeam(onlinePlayer.getScoreboardName(), getPlayerTeam());
-            },()->{
-                offline.accept(this,data);
+            }, () -> {
+                offline.accept(this, data);
             });
         });
     }
 
     @Override
-    public void sendMessage(Component message , boolean onlyLiving) {
+    public void sendMessage(Component message, boolean onlyLiving) {
         List<UUID> players = onlyLiving ? getLivingPlayers() : getPlayerList();
 
         players.forEach(uuid -> {
             FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresent(
-                    player -> player.displayClientMessage(message, false)
-            );
+                    player -> player.displayClientMessage(message, false));
         });
     }
 
     public void sendMessage(Component message) {
-        this.sendMessage(message,false);
+        this.sendMessage(message, false);
     }
 
     @Override
@@ -193,17 +193,17 @@ public final class ServerTeam extends BaseTeam {
     }
 
     public void syncCapabilities(ServerPlayer player) {
-        for (TeamCapabilitiesS2CPacket packet : TeamCapabilitiesS2CPacket.toList(this,this.getCapabilityMap().getSynchronizableCapabilityClasses(false))) {
+        for (TeamCapabilitiesS2CPacket packet : TeamCapabilitiesS2CPacket.toList(this, this.getCapabilityMap().getSynchronizableCapabilityClasses(false))) {
             FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
         }
     }
 
     public <T extends TeamCapability & FPSMCapability.CapabilitySynchronizable> void syncCapabilities(Collection<ServerPlayer> players) {
-        if(players.isEmpty()) return;
+        if (players.isEmpty()) return;
         List<Class<T>> caps = this.getCapabilityMap().getSynchronizableCapabilityClasses(true);
-        if(caps.isEmpty()) return;
+        if (caps.isEmpty()) return;
 
-        for (TeamCapabilitiesS2CPacket packet : TeamCapabilitiesS2CPacket.toList(this,caps)) {
+        for (TeamCapabilitiesS2CPacket packet : TeamCapabilitiesS2CPacket.toList(this, caps)) {
             for (ServerPlayer player : players) {
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
             }
@@ -215,7 +215,7 @@ public final class ServerTeam extends BaseTeam {
         this.enableRounds = enableRounds;
     }
 
-    public BaseMap getMap(){
+    public BaseMap getMap() {
         return map;
     }
 

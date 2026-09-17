@@ -1,7 +1,8 @@
 package com.ptcrys.fpsmatch.common.packet.mapselect;
 
-import com.ptcrys.fpsmatch.core.data.AreaData;
 import net.minecraft.network.FriendlyByteBuf;
+
+import com.ptcrys.fpsmatch.core.data.AreaData;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,20 +11,20 @@ import java.util.Set;
 import java.util.UUID;
 
 public record MapRoomDetail(
-        MapRoomSummary summary,
-        List<MapRoomPlayerInfo> players,
-        List<MapRoomSettingInfo> settings,
-        List<MapRoomPlayerInfo> availableInviteTargets,
-        List<EditableShopInfo> editableShops,
-        List<MapRoomTeamInfo> teams,
-        Set<UUID> readyPlayers,
-        AreaData mapArea,
-        List<AreaData> bombAreas,
-        boolean demolitionRegionsSupported,
-        String rulesKey,
-        String iconTexture,
-        String backgroundTexture
-) {
+                            MapRoomSummary summary,
+                            List<MapRoomPlayerInfo> players,
+                            List<MapRoomSettingInfo> settings,
+                            List<MapRoomPlayerInfo> availableInviteTargets,
+                            List<EditableShopInfo> editableShops,
+                            List<MapRoomTeamInfo> teams,
+                            Set<UUID> readyPlayers,
+                            AreaData mapArea,
+                            List<AreaData> bombAreas,
+                            boolean demolitionRegionsSupported,
+                            String rulesKey,
+                            String iconTexture,
+                            String backgroundTexture) {
+
     private static final int RESOURCE_MAX_LENGTH = 256;
 
     public static void encode(MapRoomDetail detail, FriendlyByteBuf buf) {

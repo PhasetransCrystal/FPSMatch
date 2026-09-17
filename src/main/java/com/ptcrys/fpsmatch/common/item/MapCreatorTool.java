@@ -1,5 +1,15 @@
 package com.ptcrys.fpsmatch.common.item;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.item.tool.CreatorToolItem;
 import com.ptcrys.fpsmatch.common.item.tool.ToolInteractionAction;
@@ -11,20 +21,12 @@ import com.ptcrys.fpsmatch.common.packet.RemoveDebugDataByPrefixS2CPacket;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.data.AreaData;
 import com.ptcrys.fpsmatch.util.PreviewColorUtil;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
+
     public static final String BLOCK_POS_TAG_1 = "BlockPos1";
     public static final String BLOCK_POS_TAG_2 = "BlockPos2";
     public static final String DRAFT_MAP_NAME_TAG = "DraftMapName";
@@ -37,12 +39,10 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
     }
 
     @Override
-    protected void onLeftClick(ClickActionContext context) {
-    }
+    protected void onLeftClick(ClickActionContext context) {}
 
     @Override
-    protected void onRightClick(ClickActionContext context) {
-    }
+    protected void onRightClick(ClickActionContext context) {}
 
     @Override
     public void handleWorldInteraction(ServerPlayer player, ItemStack stack, ToolInteractionAction action, @Nullable BlockPos clickedPos) {
@@ -78,10 +78,7 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
 
         String selectedType = getSelectedType(stack).trim();
         String draftMapName = getDraftMapName(stack).trim();
-        String signature = (selectedType.isBlank() ? "draft" : selectedType)
-                + "|" + draftMapName
-                + "|" + pos1.asLong()
-                + "|" + pos2.asLong();
+        String signature = (selectedType.isBlank() ? "draft" : selectedType) + "|" + draftMapName + "|" + pos1.asLong() + "|" + pos2.asLong();
         String previousSignature = player.getPersistentData().getString(HELD_PREVIEW_STATE_TAG);
         if (signature.equals(previousSignature) && player.tickCount % HELD_PREVIEW_REFRESH_INTERVAL != 0) {
             return;
@@ -91,8 +88,7 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
                 getHeldPreviewKey(player),
                 Component.literal(draftMapName.isEmpty() ? "Draft Map" : draftMapName),
                 PreviewColorUtil.getMapPreviewColor(selectedType.isBlank() ? "draft" : selectedType),
-                new AreaData(pos1, pos2)
-        ));
+                new AreaData(pos1, pos2)));
         player.getPersistentData().putString(HELD_PREVIEW_STATE_TAG, signature);
     }
 
@@ -164,19 +160,13 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.map_creator.selected.type")
                 .append(": ")
-                .append(Component.literal(getSelectedType(pStack).isBlank()
-                        ? Component.translatable("tooltip.fpsm.none").getString()
-                        : getSelectedType(pStack)).withStyle(ChatFormatting.AQUA)));
+                .append(Component.literal(getSelectedType(pStack).isBlank() ? Component.translatable("tooltip.fpsm.none").getString() : getSelectedType(pStack)).withStyle(ChatFormatting.AQUA)));
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.map_creator.selected.map")
                 .append(": ")
-                .append(Component.literal(getSelectedMap(pStack).isBlank()
-                        ? Component.translatable("tooltip.fpsm.none").getString()
-                        : getSelectedMap(pStack)).withStyle(ChatFormatting.AQUA)));
+                .append(Component.literal(getSelectedMap(pStack).isBlank() ? Component.translatable("tooltip.fpsm.none").getString() : getSelectedMap(pStack)).withStyle(ChatFormatting.AQUA)));
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.map_creator.selected.name")
                 .append(": ")
-                .append(Component.literal(getDraftMapName(pStack).isBlank()
-                        ? Component.translatable("tooltip.fpsm.none").getString()
-                        : getDraftMapName(pStack)).withStyle(ChatFormatting.GREEN)));
+                .append(Component.literal(getDraftMapName(pStack).isBlank() ? Component.translatable("tooltip.fpsm.none").getString() : getDraftMapName(pStack)).withStyle(ChatFormatting.GREEN)));
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.map_creator.selected.pos1")
                 .append(": ")
                 .append(Component.literal(formatPos(getBlockPos(pStack, BLOCK_POS_TAG_1))).withStyle(ChatFormatting.YELLOW)));

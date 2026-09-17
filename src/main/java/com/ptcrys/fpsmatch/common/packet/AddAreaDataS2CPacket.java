@@ -1,13 +1,15 @@
 package com.ptcrys.fpsmatch.common.packet;
 
-import com.ptcrys.fpsmatch.core.data.AreaData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.network.NetworkEvent;
 
+import com.ptcrys.fpsmatch.core.data.AreaData;
+
 import java.util.function.Supplier;
 
 public record AddAreaDataS2CPacket(String key, Component name, int color, AreaData areaData) {
+
     public AddAreaDataS2CPacket(Component name, AreaData areaData) {
         this(name.getString(), name, 0xFFFFFF00, areaData);
     }
@@ -24,8 +26,7 @@ public record AddAreaDataS2CPacket(String key, Component name, int color, AreaDa
                 buf.readUtf(),
                 buf.readComponent(),
                 buf.readInt(),
-                buf.readJsonWithCodec(AreaData.CODEC)
-        );
+                buf.readJsonWithCodec(AreaData.CODEC));
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {

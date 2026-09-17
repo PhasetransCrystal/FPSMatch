@@ -1,13 +1,13 @@
 package com.ptcrys.fpsmatch.mixin.spec.glow;
 
-import com.ptcrys.fpsmatch.common.event.RequestSpectatorOutlinesEvent;
-import com.ptcrys.fpsmatch.config.FPSMConfig;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.common.MinecraftForge;
+
+import com.ptcrys.fpsmatch.common.event.RequestSpectatorOutlinesEvent;
+import com.ptcrys.fpsmatch.config.FPSMConfig;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,10 +24,10 @@ public abstract class MixinKeyMappingBlockSpectatorOutlines {
         LocalPlayer player = Minecraft.getInstance().player;
         MultiPlayerGameMode gameMode = Minecraft.getInstance().gameMode;
         if (player == null || gameMode == null) return;
-        KeyMapping self = (KeyMapping)(Object)this;
+        KeyMapping self = (KeyMapping) (Object) this;
         if ("key.spectatorOutlines".equals(self.getName())) {
             if (isDown) {
-                if(FPSMConfig.Server.disableSpecGlowKey.get() || MinecraftForge.EVENT_BUS.post(new RequestSpectatorOutlinesEvent(player, gameMode))){
+                if (FPSMConfig.Server.disableSpecGlowKey.get() || MinecraftForge.EVENT_BUS.post(new RequestSpectatorOutlinesEvent(player, gameMode))) {
                     ci.cancel();
                 }
             }

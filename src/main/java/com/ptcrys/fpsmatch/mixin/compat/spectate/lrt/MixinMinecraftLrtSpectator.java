@@ -1,20 +1,21 @@
 package com.ptcrys.fpsmatch.mixin.compat.spectate.lrt;
 
-import com.tacz.guns.api.client.animation.statemachine.LuaAnimationStateMachine;
-import com.ptcrys.fpsmatch.compat.spectate.SpectatorMotion;
-import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
-import me.xjqsh.lrtactical.client.renderer.item.FlashShieldItemRenderer;
-import me.xjqsh.lrtactical.client.renderer.item.MeleeItemRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+
+import com.ptcrys.fpsmatch.compat.spectate.SpectatorMotion;
+import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
+import com.tacz.guns.api.client.animation.statemachine.LuaAnimationStateMachine;
+import me.xjqsh.lrtactical.client.renderer.item.FlashShieldItemRenderer;
+import me.xjqsh.lrtactical.client.renderer.item.MeleeItemRenderer;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.Unique;
 
 /**
  * Mirrors spectated player movement into LRTactical item animations.
@@ -22,6 +23,7 @@ import org.spongepowered.asm.mixin.Unique;
  */
 @Mixin(Minecraft.class)
 public class MixinMinecraftLrtSpectator {
+
     @Inject(method = "tick", at = @At("HEAD"))
     private void fpsmatch$onClientTickStart(CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();

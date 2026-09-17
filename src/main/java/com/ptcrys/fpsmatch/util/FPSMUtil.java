@@ -1,26 +1,5 @@
 package com.ptcrys.fpsmatch.util;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.mojang.authlib.GameProfile;
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.drop.DropType;
-import com.ptcrys.fpsmatch.common.entity.MatchDropEntity;
-import com.ptcrys.fpsmatch.common.packet.FPSMInventorySelectedS2CPacket;
-import com.ptcrys.fpsmatch.compat.CounterStrikeGrenadesCompat;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.core.data.PlayerData;
-import com.ptcrys.fpsmatch.core.item.BlastBombItem;
-import com.ptcrys.fpsmatch.core.item.IThrowEntityAble;
-import com.ptcrys.fpsmatch.common.gamerule.FPSMatchRule;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
-import com.ptcrys.fpsmatch.core.team.MapTeams;
-import com.ptcrys.fpsmatch.core.team.ServerTeam;
-import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
-import com.ptcrys.fpsmatch.compat.gun.GunDataDTO;
-import com.ptcrys.fpsmatch.compat.gun.GunTabTypeEnum;
-import com.ptcrys.fpsmatch.compat.gun.IGunProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
@@ -40,12 +19,35 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.server.ServerLifecycleHooks;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.mojang.authlib.GameProfile;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.drop.DropType;
+import com.ptcrys.fpsmatch.common.entity.MatchDropEntity;
+import com.ptcrys.fpsmatch.common.gamerule.FPSMatchRule;
+import com.ptcrys.fpsmatch.common.packet.FPSMInventorySelectedS2CPacket;
+import com.ptcrys.fpsmatch.compat.CounterStrikeGrenadesCompat;
+import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
+import com.ptcrys.fpsmatch.compat.gun.GunDataDTO;
+import com.ptcrys.fpsmatch.compat.gun.GunTabTypeEnum;
+import com.ptcrys.fpsmatch.compat.gun.IGunProvider;
+import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.data.PlayerData;
+import com.ptcrys.fpsmatch.core.item.BlastBombItem;
+import com.ptcrys.fpsmatch.core.item.IThrowEntityAble;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
+import com.ptcrys.fpsmatch.core.team.MapTeams;
+import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.Predicate;
 
 public class FPSMUtil {
+
     public static final List<GunTabTypeEnum> MAIN_WEAPON = ImmutableList.of(GunTabTypeEnum.RIFLE, GunTabTypeEnum.SNIPER, GunTabTypeEnum.SHOTGUN, GunTabTypeEnum.SMG, GunTabTypeEnum.MG);
     public static final List<Predicate<ItemStack>> MAIN_WEAPON_PREDICATE = new ArrayList<>();
     public static final List<Predicate<ItemStack>> SECONDARY_WEAPON_PREDICATE = new ArrayList<>();
@@ -54,7 +56,7 @@ public class FPSMUtil {
     public static final List<Predicate<ItemStack>> C4_PREDICATE = new ArrayList<>();
     public static final List<Predicate<ItemStack>> MISC_PREDICATE = new ArrayList<>();
 
-    static{
+    static {
         addMainWeaponPredicate((itemStack -> {
             IGunProvider provider = GunCompatManager.findProvider(itemStack);
             if (provider.isGun(itemStack)) {
@@ -75,24 +77,24 @@ public class FPSMUtil {
 
         addThrowablePredicate((itemStack -> itemStack.getItem() instanceof IThrowEntityAble));
         addThrowablePredicate((itemStack -> {
-            if (FPSMImpl.findLrtacticalMod()){
-                try{
+            if (FPSMImpl.findLrtacticalMod()) {
+                try {
                     return itemStack.getItem() instanceof me.xjqsh.lrtactical.api.item.IThrowable;
-                }catch (Exception e){
+                } catch (Exception e) {
                     return false;
                 }
-            }else{
+            } else {
                 return false;
             }
         }));
         addThrowablePredicate((itemStack -> {
-            if (FPSMImpl.findCounterStrikeGrenadesMod()){
-                try{
+            if (FPSMImpl.findCounterStrikeGrenadesMod()) {
+                try {
                     return itemStack.getItem() instanceof club.pisquad.minecraft.csgrenades.item.CounterStrikeGrenadeItem;
-                }catch (Exception e){
+                } catch (Exception e) {
                     return false;
                 }
-            }else{
+            } else {
                 return false;
             }
         }));
@@ -102,13 +104,13 @@ public class FPSMUtil {
             if (provider.isGun(itemStack)) {
                 return provider.getGunTabType(itemStack) == GunTabTypeEnum.RPG;
             } else {
-                if (FPSMImpl.findLrtacticalMod()){
-                    try{
+                if (FPSMImpl.findLrtacticalMod()) {
+                    try {
                         return itemStack.getItem() instanceof me.xjqsh.lrtactical.api.item.IMeleeWeapon;
-                    }catch (Exception e){
+                    } catch (Exception e) {
                         return false;
                     }
-                }else{
+                } else {
                     return false;
                 }
             }
@@ -151,7 +153,8 @@ public class FPSMUtil {
             categoryMap.put(MISC_PREDICATE, new ArrayList<>());
 
             for (ItemStack stack : allItems) {
-                categorized: {
+                categorized:
+                {
                     for (Map.Entry<List<Predicate<ItemStack>>, List<ItemStack>> entry : categoryMap.entrySet()) {
                         for (Predicate<ItemStack> predicate : entry.getKey()) {
                             if (predicate.test(stack)) {
@@ -170,9 +173,7 @@ public class FPSMUtil {
             List<ItemStack> throwable = mergeItemStacks(categoryMap.get(THROW_PREDICATE));
             List<ItemStack> miscItems = mergeItemStacks(categoryMap.get(MISC_PREDICATE));
 
-            throwable.sort(Comparator.comparing(stack ->
-                    stack.getHoverName().getString().toLowerCase()
-            ));
+            throwable.sort(Comparator.comparing(stack -> stack.getHoverName().getString().toLowerCase()));
 
             Map<Integer, ItemStack> sortedSlots = new HashMap<>();
             List<ItemStack> remainingItems = new ArrayList<>();
@@ -276,7 +277,6 @@ public class FPSMUtil {
         return result;
     }
 
-
     // 分配物品到指定槽位
     private static boolean assignToSlot(Map<Integer, ItemStack> map, List<ItemStack> items, int slot) {
         if (!items.isEmpty()) {
@@ -356,36 +356,40 @@ public class FPSMUtil {
         }));
     }
 
-    public static void addMainWeaponPredicate(Predicate<ItemStack> predicate){
+    public static void addMainWeaponPredicate(Predicate<ItemStack> predicate) {
         MAIN_WEAPON_PREDICATE.add(predicate);
     }
-    public static void addSecondaryWeaponPredicate(Predicate<ItemStack> predicate){
+
+    public static void addSecondaryWeaponPredicate(Predicate<ItemStack> predicate) {
         SECONDARY_WEAPON_PREDICATE.add(predicate);
     }
-    public static void addThirdWeaponPredicate(Predicate<ItemStack> predicate){
+
+    public static void addThirdWeaponPredicate(Predicate<ItemStack> predicate) {
         THIRD_WEAPON_PREDICATE.add(predicate);
     }
-    public static void addThrowablePredicate(Predicate<ItemStack> predicate){
+
+    public static void addThrowablePredicate(Predicate<ItemStack> predicate) {
         THROW_PREDICATE.add(predicate);
     }
-    public static void addC4Predicate(Predicate<ItemStack> predicate){
+
+    public static void addC4Predicate(Predicate<ItemStack> predicate) {
         C4_PREDICATE.add(predicate);
     }
 
-    public static void playerDropMatchItem(ServerPlayer player, ItemStack itemStack){
+    public static void playerDropMatchItem(ServerPlayer player, ItemStack itemStack) {
         RandomSource random = player.getRandom();
         DropType type = DropType.getItemDropType(itemStack);
-        MatchDropEntity dropEntity = new MatchDropEntity(player.level(),itemStack,type);
-        double d0 = player.getEyeY() - (double)0.3F;
+        MatchDropEntity dropEntity = new MatchDropEntity(player.level(), itemStack, type);
+        double d0 = player.getEyeY() - (double) 0.3F;
         Vec3 pos = new Vec3(player.getX(), d0, player.getZ());
         dropEntity.setPos(pos);
-        float f8 = Mth.sin(player.getXRot() * ((float)Math.PI / 180F));
-        float f2 = Mth.cos(player.getXRot() * ((float)Math.PI / 180F));
-        float f3 = Mth.sin(player.getYRot() * ((float)Math.PI / 180F));
-        float f4 = Mth.cos(player.getYRot() * ((float)Math.PI / 180F));
-        float f5 = random.nextFloat() * ((float)Math.PI * 2F);
+        float f8 = Mth.sin(player.getXRot() * ((float) Math.PI / 180F));
+        float f2 = Mth.cos(player.getXRot() * ((float) Math.PI / 180F));
+        float f3 = Mth.sin(player.getYRot() * ((float) Math.PI / 180F));
+        float f4 = Mth.cos(player.getYRot() * ((float) Math.PI / 180F));
+        float f5 = random.nextFloat() * ((float) Math.PI * 2F);
         float f6 = 0.02F * random.nextFloat();
-        dropEntity.setDeltaMovement((double)(-f3 * f2 * 0.3F) + Math.cos(f5) * (double)f6, -f8 * 0.3F + 0.1F + (random.nextFloat() - random.nextFloat()) * 0.1F, (double)(f4 * f2 * 0.3F) + Math.sin(f5) * (double)f6);
+        dropEntity.setDeltaMovement((double) (-f3 * f2 * 0.3F) + Math.cos(f5) * (double) f6, -f8 * 0.3F + 0.1F + (random.nextFloat() - random.nextFloat()) * 0.1F, (double) (f4 * f2 * 0.3F) + Math.sin(f5) * (double) f6);
         player.level().addFreshEntity(dropEntity);
     }
 
@@ -400,7 +404,7 @@ public class FPSMUtil {
                         playerDropMatchItem(serverPlayer, weapon);
                     }
 
-                    if(!dropThrowable) return;
+                    if (!dropThrowable) return;
                     Inventory inventory = serverPlayer.getInventory();
                     List<ItemStack> throwable = searchInventoryForType(inventory, DropType.THROW);
                     if (!throwable.isEmpty()) {
@@ -479,16 +483,12 @@ public class FPSMUtil {
         return Iterables.concat(
                 player.getInventory().items,
                 player.getInventory().armor,
-                player.getInventory().offhand
-        );
+                player.getInventory().offhand);
     }
-
-
-
 
     /**
      * 从伤害源中中获取击杀者
-     * */
+     */
     public static ServerPlayer getKiller(ServerPlayer dead, DamageSource source) {
         Entity src = source.getEntity();
         if (src instanceof ServerPlayer sp) return sp;
@@ -498,18 +498,18 @@ public class FPSMUtil {
         if (direct instanceof Projectile proj && proj.getOwner() instanceof ServerPlayer owner) {
             return owner;
         }
-        if (direct instanceof ThrowableItemProjectile tip && tip.getOwner() instanceof ServerPlayer owner2){
+        if (direct instanceof ThrowableItemProjectile tip && tip.getOwner() instanceof ServerPlayer owner2) {
             return owner2;
         }
-        if (direct instanceof AreaEffectCloud cloud && cloud.getOwner() instanceof ServerPlayer owner3){
+        if (direct instanceof AreaEffectCloud cloud && cloud.getOwner() instanceof ServerPlayer owner3) {
             return owner3;
         }
-        if (direct instanceof PrimedTnt tnt && tnt.getOwner() instanceof ServerPlayer owner4){
+        if (direct instanceof PrimedTnt tnt && tnt.getOwner() instanceof ServerPlayer owner4) {
             return owner4;
         }
 
         Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(dead);
-        if(opt.isPresent()){
+        if (opt.isPresent()) {
             BaseMap baseMap = opt.get();
             Map<UUID, Float> hurtMap = baseMap.getMapTeams().getDamageMap().get(dead.getUUID());
             return hurtMap.entrySet().stream()
@@ -522,13 +522,12 @@ public class FPSMUtil {
 
     /**
      * 从伤害源中中获取击杀者的武器
-     * */
-    public static ItemStack getKillerWeapon(DamageSource source){
+     */
+    public static ItemStack getKillerWeapon(DamageSource source) {
         Player attacker;
         if (source.getEntity() instanceof Player p) {
             attacker = p;
-        } else if (source.getEntity() instanceof ThrowableItemProjectile throwable
-                && throwable.getOwner() instanceof Player p) {
+        } else if (source.getEntity() instanceof ThrowableItemProjectile throwable && throwable.getOwner() instanceof Player p) {
             attacker = p;
         } else {
             attacker = null;
@@ -539,14 +538,14 @@ public class FPSMUtil {
             itemStack = projectile.getItem();
         } else if (FPSMImpl.findCounterStrikeGrenadesMod()) {
             itemStack = CounterStrikeGrenadesCompat.getItemFromDamageSource(source);
-        }else{
+        } else {
             itemStack = ItemStack.EMPTY;
         }
 
         return (itemStack.isEmpty() && attacker != null) ? attacker.getMainHandItem() : itemStack;
     }
 
-    public static ResourceLocation fetchSkin(UUID id, String name){
+    public static ResourceLocation fetchSkin(UUID id, String name) {
         return Minecraft.getInstance().getSkinManager()
                 .getInsecureSkinLocation(new GameProfile(id, name));
     }
@@ -600,9 +599,8 @@ public class FPSMUtil {
         return mapTeams.getPlayerData(bestAssistUUID);
     }
 
-    //服务端
+    // 服务端
     public static boolean isOp(GameProfile profile) {
         return ServerLifecycleHooks.getCurrentServer().getPlayerList().isOp(profile);
     }
-
 }

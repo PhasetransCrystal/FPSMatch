@@ -7,8 +7,8 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public final class ClientPacketExecutor {
-    private ClientPacketExecutor() {
-    }
+
+    private ClientPacketExecutor() {}
 
     public static void execute(Supplier<NetworkEvent.Context> ctxSupplier, Object packet) {
         NetworkEvent.Context context = ctxSupplier.get();

@@ -1,17 +1,5 @@
 package com.ptcrys.fpsmatch.common.capability.map;
 
-import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.serialization.Codec;
-import com.ptcrys.fpsmatch.common.command.FPSMCommand;
-import com.ptcrys.fpsmatch.common.command.FPSMCommandSuggests;
-import com.ptcrys.fpsmatch.common.command.FPSMHelpManager;
-import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
-import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
-import com.ptcrys.fpsmatch.core.capability.map.MapCapability;
-import com.ptcrys.fpsmatch.core.data.SpawnPointData;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -19,17 +7,29 @@ import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.serialization.Codec;
+import com.ptcrys.fpsmatch.common.command.FPSMCommand;
+import com.ptcrys.fpsmatch.common.command.FPSMHelpManager;
+import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
+import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
+import com.ptcrys.fpsmatch.core.capability.map.MapCapability;
+import com.ptcrys.fpsmatch.core.data.SpawnPointData;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
+
 public class GameEndTeleportCapability extends MapCapability implements FPSMCapability.Savable<SpawnPointData> {
 
     public static void register() {
         FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.MAP, GameEndTeleportCapability.class, new Factory<>() {
+
             @Override
             public GameEndTeleportCapability create(BaseMap map) {
                 return new GameEndTeleportCapability(map);
             }
 
             @Override
-            public Command command(){
+            public Command command() {
                 return new METPCommand();
             }
         });
@@ -65,7 +65,7 @@ public class GameEndTeleportCapability extends MapCapability implements FPSMCapa
         return pos;
     }
 
-    public static class METPCommand implements FPSMCapability.Factory.Command{
+    public static class METPCommand implements FPSMCapability.Factory.Command {
 
         @Override
         public String getName() {
@@ -76,7 +76,7 @@ public class GameEndTeleportCapability extends MapCapability implements FPSMCapa
         public LiteralArgumentBuilder<CommandSourceStack> builder(LiteralArgumentBuilder<CommandSourceStack> builder, CommandBuildContext context) {
             return builder
                     .then(Commands.argument("pos", Vec3Argument.vec3())
-                    .executes(METPCommand::handleModifyMatchEndTeleportPoint));
+                            .executes(METPCommand::handleModifyMatchEndTeleportPoint));
         }
 
         @Override
@@ -90,11 +90,10 @@ public class GameEndTeleportCapability extends MapCapability implements FPSMCapa
             Vec3 point = Vec3Argument.getVec3(context, "pos");
 
             return FPSMCommand.getMapCapability(context, GameEndTeleportCapability.class).map(
-                    cap->{
+                    cap -> {
                         SpawnPointData pointData = new SpawnPointData(
                                 context.getSource().getLevel().dimension(),
-                                point, 0f, 0f
-                        );
+                                point, 0f, 0f);
                         cap.setPoint(pointData);
                         FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.metp.success", pointData.toString()));
                         return 1;

@@ -1,6 +1,7 @@
 package com.ptcrys.fpsmatch.common.client.spec;
 
 public final class SpectateState {
+
     private static volatile SpectateMode mode = SpectateMode.FREE;
     private static volatile SpectateTarget target;
 
@@ -14,9 +15,21 @@ public final class SpectateState {
         mode = value == null || value.mode() == null ? SpectateMode.FREE : value.mode();
     }
 
-    public static SpectateMode get() { return mode; }
-    public static SpectateTarget getTarget() { return target; }
-    public static boolean isAttach() { return mode == SpectateMode.ATTACH || mode == SpectateMode.TEAMMATE; }
-    public static boolean isRestricted() { return mode.isRestricted(); }
+    public static SpectateMode get() {
+        return mode;
+    }
+
+    public static SpectateTarget getTarget() {
+        return target;
+    }
+
+    public static boolean isAttach() {
+        return mode == SpectateMode.ATTACH || mode == SpectateMode.TEAMMATE;
+    }
+
+    public static boolean isRestricted() {
+        return mode.isRestricted();
+    }
+
     private SpectateState() {}
 }

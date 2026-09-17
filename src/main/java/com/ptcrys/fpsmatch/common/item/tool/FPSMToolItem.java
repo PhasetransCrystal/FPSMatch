@@ -1,5 +1,18 @@
 package com.ptcrys.fpsmatch.common.item.tool;
 
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.item.tool.handler.ClickAction;
 import com.ptcrys.fpsmatch.common.item.tool.handler.ClickActionContext;
@@ -8,30 +21,14 @@ import com.ptcrys.fpsmatch.common.packet.EditToolClickC2SPacket;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public abstract class FPSMToolItem extends Item implements EditToolClickHandler {
+
     public static final String TYPE_TAG = "SelectedType";
     public static final String MAP_TAG = "SelectedMap";
     public static final String TEAM_TAG = "SelectedTeam";
@@ -59,12 +56,13 @@ public abstract class FPSMToolItem extends Item implements EditToolClickHandler 
 
     @Override
     public final @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand interactionHand) {
-        if(level.isClientSide()) return InteractionResultHolder.pass(player.getItemInHand(interactionHand));
-        this.handleClick(player.getItemInHand(interactionHand),(ServerPlayer) player,false,player.isShiftKeyDown(),ClickAction.RIGHT_CLICK);
+        if (level.isClientSide()) return InteractionResultHolder.pass(player.getItemInHand(interactionHand));
+        this.handleClick(player.getItemInHand(interactionHand), (ServerPlayer) player, false, player.isShiftKeyDown(), ClickAction.RIGHT_CLICK);
         return InteractionResultHolder.success(player.getItemInHand(interactionHand));
     }
 
     protected abstract void onLeftClick(ClickActionContext context);
+
     protected abstract void onRightClick(ClickActionContext context);
 
     // 标签操作方法
@@ -153,8 +151,6 @@ public abstract class FPSMToolItem extends Item implements EditToolClickHandler 
 
         FPSMatch.sendToServer(new EditToolClickC2SPacket(
                 ClickAction.LEFT_CLICK,
-                player.isShiftKeyDown()
-        ));
+                player.isShiftKeyDown()));
     }
-
 }

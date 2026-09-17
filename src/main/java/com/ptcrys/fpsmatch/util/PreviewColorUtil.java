@@ -1,6 +1,7 @@
 package com.ptcrys.fpsmatch.util;
 
 public final class PreviewColorUtil {
+
     private static final int[] PALETTE = {
             0xFFE85D5D,
             0xFF2FD3D9,
@@ -11,8 +12,7 @@ public final class PreviewColorUtil {
             0xFFE05DB1
     };
 
-    private PreviewColorUtil() {
-    }
+    private PreviewColorUtil() {}
 
     public static int getMapPreviewColor(String gameType) {
         return mix(getBaseColor(gameType), 0xFFFFFFFF, 0.35F);

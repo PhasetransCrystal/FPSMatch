@@ -9,11 +9,11 @@ import com.ptcrys.fpsmatch.util.hash.FileHashUtil;
 import java.io.File;
 
 public record HashDownloadHolder(String url, File file, HashData hashData) implements IDownloadAble {
+
     public static final Codec<HashDownloadHolder> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("uuid").forGetter(HashDownloadHolder::url),
             Codec.STRING.fieldOf("musicUrl").forGetter(HashDownloadHolder::getFileStr),
-            HashData.CODEC.fieldOf("hashData").forGetter(HashDownloadHolder::hashData)
-    ).apply(instance, HashDownloadHolder::new));
+            HashData.CODEC.fieldOf("hashData").forGetter(HashDownloadHolder::hashData)).apply(instance, HashDownloadHolder::new));
 
     public HashDownloadHolder(String url, String file, HashData hashData) {
         this(url, new File(file), hashData);
@@ -29,26 +29,26 @@ public record HashDownloadHolder(String url, File file, HashData hashData) imple
         return file;
     }
 
-    public String getFileStr(){
+    public String getFileStr() {
         return file.getAbsolutePath();
     }
 
     @Override
     public void onDownloadCompleted() {
-        if(!checkHash()){
+        if (!checkHash()) {
             file.delete();
         }
     }
 
     public boolean checkHash() {
-        if(file.exists()){
-            try{
+        if (file.exists()) {
+            try {
                 return FileHashUtil.calculateHash(file, hashData.getHashAlgorithm()).equals(hashData.hash());
-            }catch (Exception e){
+            } catch (Exception e) {
                 FPSMatch.LOGGER.error("Error checking hash", e);
                 return false;
             }
-        }else{
+        } else {
             return false;
         }
     }

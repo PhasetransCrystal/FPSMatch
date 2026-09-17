@@ -1,15 +1,18 @@
 package com.ptcrys.fpsmatch.core.persistence;
 
-import com.mojang.logging.LogUtils;
 import net.minecraftforge.fml.loading.FMLLoader;
+
+import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class PersistenceUtils {
+
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final String[] ILLEGAL_FILENAME_CHARS = {"\\", "/", ":", "*", "?", "\"", "<", ">", "|"};
+    private static final String[] ILLEGAL_FILENAME_CHARS = { "\\", "/", ":", "*", "?", "\"", "<", ">", "|" };
 
     /** 修复文件名中的非法字符 */
     public static String fixFileName(String fileName) {
@@ -41,5 +44,4 @@ public class PersistenceUtils {
         String fixedFilename = fixFileName(filename);
         return cacheDir.resolve(fixedFilename + "." + type);
     }
-
 }

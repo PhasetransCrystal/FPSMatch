@@ -1,17 +1,18 @@
 package com.ptcrys.fpsmatch.core.shop;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
-import com.mojang.datafixers.util.Pair;
-import com.ptcrys.fpsmatch.core.shop.event.CheckCostEvent;
-import com.ptcrys.fpsmatch.core.shop.event.ShopSlotChangeEvent;
-import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
-import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
+import com.mojang.datafixers.util.Pair;
+import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
+import com.ptcrys.fpsmatch.core.shop.event.CheckCostEvent;
+import com.ptcrys.fpsmatch.core.shop.event.ShopSlotChangeEvent;
+import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -49,9 +50,9 @@ public class ShopData<T extends Enum<T> & INamedType> {
      *
      * @param shopData 商店数据
      */
-    private  <E extends ImmutableList<ShopSlot>> ShopData(Map<T, E> shopData, int checker) {
+    private <E extends ImmutableList<ShopSlot>> ShopData(Map<T, E> shopData, int checker) {
         // 检查数据是否合法
-        checkData(shopData,checker);
+        checkData(shopData, checker);
         this.setDoneData(shopData);
     }
 
@@ -61,7 +62,6 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param shopData 商店数据
      */
     public <E extends ImmutableList<ShopSlot>> void setDoneData(Map<T, E> shopData) {
-
         // 赋值给 data 字段
         data.clear();
         data.putAll(shopData);
@@ -86,10 +86,10 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * 带初始金钱的构造函数。
      *
      * @param shopData 商店数据
-     * @param money 玩家初始金钱
+     * @param money    玩家初始金钱
      */
-    public <E extends ImmutableList<ShopSlot>> ShopData(Map<T, E> shopData,int checker, int money) {
-        this(shopData,checker);
+    public <E extends ImmutableList<ShopSlot>> ShopData(Map<T, E> shopData, int checker, int money) {
+        this(shopData, checker);
         this.money = money;
     }
 
@@ -100,22 +100,22 @@ public class ShopData<T extends Enum<T> & INamedType> {
      *
      * @param data 商店数据
      */
-    public <E extends List<ShopSlot>> void checkData(Map<T, E> data,int checker) {
+    public <E extends List<ShopSlot>> void checkData(Map<T, E> data, int checker) {
         // 获取枚举类的所有值
         List<T> enumConstants = data.keySet().stream().toList();
         int typeN = enumConstants.size();
-        if(typeN != checker) {
-            throw new RuntimeException("Incorrect number of type. Expected "+checker+" but found " + typeN);
+        if (typeN != checker) {
+            throw new RuntimeException("Incorrect number of type. Expected " + checker + " but found " + typeN);
         }
 
         // 遍历所有的物品类型
         for (T type : enumConstants) {
             // 获取该类型的商店槽位列表
-            List<ShopSlot> slots = data.getOrDefault(type,null);
+            List<ShopSlot> slots = data.getOrDefault(type, null);
             // 如果没有找到该类型的商店槽位列表，则抛出异常
             if (slots == null) throw new RuntimeException("No slots found for type " + type);
-                // 如果该类型的商店槽位列表数量不等于枚举类型数量，则抛出异常
-            if (slots.size() != type.slotCount()) throw new RuntimeException("Incorrect number of slots for type " + type + ". Expected "+type.slotCount()+" but found " + slots.size());
+            // 如果该类型的商店槽位列表数量不等于枚举类型数量，则抛出异常
+            if (slots.size() != type.slotCount()) throw new RuntimeException("Incorrect number of slots for type " + type + ". Expected " + type.slotCount() + " but found " + slots.size());
         }
     }
 
@@ -127,7 +127,6 @@ public class ShopData<T extends Enum<T> & INamedType> {
     public Map<T, ImmutableList<ShopSlot>> getData() {
         return data;
     }
-
 
     /**
      * 设置玩家的金钱数量。
@@ -150,7 +149,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param money 减少的金钱数量
      */
     public void reduceMoney(int money) {
-        if(unlimited()) return;
+        if (unlimited()) return;
         this.money = Math.max(0, this.money -= Math.max(0, money));
     }
 
@@ -160,7 +159,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param money 增加的金钱数量
      */
     public void addMoney(int money) {
-        if(unlimited()) return;
+        if (unlimited()) return;
         this.money = Math.min(getMaxMoney(), this.money += Math.max(0, money));
     }
 
@@ -183,7 +182,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
         return this.money;
     }
 
-    public boolean unlimited(){
+    public boolean unlimited() {
         return this.money == -1;
     }
 
@@ -193,8 +192,8 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * 根据操作类型（购买或退回），调用对应的处理方法。
      *
      * @param player 玩家对象
-     * @param type 物品类型
-     * @param index 槽位索引
+     * @param type   物品类型
+     * @param index  槽位索引
      * @param action 操作类型
      */
     public ShopActionResult handleButton(ServerPlayer player, T type, int index, ShopAction action) {
@@ -215,12 +214,11 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * <p>
      * 检查玩家是否有足够的金钱，并调用槽位的购买方法。
      *
-     * @param player 玩家对象
+     * @param player      玩家对象
      * @param currentSlot 当前槽位
      */
     protected ShopActionResult handleBuy(ServerPlayer player, ShopSlot currentSlot) {
-        if (currentSlot.isLocked()
-                || currentSlot.getBoughtCount() >= currentSlot.getMaxBuyCount()) {
+        if (currentSlot.isLocked() || currentSlot.getBoughtCount() >= currentSlot.getMaxBuyCount()) {
             return ShopActionResult.failure(ShopActionResult.Code.LOCKED_OR_MAX_COUNT);
         }
         boolean check = this.broadcastCostCheckEvent(player, currentSlot);
@@ -237,7 +235,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * <p>
      * 检查玩家是否可以退回物品，并调用槽位的退回方法。
      *
-     * @param player 玩家对象
+     * @param player      玩家对象
      * @param currentSlot 当前槽位
      */
     protected ShopActionResult handleReturn(ServerPlayer player, ShopSlot currentSlot) {
@@ -275,9 +273,9 @@ public class ShopData<T extends Enum<T> & INamedType> {
             for (ShopSlot shopSlot : shopSlots) {
                 if (itemStack.isEmpty()) continue;
                 if (shopSlot.returningChecker.test(itemStack)) {
-                    if(itemStack.getCount() >= shopSlot.getMaxBuyCount()){
+                    if (itemStack.getCount() >= shopSlot.getMaxBuyCount()) {
                         shopSlot.lock();
-                    }else{
+                    } else {
                         shopSlot.unlock(itemStack.getCount());
                     }
                     checkFlag.put(shopSlot, false);
@@ -299,7 +297,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * <p>
      * 检查玩家是否有足够的金钱购买当前槽位的物品。
      *
-     * @param player 玩家对象
+     * @param player      玩家对象
      * @param currentSlot 当前槽位
      * @return 如果检查通过，返回 true；否则返回 false
      */
@@ -316,9 +314,9 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * <p>
      * 通知其他槽位当前槽位的状态变更。
      *
-     * @param player 玩家对象
+     * @param player      玩家对象
      * @param currentSlot 当前槽位
-     * @param flag 变更标志（1 表示购买，-1 表示退回）
+     * @param flag        变更标志（1 表示购买，-1 表示退回）
      */
     protected void broadcastGroupChangeEvent(ServerPlayer player, ShopSlot currentSlot, int flag) {
         List<ShopSlot> groupSlot = currentSlot.haveGroup() ? this.grouped.get(currentSlot.getGroupId()).stream().filter((slot) -> slot != currentSlot).toList() : new ArrayList<>();

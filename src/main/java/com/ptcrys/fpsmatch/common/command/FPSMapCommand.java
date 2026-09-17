@@ -1,20 +1,5 @@
 package com.ptcrys.fpsmatch.common.command;
 
-import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.datafixers.util.Function3;
-import com.mojang.datafixers.util.Pair;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
-import com.ptcrys.fpsmatch.core.data.AreaData;
-import com.ptcrys.fpsmatch.core.data.Setting;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.util.MapId;
-import com.ptcrys.fpsmatch.core.team.BaseTeam;
-import com.ptcrys.fpsmatch.core.team.MapTeams;
-import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -27,12 +12,28 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.datafixers.util.Function3;
+import com.mojang.datafixers.util.Pair;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
+import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
+import com.ptcrys.fpsmatch.core.data.AreaData;
+import com.ptcrys.fpsmatch.core.data.Setting;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
+import com.ptcrys.fpsmatch.core.team.BaseTeam;
+import com.ptcrys.fpsmatch.core.team.MapTeams;
+import com.ptcrys.fpsmatch.util.MapId;
+
 import java.util.*;
 
 import static net.minecraft.network.chat.CommonComponents.*;
 
-
 public class FPSMapCommand {
+
     // 构建map modify命令树
     public static LiteralArgumentBuilder<CommandSourceStack> init(Pair<LiteralArgumentBuilder<CommandSourceStack>, CommandBuildContext> builder) {
         // 获取HelpManager实例
@@ -120,10 +121,7 @@ public class FPSMapCommand {
                                                                                 .then(Commands.argument(FPSMCommandSuggests.TARGETS_ARG, EntityArgument.players())
                                                                                         .then(Commands.argument(FPSMCommandSuggests.ACTION_ARG, StringArgumentType.string())
                                                                                                 .suggests(FPSMCommandSuggests.TEAM_ACTION_SUGGESTION)
-                                                                                                .executes(FPSMapCommand::handleSpecTeamAction)
-                                                                                        )
-                                                                                )
-                                                                        ))
+                                                                                                .executes(FPSMapCommand::handleSpecTeamAction)))))
                                                                 .then(Commands.argument(FPSMCommandSuggests.TEAM_NAME_ARG, StringArgumentType.string())
                                                                         .suggests(FPSMCommandSuggests.TEAM_NAMES_SUGGESTION)
                                                                         .then(buildTeamCapabilityCommands(builder.getSecond()))
@@ -131,16 +129,7 @@ public class FPSMapCommand {
                                                                                 .then(Commands.argument(FPSMCommandSuggests.TARGETS_ARG, EntityArgument.players())
                                                                                         .then(Commands.argument(FPSMCommandSuggests.ACTION_ARG, StringArgumentType.string())
                                                                                                 .suggests(FPSMCommandSuggests.TEAM_ACTION_SUGGESTION)
-                                                                                                .executes(FPSMapCommand::handleTeamAction)
-                                                                                        )
-                                                                                )
-                                                                        )
-                                                                )
-                                                        )
-                                                )
-                                        )
-                                )
-                        ));
+                                                                                                .executes(FPSMapCommand::handleTeamAction)))))))))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> buildMapCapabilityCommands(CommandBuildContext context) {
@@ -433,9 +422,9 @@ public class FPSMapCommand {
                     for (Setting<?> setting : settings) {
                         String valueStr = String.valueOf(setting.get());
                         builder.append(NEW_LINE);
-                        MutableComponent info = Component.literal("[" + setting.get().getClass().getSimpleName() + "]").withStyle(ChatFormatting.GRAY,ChatFormatting.BOLD);
-                        MutableComponent name = Component.literal(setting.getConfigName()).withStyle(ChatFormatting.WHITE,ChatFormatting.BOLD);
-                        MutableComponent value = Component.literal(valueStr).withStyle(ChatFormatting.GREEN,ChatFormatting.BOLD);;
+                        MutableComponent info = Component.literal("[" + setting.get().getClass().getSimpleName() + "]").withStyle(ChatFormatting.GRAY, ChatFormatting.BOLD);
+                        MutableComponent name = Component.literal(setting.getConfigName()).withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD);
+                        MutableComponent value = Component.literal(valueStr).withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD);;
 
                         builder.append(info.append(SPACE).append(name).append(SPACE).append(value));
                     }
@@ -582,5 +571,4 @@ public class FPSMapCommand {
                     return 0;
                 });
     }
-
 }

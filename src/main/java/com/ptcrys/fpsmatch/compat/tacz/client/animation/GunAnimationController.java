@@ -1,5 +1,9 @@
 package com.ptcrys.fpsmatch.compat.tacz.client.animation;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+
 import com.ptcrys.fpsmatch.compat.tacz.client.test.TaczSpecScreenShake;
 import com.ptcrys.fpsmatch.compat.tacz.client.util.GunSpecUtils;
 import com.tacz.guns.api.TimelessAPI;
@@ -11,9 +15,6 @@ import com.tacz.guns.client.resource.index.ClientGunIndex;
 import com.tacz.guns.client.sound.SoundPlayManager;
 import com.tacz.guns.resource.pojo.data.gun.Bolt;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
 
 import java.util.Optional;
 
@@ -54,7 +55,7 @@ public class GunAnimationController {
             Minecraft.getInstance().submitAsync(() -> {
                 AnimationStateMachine<?> asm = display.getAnimationStateMachine();
                 if (asm == null) return;
-                
+
                 GunSpecUtils.safeTrigger(asm, GunSpecUtils.TRIGGER_CANCEL_RELOAD);
                 GunSpecUtils.safeTrigger(asm, GunSpecUtils.TRIGGER_RELOAD_END);
                 GunSpecUtils.safeTrigger(asm, GunSpecUtils.TRIGGER_STOP_RELOAD);
@@ -98,7 +99,7 @@ public class GunAnimationController {
             GunSpecUtils.safeTrigger(asm, GunSpecUtils.TRIGGER_CANCEL_INSPECT);
             GunSpecUtils.safeTrigger(asm, GunSpecUtils.TRIGGER_STOP_INSPECT);
             GunSpecUtils.safeTrigger(asm, GunSpecUtils.TRIGGER_INSPECT);
-            
+
             SoundPlayManager.stopPlayGunSound();
             SoundPlayManager.playInspectSound(entity, display, false);
         });
@@ -115,9 +116,8 @@ public class GunAnimationController {
             AnimationStateMachine<?> asm = display.getAnimationStateMachine();
             if (asm == null) return;
 
-            boolean anyTriggered = GunSpecUtils.safeTrigger(asm, GunSpecUtils.TRIGGER_CANCEL_INSPECT) 
-                    || GunSpecUtils.safeTrigger(asm, GunSpecUtils.TRIGGER_STOP_INSPECT);
-            
+            boolean anyTriggered = GunSpecUtils.safeTrigger(asm, GunSpecUtils.TRIGGER_CANCEL_INSPECT) || GunSpecUtils.safeTrigger(asm, GunSpecUtils.TRIGGER_STOP_INSPECT);
+
             if (!anyTriggered) {
                 try {
                     asm.exit();
@@ -135,13 +135,13 @@ public class GunAnimationController {
 
         Optional<GunData> gunData = TimelessAPI.getClientGunIndex(iGun.getGunId(stack))
                 .map(ClientGunIndex::getGunData);
-        
+
         if (gunData.isEmpty()) return true;
 
         Bolt bolt = gunData.get().getBolt();
         int ammo = iGun.getCurrentAmmoCount(stack);
         boolean hasInBarrel = iGun.hasBulletInBarrel(stack);
-        
+
         return (bolt == Bolt.OPEN_BOLT) ? (ammo <= 0) : (!hasInBarrel && ammo <= 0);
     }
 }

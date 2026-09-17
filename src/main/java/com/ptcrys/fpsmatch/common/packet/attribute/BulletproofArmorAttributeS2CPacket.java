@@ -1,12 +1,14 @@
 package com.ptcrys.fpsmatch.common.packet.attribute;
 
-import com.ptcrys.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 
 import java.util.function.Supplier;
 
 public class BulletproofArmorAttributeS2CPacket {
+
     private final boolean hasHelmet;
     private final int durability;
 
@@ -25,7 +27,7 @@ public class BulletproofArmorAttributeS2CPacket {
     }
 
     public static BulletproofArmorAttributeS2CPacket decode(FriendlyByteBuf buf) {
-        return new BulletproofArmorAttributeS2CPacket(buf.readBoolean(),buf.readInt());
+        return new BulletproofArmorAttributeS2CPacket(buf.readBoolean(), buf.readInt());
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {

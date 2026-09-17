@@ -1,52 +1,53 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
+
+import com.mojang.blaze3d.systems.RenderSystem;
 
 /**
  * 地图缩略图/预览图渲染器。
  * <p>
  * 渲染优先级：
  * <ol>
- *   <li>若提供贴图路径且资源已注册 → 绘制贴图（等比拉伸填充）</li>
- *   <li>否则 → 绘制柔和渐变色块 + 模式标识</li>
+ * <li>若提供贴图路径且资源已注册 → 绘制贴图（等比拉伸填充）</li>
+ * <li>否则 → 绘制柔和渐变色块 + 模式标识</li>
  * </ol>
  * <p>
  * 实际贴图保持清晰；没有贴图时显示模式标识，不伪造地图布局。
  */
 public final class MapThumbnailRenderer {
-    private MapThumbnailRenderer() {
-    }
+
+    private MapThumbnailRenderer() {}
 
     /**
      * 8 组低饱和战术底色对（顶部偏钢蓝 -> 底部偏炭黑）。
      */
     private static final int[][] GRADIENT_PAIRS = {
-            {0xFF344553, 0xFF151D25},
-            {0xFF3D4A55, 0xFF182027},
-            {0xFF2F4A4D, 0xFF152327},
-            {0xFF4A463A, 0xFF211E1A},
-            {0xFF4C3F32, 0xFF201A16},
-            {0xFF49383D, 0xFF21191D},
-            {0xFF3C454D, 0xFF171D23},
-            {0xFF3E4250, 0xFF191B24},
+            { 0xFF344553, 0xFF151D25 },
+            { 0xFF3D4A55, 0xFF182027 },
+            { 0xFF2F4A4D, 0xFF152327 },
+            { 0xFF4A463A, 0xFF211E1A },
+            { 0xFF4C3F32, 0xFF201A16 },
+            { 0xFF49383D, 0xFF21191D },
+            { 0xFF3C454D, 0xFF171D23 },
+            { 0xFF3E4250, 0xFF191B24 },
     };
 
     /**
      * 渲染地图缩略图。
      *
-     * @param graphics      GuiGraphics
-     * @param x             左上 x
-     * @param y             左上 y
-     * @param width         宽
-     * @param height        高
-     * @param texturePath   贴图资源路径，空串表示无贴图
-     * @param mapName       地图内部名（用于色块哈希）
-     * @param gameType      游戏类型（用于色块哈希 + 模式标识）
-     * @param displayName   显示名（色块底部叠加）
-     * @param showLabel     是否在色块底部叠加地图名标签
+     * @param graphics    GuiGraphics
+     * @param x           左上 x
+     * @param y           左上 y
+     * @param width       宽
+     * @param height      高
+     * @param texturePath 贴图资源路径，空串表示无贴图
+     * @param mapName     地图内部名（用于色块哈希）
+     * @param gameType    游戏类型（用于色块哈希 + 模式标识）
+     * @param displayName 显示名（色块底部叠加）
+     * @param showLabel   是否在色块底部叠加地图名标签
      */
     public static void render(GuiGraphics graphics, int x, int y, int width, int height,
                               String texturePath, String mapName, String gameType,
@@ -141,7 +142,6 @@ public final class MapThumbnailRenderer {
         int textY = labelY + (labelHeight - mc.font.lineHeight) / 2;
         graphics.drawString(mc.font, displayName, textX, textY, 0xFFE7EDF2, false);
     }
-
 
     /**
      * 基于 mapName + gameType 哈希确定性选取色对索引。

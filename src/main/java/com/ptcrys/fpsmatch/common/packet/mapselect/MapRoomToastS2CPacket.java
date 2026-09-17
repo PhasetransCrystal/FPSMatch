@@ -1,13 +1,15 @@
 package com.ptcrys.fpsmatch.common.packet.mapselect;
 
-import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.network.NetworkEvent;
 
+import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
+
 import java.util.function.Supplier;
 
 public record MapRoomToastS2CPacket(Component message, boolean error) {
+
     public static void encode(MapRoomToastS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeComponent(packet.message());
         buf.writeBoolean(packet.error());

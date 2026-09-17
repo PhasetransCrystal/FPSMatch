@@ -1,17 +1,18 @@
 package com.ptcrys.fpsmatch.common.mapselect;
 
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+
 import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.capability.map.DemolitionModeCapability;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
 import com.ptcrys.fpsmatch.config.FPSMConfig;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.data.PlayerData;
 import com.ptcrys.fpsmatch.core.data.Setting;
-import com.ptcrys.fpsmatch.common.capability.map.DemolitionModeCapability;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -30,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 本机制受 {@link FPSMConfig.Server#roomSyncPushEnabled} 控制，关闭后完全回退旧行为。
  */
 public final class MapRoomSyncManager {
+
     /** 观看列表的哨兵目标值（区别于具体房间 key）。 */
     private static final String LIST_TARGET = "\u0000list";
     private static final String KEY_SEPARATOR = "\u001f";
@@ -42,8 +44,7 @@ public final class MapRoomSyncManager {
     private static long lastListSignature = Long.MIN_VALUE;
     private static int tickCounter = 0;
 
-    private MapRoomSyncManager() {
-    }
+    private MapRoomSyncManager() {}
 
     public static String roomKey(String gameType, String mapName) {
         return gameType + KEY_SEPARATOR + mapName;

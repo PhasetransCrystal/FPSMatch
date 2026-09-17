@@ -2,17 +2,16 @@ package com.ptcrys.fpsmatch.common.client;
 
 /** Pure positioning model for the FPSMatch entry appended to the pause menu. */
 public final class PauseMenuLayoutModel {
+
     private static final int PREFERRED_WIDTH = 204;
     private static final int PREFERRED_HEIGHT = 20;
     private static final int HORIZONTAL_MARGIN = 8;
     private static final int VERTICAL_MARGIN = 4;
     private static final int MENU_GAP = 4;
 
-    private PauseMenuLayoutModel() {
-    }
+    private PauseMenuLayoutModel() {}
 
-    public record Placement(int x, int y, int width, int height, int menuShiftUp) {
-    }
+    public record Placement(int x, int y, int width, int height, int menuShiftUp) {}
 
     /**
      * Places the entry immediately after the detected pause-menu bounds. When the new row would

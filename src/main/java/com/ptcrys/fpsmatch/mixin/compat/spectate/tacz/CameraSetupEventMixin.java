@@ -1,9 +1,10 @@
 package com.ptcrys.fpsmatch.mixin.compat.spectate.tacz;
 
+import net.minecraftforge.client.event.ViewportEvent;
+
+import com.ptcrys.fpsmatch.compat.spectate.tacz.SpectatorCameraRecoil;
 import com.tacz.guns.api.event.common.GunFireEvent;
 import com.tacz.guns.client.event.CameraSetupEvent;
-import com.ptcrys.fpsmatch.compat.spectate.tacz.SpectatorCameraRecoil;
-import net.minecraftforge.client.event.ViewportEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -11,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = CameraSetupEvent.class, remap = false)
 public abstract class CameraSetupEventMixin {
+
     @Inject(method = "initialCameraRecoil(Lcom/tacz/guns/api/event/common/GunFireEvent;)V", at = @At("HEAD"))
     private static void fpsmatch$initSpectatorCameraRecoil(GunFireEvent event, CallbackInfo ci) {
         if (!event.getLogicalSide().isClient()) {

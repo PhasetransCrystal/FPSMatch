@@ -6,13 +6,17 @@ import java.util.List;
 
 /** Tick clock shared by camera, actors and audio. Sampling never dispatches markers. */
 public final class SequenceClock {
+
     private final List<Marker> markers = new ArrayList<>();
     private int ticks;
     private int dispatchedThrough = -1;
     private long generation;
     private boolean cancelled;
 
-    public int ticks() { return ticks; }
+    public int ticks() {
+        return ticks;
+    }
+
     public double sample(float partialTick) {
         return ticks + Math.max(0, Math.min(1, partialTick));
     }
@@ -40,8 +44,17 @@ public final class SequenceClock {
         dispatch(true);
     }
 
-    public void cancel() { cancelled = true; ++generation; }
-    public void reset() { ticks = 0; dispatchedThrough = -1; cancelled = false; ++generation; }
+    public void cancel() {
+        cancelled = true;
+        ++generation;
+    }
+
+    public void reset() {
+        ticks = 0;
+        dispatchedThrough = -1;
+        cancelled = false;
+        ++generation;
+    }
 
     private void dispatch(boolean seeking) {
         long currentGeneration = generation;

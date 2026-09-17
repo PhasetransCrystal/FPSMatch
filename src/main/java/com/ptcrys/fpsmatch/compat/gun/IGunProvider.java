@@ -34,12 +34,10 @@ public interface IGunProvider {
     GunTabTypeEnum getGunTabType(ItemStack stack);
 
     /** 设置枪械 ID（NBT 写入） */
-    default void setGunId(ItemStack stack, ResourceLocation gunId) {
-    }
+    default void setGunId(ItemStack stack, ResourceLocation gunId) {}
 
     /** 设置枪械显示 ID（NBT 写入） */
-    default void setGunDisplayId(ItemStack stack, ResourceLocation gunId) {
-    }
+    default void setGunDisplayId(ItemStack stack, ResourceLocation gunId) {}
 
     // ========== 弹药操作 ==========
 

@@ -1,14 +1,5 @@
 package com.ptcrys.fpsmatch.compat.spectate.tacz;
 
-import com.tacz.guns.api.TimelessAPI;
-import com.tacz.guns.api.client.animation.statemachine.LuaAnimationStateMachine;
-import com.tacz.guns.api.event.common.GunFireEvent;
-import com.tacz.guns.api.event.common.GunReloadEvent;
-import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.client.renderer.item.AnimateGeoItemRenderer;
-import com.tacz.guns.client.resource.GunDisplayInstance;
-import com.tacz.guns.client.sound.SoundPlayManager;
-import java.lang.reflect.Method;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.world.entity.LivingEntity;
@@ -17,13 +8,24 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
+import com.tacz.guns.api.TimelessAPI;
+import com.tacz.guns.api.client.animation.statemachine.LuaAnimationStateMachine;
+import com.tacz.guns.api.event.common.GunFireEvent;
+import com.tacz.guns.api.event.common.GunReloadEvent;
+import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.client.renderer.item.AnimateGeoItemRenderer;
+import com.tacz.guns.client.resource.GunDisplayInstance;
+import com.tacz.guns.client.sound.SoundPlayManager;
+
+import java.lang.reflect.Method;
+
 /**
  * Plays and cancels TACZ inspect animations for the local player or spectated view.
  * Registered by {@link com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap} when TACZ is loaded.
  */
 public final class SpectatorGunInspect {
-    private SpectatorGunInspect() {
-    }
+
+    private SpectatorGunInspect() {}
 
     public static void playInspectAnimationFor(LivingEntity entity) {
         if (!(entity instanceof Player player)) {
@@ -64,8 +66,7 @@ public final class SpectatorGunInspect {
                     try {
                         asm.exit();
                         asm.initialize();
-                    } catch (Throwable ignored) {
-                    }
+                    } catch (Throwable ignored) {}
                 }
             }
             SoundPlayManager.stopPlayGunSound();

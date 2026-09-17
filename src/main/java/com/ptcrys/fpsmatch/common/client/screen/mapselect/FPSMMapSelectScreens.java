@@ -1,16 +1,16 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.Screen;
+
 import com.mojang.logging.LogUtils;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.modernui.*;
-import com.ptcrys.fpsmatch.common.client.screen.FPSMTeamActionScreen;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.PauseScreen;
-import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -22,10 +22,10 @@ import java.util.Optional;
  * Product open path always uses Modern UI screens.
  */
 public final class FPSMMapSelectScreens {
+
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private FPSMMapSelectScreens() {
-    }
+    private FPSMMapSelectScreens() {}
 
     public static boolean isMapSelectionScreen(Screen screen) {
         return screen instanceof ModernMapSelectionScreen;
@@ -64,25 +64,20 @@ public final class FPSMMapSelectScreens {
     }
 
     public static Optional<AcceptanceHandle> openAcceptance(
-            MapSelectionSnapshotS2CPacket snapshot,
-            MapRoomDetail detail,
-            MapRoomToastS2CPacket toast
-    ) {
+                                                            MapSelectionSnapshotS2CPacket snapshot,
+                                                            MapRoomDetail detail,
+                                                            MapRoomToastS2CPacket toast) {
         Objects.requireNonNull(snapshot, "snapshot");
         Objects.requireNonNull(detail, "detail");
         Objects.requireNonNull(toast, "toast");
-        boolean containsDetail = snapshot.maps().stream().anyMatch(summary ->
-                summary.gameType().equals(detail.summary().gameType())
-                        && summary.mapName().equals(detail.summary().mapName())
-        );
+        boolean containsDetail = snapshot.maps().stream().anyMatch(summary -> summary.gameType().equals(detail.summary().gameType()) && summary.mapName().equals(detail.summary().mapName()));
         if (!containsDetail || !toast.error()) {
             return Optional.empty();
         }
 
         Minecraft minecraft = Minecraft.getInstance();
         Screen parent = sanitizeParent(minecraft.screen);
-        ModernMapSelectionScreen screen =
-                new ModernMapSelectionScreen(snapshot, parent);
+        ModernMapSelectionScreen screen = new ModernMapSelectionScreen(snapshot, parent);
         try {
             minecraft.setScreen(screen);
             if (minecraft.screen != screen) {
@@ -102,6 +97,7 @@ public final class FPSMMapSelectScreens {
     }
 
     public static final class AcceptanceHandle {
+
         private final ModernMapSelectionScreen screen;
 
         private AcceptanceHandle(ModernMapSelectionScreen screen) {

@@ -1,7 +1,6 @@
 package com.ptcrys.fpsmatch.core.network;
 
 import com.mojang.serialization.Codec;
-import com.ptcrys.fpsmatch.core.network.download.DownloadBuilder;
 import com.ptcrys.fpsmatch.core.network.interceptor.Interceptor;
 import com.ptcrys.fpsmatch.core.network.interceptor.LoggingInterceptor;
 
@@ -20,6 +19,7 @@ import java.util.concurrent.TimeUnit;
  * 支持拦截器的网络请求模块
  */
 public class NetworkModule {
+
     private boolean closed = false;
     private final HttpClient httpClient;
     private final String baseUrl;
@@ -65,7 +65,6 @@ public class NetworkModule {
         return this;
     }
 
-
     HttpRequest.Builder applyRequestInterceptors(HttpRequest.Builder builder, Object body) {
         HttpRequest.Builder result = builder;
         for (Interceptor interceptor : interceptors) {
@@ -82,7 +81,7 @@ public class NetworkModule {
         return result;
     }
 
-    public void shutdown(){
+    public void shutdown() {
         Executor executor = httpClient.executor().orElse(null);
         if (executor instanceof ExecutorService) {
             ((ExecutorService) executor).shutdown();
@@ -90,17 +89,18 @@ public class NetworkModule {
         this.closed = true;
     }
 
-    public boolean isClosed(){
+    public boolean isClosed() {
         return closed;
     }
 
-    public static void shutdown(Executor executor){
+    public static void shutdown(Executor executor) {
         if (executor instanceof ExecutorService) {
             ((ExecutorService) executor).shutdown();
         }
     }
 
     public static class Builder {
+
         private String baseUrl = "";
         private long connectTimeout = 10_000;
         private Executor executor;
@@ -127,7 +127,7 @@ public class NetworkModule {
             return this;
         }
 
-        public Builder addInterceptor(Interceptor interceptor){
+        public Builder addInterceptor(Interceptor interceptor) {
             this.interceptors.add(interceptor);
             return this;
         }

@@ -3,10 +3,12 @@ package com.ptcrys.fpsmatch.compat.impl;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.LoadingModList;
 import net.minecraftforge.forgespi.language.IModFileInfo;
+
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
 import org.apache.maven.artifact.versioning.VersionRange;
 
 public class FPSMImpl {
+
     public static final String LRTACTICAL = "lrtactical";
     public static final String COUNTER_STRIKE_GRENADES = "csgrenades";
     public static final String MOHIST = "mohist";
@@ -16,43 +18,43 @@ public class FPSMImpl {
     public static final String PHYSICS_MOD = "physicsmod";
     public static final String KUBEJS = "kubejs";
 
-    public static boolean findLrtacticalMod(){
-       return isLoaded(LRTACTICAL);
+    public static boolean findLrtacticalMod() {
+        return isLoaded(LRTACTICAL);
     }
 
-    public static boolean findCounterStrikeGrenadesMod(){
+    public static boolean findCounterStrikeGrenadesMod() {
         return isLoaded(COUNTER_STRIKE_GRENADES);
     }
 
-    public static boolean findMohist(){
+    public static boolean findMohist() {
         return isLoaded(MOHIST);
     }
 
-    public static boolean findClothConfig(){
+    public static boolean findClothConfig() {
         return isLoaded(CLOTH_CONFIG);
     }
 
-    public static boolean findTacz(){
+    public static boolean findTacz() {
         return isLoaded(TACZ);
     }
 
-    public static boolean findTaczTweaks(){
+    public static boolean findTaczTweaks() {
         return isLoaded(TACZ_TWEAKS);
     }
 
-    public static boolean findPhysicsMod(){
+    public static boolean findPhysicsMod() {
         return isLoaded(PHYSICS_MOD);
     }
 
-    public static boolean findKubeJS(){
+    public static boolean findKubeJS() {
         return isLoaded(KUBEJS);
     }
 
     public static boolean withVersion(String modId, String version) {
         IModFileInfo info = getModFileInfo(modId);
-        try{
+        try {
             return info != null && VersionRange.createFromVersionSpec(version).containsVersion(info.getMods().get(0).getVersion());
-        }catch (InvalidVersionSpecificationException exception){
+        } catch (InvalidVersionSpecificationException exception) {
             return false;
         }
     }

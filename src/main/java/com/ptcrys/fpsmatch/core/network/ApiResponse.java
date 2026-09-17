@@ -7,6 +7,7 @@ import java.util.Map;
  * API响应封装类，统一处理响应数据和错误信息
  */
 public class ApiResponse<T> {
+
     private int code;
     private String message;
     private Map<String, List<String>> headers;

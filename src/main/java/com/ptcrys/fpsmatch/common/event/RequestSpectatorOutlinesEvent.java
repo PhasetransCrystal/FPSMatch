@@ -5,6 +5,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraftforge.eventbus.api.Event;
 
 public class RequestSpectatorOutlinesEvent extends Event {
+
     private final LocalPlayer player;
     private final MultiPlayerGameMode gameMode;
 
@@ -17,12 +18,12 @@ public class RequestSpectatorOutlinesEvent extends Event {
         return player;
     }
 
-    public MultiPlayerGameMode getGameMode(){
+    public MultiPlayerGameMode getGameMode() {
         return gameMode;
     }
 
     @Override
-    public boolean isCancelable(){
+    public boolean isCancelable() {
         return true;
     }
 }

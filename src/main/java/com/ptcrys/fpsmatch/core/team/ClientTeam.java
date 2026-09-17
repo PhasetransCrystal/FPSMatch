@@ -1,44 +1,46 @@
 package com.ptcrys.fpsmatch.core.team;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.packet.team.TeamChatMessageC2SPacket;
-import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
-import com.ptcrys.fpsmatch.core.data.PlayerData;
-import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
+
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.packet.team.TeamChatMessageC2SPacket;
+import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
+import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
+import com.ptcrys.fpsmatch.core.data.PlayerData;
 
 import java.util.*;
 
 public final class ClientTeam extends BaseTeam {
+
     public final Map<UUID, PlayerData> players;
 
     public ClientTeam(String gameType, String mapName, TeamData data) {
         super(gameType, mapName, data.name(), -1, null);
         players = new HashMap<>();
-        for (String cap : data.capabilities()){
+        for (String cap : data.capabilities()) {
             FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(cap, TeamCapability.class).ifPresent(this.getCapabilityMap()::add);
         }
     }
 
     @Override
     public boolean join(Player player) {
-        if(!super.join(player)) return false;
-        this.players.put(player.getUUID(),new PlayerData(player.getUUID(),player.getDisplayName()));
+        if (!super.join(player)) return false;
+        this.players.put(player.getUUID(), new PlayerData(player.getUUID(), player.getDisplayName()));
         return true;
     }
 
     public void join(UUID uuid, PlayerData data) {
-        this.players.put(uuid,data);
+        this.players.put(uuid, data);
     }
 
     public void join(UUID uuid, Component displayName) {
-        this.players.put(uuid,new PlayerData(uuid,displayName));
+        this.players.put(uuid, new PlayerData(uuid, displayName));
     }
 
     @Override
     public boolean leave(Player player) {
-        if(!super.leave(player)) return false;
+        if (!super.leave(player)) return false;
         this.delPlayer(player.getUUID());
         return true;
     }
@@ -49,9 +51,7 @@ public final class ClientTeam extends BaseTeam {
     }
 
     @Override
-    public void resetLiving() {
-
-    }
+    public void resetLiving() {}
 
     @Override
     public Optional<PlayerData> getPlayerData(UUID player) {
@@ -89,7 +89,7 @@ public final class ClientTeam extends BaseTeam {
     }
 
     public void setPlayerData(UUID player, PlayerData data) {
-        players.put(player,data);
+        players.put(player, data);
     }
 
     @Override
@@ -99,7 +99,7 @@ public final class ClientTeam extends BaseTeam {
     }
 
     public void sendMessage(Component message) {
-        this.sendMessage(message,false);
+        this.sendMessage(message, false);
     }
 
     @Override
@@ -111,5 +111,4 @@ public final class ClientTeam extends BaseTeam {
     public boolean isClientSide() {
         return true;
     }
-
 }

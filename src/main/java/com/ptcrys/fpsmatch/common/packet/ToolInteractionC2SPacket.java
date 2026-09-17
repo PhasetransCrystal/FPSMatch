@@ -1,18 +1,20 @@
 package com.ptcrys.fpsmatch.common.packet;
 
-import com.ptcrys.fpsmatch.common.item.tool.ToolInteractionAction;
-import com.ptcrys.fpsmatch.common.item.tool.WorldToolItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.common.item.tool.ToolInteractionAction;
+import com.ptcrys.fpsmatch.common.item.tool.WorldToolItem;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
 
 public record ToolInteractionC2SPacket(ToolInteractionAction action, @Nullable BlockPos clickedPos) {
+
     public static void encode(ToolInteractionC2SPacket packet, FriendlyByteBuf buf) {
         buf.writeEnum(packet.action());
         buf.writeBoolean(packet.clickedPos() != null);
@@ -40,8 +42,7 @@ public record ToolInteractionC2SPacket(ToolInteractionAction action, @Nullable B
                 if (!player.hasPermissions(2)) {
                     player.displayClientMessage(
                             Component.literal("需要管理员(OP)权限才能使用地图工具"),
-                            false
-                    );
+                            false);
                     return;
                 }
                 worldToolItem.handleWorldInteraction(player, stack, action, clickedPos);

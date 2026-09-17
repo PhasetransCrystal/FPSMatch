@@ -1,11 +1,5 @@
 package com.ptcrys.fpsmatch.common.entity.throwable;
 
-import com.ptcrys.fpsmatch.config.FPSMConfig;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
-import com.ptcrys.fpsmatch.common.entity.EntityRegister;
-import com.ptcrys.fpsmatch.common.item.FPSMItemRegister;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -19,13 +13,20 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
+
+import com.ptcrys.fpsmatch.common.entity.EntityRegister;
+import com.ptcrys.fpsmatch.common.item.FPSMItemRegister;
+import com.ptcrys.fpsmatch.config.FPSMConfig;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.util.Optional;
 
 public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
+
     private static final EntityDataAccessor<ParticleOptions> PARTICLE_OPTIONS = SynchedEntityData.defineId(SmokeShellEntity.class, EntityDataSerializers.PARTICLE);
     private static final EntityDataAccessor<Integer> Particle_COOLDOWN = SynchedEntityData.defineId(SmokeShellEntity.class, EntityDataSerializers.INT);
 
@@ -39,7 +40,7 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
         this.noCulling = true;
         setTimeLeft(FPSMConfig.common.smokeShellLivingTime.get());
         setTimeoutTicks(-1);
-        if(this.getOwner() instanceof Player player){
+        if (this.getOwner() instanceof Player player) {
             Optional<BaseMap> baseMap = FPSMCore.getInstance().getMapByPlayer(player);
             baseMap.flatMap(map -> map.getMapTeams().getTeamByPlayer(player)).ifPresent(t -> {
                 this.setParticleOptions(new DustParticleOptions(t.getColorVec3f(), 10F));
@@ -66,8 +67,8 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
     }
 
     @Override
-    protected void onActiveTick(){
-        if(this.getParticleCoolDown() > 0){
+    protected void onActiveTick() {
+        if (this.getParticleCoolDown() > 0) {
             this.setParticleCoolDown(this.getParticleCoolDown() - 1);
         }
     }
@@ -104,8 +105,7 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
                 z - r - offset,
                 x + r + offset,
                 maxY,
-                z + r + offset
-        ).intersects(checker);
+                z + r + offset).intersects(checker);
     }
 
     public int getParticleCoolDown() {
@@ -116,11 +116,11 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
         entityData.set(Particle_COOLDOWN, particleCoolDown);
     }
 
-    public ParticleOptions getParticleOptions(){
+    public ParticleOptions getParticleOptions() {
         return entityData.get(PARTICLE_OPTIONS);
     }
-    public void setParticleOptions(ParticleOptions options){
+
+    public void setParticleOptions(ParticleOptions options) {
         entityData.set(PARTICLE_OPTIONS, options);
     }
-
 }

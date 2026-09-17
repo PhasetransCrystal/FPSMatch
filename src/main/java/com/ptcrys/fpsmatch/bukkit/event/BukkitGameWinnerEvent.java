@@ -1,12 +1,12 @@
 package com.ptcrys.fpsmatch.bukkit.event;
 
 import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.core.team.BaseTeam;
 import org.bukkit.World;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
 public class BukkitGameWinnerEvent extends Event {
+
     private static final HandlerList handlers = new HandlerList();
     private final BaseMap map;
     private final World world;
@@ -16,10 +16,20 @@ public class BukkitGameWinnerEvent extends Event {
         this.world = world;
     }
 
-    public BaseMap getMap() { return map; }
-    public World getWorld() { return world; }
+    public BaseMap getMap() {
+        return map;
+    }
+
+    public World getWorld() {
+        return world;
+    }
 
     @Override
-    public HandlerList getHandlers() { return handlers; }
-    public static HandlerList getHandlerList() { return handlers; }
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
 }

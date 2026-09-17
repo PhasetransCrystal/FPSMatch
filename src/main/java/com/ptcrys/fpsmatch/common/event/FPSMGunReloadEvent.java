@@ -9,6 +9,7 @@ import net.minecraftforge.eventbus.api.Event;
  * 由 TACZ 兼容层（TACZGunEventBridge）桥接触发。
  */
 public class FPSMGunReloadEvent extends Event {
+
     private final LivingEntity entity;
     private final ItemStack gunItemStack;
 

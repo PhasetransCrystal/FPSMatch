@@ -1,6 +1,7 @@
 package com.ptcrys.fpsmatch.mixin.particle;
 
 import net.minecraft.core.particles.DustParticleOptionsBase;
+
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -12,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(DustParticleOptionsBase.class)
 public class DustParticleOptionsMixin {
+
     @Mutable
     @Final
     @Shadow
@@ -22,9 +24,9 @@ public class DustParticleOptionsMixin {
     @Shadow
     protected float scale;
 
-     @Inject(method = "<init>", at = @At("RETURN"))
+    @Inject(method = "<init>", at = @At("RETURN"))
     private void onInit(Vector3f vector3f, float f, CallbackInfo ci) {
-         this.color = vector3f;
-         this.scale = f;
-     }
+        this.color = vector3f;
+        this.scale = f;
+    }
 }

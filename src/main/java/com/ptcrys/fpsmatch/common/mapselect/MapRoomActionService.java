@@ -1,5 +1,9 @@
 package com.ptcrys.fpsmatch.common.mapselect;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.capability.map.DemolitionModeCapability;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
@@ -10,9 +14,6 @@ import com.ptcrys.fpsmatch.core.data.Setting;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.team.MapTeams;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
-import net.minecraft.network.chat.Component;
-import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Map;
 import java.util.Optional;
@@ -20,12 +21,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class MapRoomActionService {
+
     private static final long INVITE_TTL_MILLIS = 60_000L;
     private static final int MAX_BOMB_AREAS = 256;
     private static final Map<UUID, PendingInvite> PENDING_INVITES = new ConcurrentHashMap<>();
 
-    private MapRoomActionService() {
-    }
+    private MapRoomActionService() {}
 
     public enum DebugAction {
         START,
@@ -35,10 +36,10 @@ public final class MapRoomActionService {
         SWITCH_DEBUG
     }
 
-    private record PendingInvite(String gameType, String mapName, long expiresAt) {
-    }
+    private record PendingInvite(String gameType, String mapName, long expiresAt) {}
 
     public record Result(boolean success, Component message, Optional<MapRoomDetail> detail) {
+
         public static Result success(Component message, BaseMap map, ServerPlayer viewer) {
             return new Result(true, message, Optional.of(MapRoomQueryService.detail(viewer, map)));
         }
@@ -140,9 +141,7 @@ public final class MapRoomActionService {
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.ready.spectator"));
         }
         boolean ready = map.toggleReady(player);
-        Component message = ready
-                ? Component.translatable("gui.fpsm.map_select.action.ready.on")
-                : Component.translatable("gui.fpsm.map_select.action.ready.off");
+        Component message = ready ? Component.translatable("gui.fpsm.map_select.action.ready.on") : Component.translatable("gui.fpsm.map_select.action.ready.off");
         return Result.success(message, map, player);
     }
 
@@ -180,9 +179,7 @@ public final class MapRoomActionService {
         // packets again.
         Optional<ServerTeam> currentTeam = map.getMapTeams().getTeamByPlayer(targetServerPlayer);
         if (currentTeam.isPresent() && currentTeam.get().getName().equals(teamName)) {
-            Component message = self
-                    ? Component.translatable("gui.fpsm.map_select.action.switch_team.success.self", teamName)
-                    : Component.translatable("gui.fpsm.map_select.action.switch_team.success.other", targetServerPlayer.getGameProfile().getName(), teamName);
+            Component message = self ? Component.translatable("gui.fpsm.map_select.action.switch_team.success.self", teamName) : Component.translatable("gui.fpsm.map_select.action.switch_team.success.other", targetServerPlayer.getGameProfile().getName(), teamName);
             return Result.success(message, map, player);
         }
 
@@ -199,9 +196,7 @@ public final class MapRoomActionService {
             return Result.failure(message);
         }
         map.setReady(targetServerPlayer.getUUID(), false);
-        Component message = self
-                ? Component.translatable("gui.fpsm.map_select.action.switch_team.success.self", teamName)
-                : Component.translatable("gui.fpsm.map_select.action.switch_team.success.other", targetServerPlayer.getGameProfile().getName(), teamName);
+        Component message = self ? Component.translatable("gui.fpsm.map_select.action.switch_team.success.self", teamName) : Component.translatable("gui.fpsm.map_select.action.switch_team.success.other", targetServerPlayer.getGameProfile().getName(), teamName);
         return Result.success(message, map, player);
     }
 
@@ -318,12 +313,11 @@ public final class MapRoomActionService {
     }
 
     private static Result withDemolitionCapability(
-            ServerPlayer player,
-            String gameType,
-            String mapName,
-            AreaData area,
-            DemolitionEdit edit
-    ) {
+                                                   ServerPlayer player,
+                                                   String gameType,
+                                                   String mapName,
+                                                   AreaData area,
+                                                   DemolitionEdit edit) {
         Result validation = validateAreaEdit(player, area);
         if (validation != null) {
             return validation;
@@ -355,9 +349,7 @@ public final class MapRoomActionService {
     }
 
     private static boolean validPosition(BlockPos pos) {
-        return pos != null && Math.abs((long) pos.getX()) <= 30_000_000L
-                && Math.abs((long) pos.getZ()) <= 30_000_000L
-                && pos.getY() >= -2048 && pos.getY() <= 2047;
+        return pos != null && Math.abs((long) pos.getX()) <= 30_000_000L && Math.abs((long) pos.getZ()) <= 30_000_000L && pos.getY() >= -2048 && pos.getY() <= 2047;
     }
 
     private static boolean isAreaInside(AreaData container, AreaData candidate) {
@@ -366,6 +358,7 @@ public final class MapRoomActionService {
 
     @FunctionalInterface
     private interface DemolitionEdit {
+
         Result apply(BaseMap map, DemolitionModeCapability capability);
     }
 

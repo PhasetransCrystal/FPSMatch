@@ -1,14 +1,15 @@
 package com.ptcrys.fpsmatch.common.packet;
 
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.network.NetworkEvent;
+
 import com.ptcrys.fpsmatch.common.item.MatchConfigTool;
 import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSettingInfo;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -17,11 +18,11 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public record OpenMatchConfigToolScreenS2CPacket(
-        List<MapEntry> maps,
-        String selectedType,
-        String selectedMap,
-        List<MapRoomSettingInfo> settings
-) {
+                                                 List<MapEntry> maps,
+                                                 String selectedType,
+                                                 String selectedMap,
+                                                 List<MapRoomSettingInfo> settings) {
+
     private static final int ID_MAX_LENGTH = 128;
     private static final int TEXT_MAX_LENGTH = 1024;
 
@@ -43,8 +44,7 @@ public record OpenMatchConfigToolScreenS2CPacket(
                 maps,
                 selectedType,
                 selectedMap,
-                collectSettings(viewer, selectedType, selectedMap)
-        );
+                collectSettings(viewer, selectedType, selectedMap));
     }
 
     public static OpenMatchConfigToolScreenS2CPacket of(ServerPlayer viewer, ItemStack stack, String selectedType, String selectedMap) {
@@ -118,6 +118,5 @@ public record OpenMatchConfigToolScreenS2CPacket(
                 .orElseGet(List::of);
     }
 
-    public record MapEntry(String gameType, String mapName, String displayName, String dimension) {
-    }
+    public record MapEntry(String gameType, String mapName, String displayName, String dimension) {}
 }

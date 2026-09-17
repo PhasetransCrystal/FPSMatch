@@ -12,17 +12,15 @@ import java.util.concurrent.TimeUnit;
  * 下载进度记录类，提供下载进度跟踪和相关计算功能
  *
  * @param bytesDownloaded 已下载字节数（必须≥0）
- * @param totalBytes 总字节数（未知时为-1）
- * @param progress 下载进度（0.0-1.0，未知时为-1）
+ * @param totalBytes      总字节数（未知时为-1）
+ * @param progress        下载进度（0.0-1.0，未知时为-1）
  */
 public record DownloadProgress(long bytesDownloaded, long totalBytes, double progress) {
+
     // 线程安全的格式化器
-    private static final ThreadLocal<DecimalFormat> PROGRESS_FORMAT =
-            ThreadLocal.withInitial(() -> new DecimalFormat("0.00%"));
-    private static final ThreadLocal<DecimalFormat> SIZE_FORMAT =
-            ThreadLocal.withInitial(() -> new DecimalFormat("#,##0.00"));
-    private static final ThreadLocal<DecimalFormat> SPEED_FORMAT =
-            ThreadLocal.withInitial(() -> new DecimalFormat("#,##0.00"));
+    private static final ThreadLocal<DecimalFormat> PROGRESS_FORMAT = ThreadLocal.withInitial(() -> new DecimalFormat("0.00%"));
+    private static final ThreadLocal<DecimalFormat> SIZE_FORMAT = ThreadLocal.withInitial(() -> new DecimalFormat("#,##0.00"));
+    private static final ThreadLocal<DecimalFormat> SPEED_FORMAT = ThreadLocal.withInitial(() -> new DecimalFormat("#,##0.00"));
 
     // 紧凑型构造器参数验证
     public DownloadProgress {
@@ -37,6 +35,7 @@ public record DownloadProgress(long bytesDownloaded, long totalBytes, double pro
 
     /**
      * 创建总大小未知的下载进度
+     * 
      * @param bytesDownloaded 已下载字节数
      */
     public DownloadProgress(long bytesDownloaded) {
@@ -45,8 +44,9 @@ public record DownloadProgress(long bytesDownloaded, long totalBytes, double pro
 
     /**
      * 创建已知总大小的下载进度
+     * 
      * @param bytesDownloaded 已下载字节数
-     * @param totalBytes 总字节数
+     * @param totalBytes      总字节数
      */
     public DownloadProgress(long bytesDownloaded, long totalBytes) {
         this(bytesDownloaded, totalBytes, calculateProgress(bytesDownloaded, totalBytes));
@@ -76,10 +76,12 @@ public record DownloadProgress(long bytesDownloaded, long totalBytes, double pro
     public String getFormattedProgress() {
         return progress >= 0 ? PROGRESS_FORMAT.get().format(progress).replace("%", "%%") : "-";
     }
+
     /**
      * 计算下载速度
+     * 
      * @param previousProgress 前一个进度状态
-     * @param elapsedNanos 经过的时间（纳秒）
+     * @param elapsedNanos     经过的时间（纳秒）
      * @return 下载速度（字节/秒），无法计算时返回-1
      */
     public double calculateSpeed(@NotNull DownloadProgress previousProgress, long elapsedNanos) {
@@ -101,6 +103,7 @@ public record DownloadProgress(long bytesDownloaded, long totalBytes, double pro
 
     /**
      * 估算剩余时间
+     * 
      * @param speedBytesPerSec 当前速度（字节/秒）
      * @return 剩余时间，无法计算时返回null
      */

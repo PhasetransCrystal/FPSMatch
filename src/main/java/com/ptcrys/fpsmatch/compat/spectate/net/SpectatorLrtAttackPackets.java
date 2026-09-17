@@ -1,22 +1,24 @@
 package com.ptcrys.fpsmatch.compat.spectate.net;
 
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
-import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
-import me.xjqsh.lrtactical.api.melee.MeleeAction;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.simple.SimpleChannel;
 
+import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
+import me.xjqsh.lrtactical.api.melee.MeleeAction;
+
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+
 /**
  * Packets for LRTactical attack sync while spectating.
  */
 public final class SpectatorLrtAttackPackets {
-    private SpectatorLrtAttackPackets() {
-    }
+
+    private SpectatorLrtAttackPackets() {}
 
     public static void register(SimpleChannel channel, AtomicInteger id) {
         channel.messageBuilder(C2SLrtAttackPacket.class, id.getAndIncrement(), NetworkDirection.PLAY_TO_SERVER)
@@ -33,6 +35,7 @@ public final class SpectatorLrtAttackPackets {
     }
 
     public record C2SLrtAttackPacket(MeleeAction action) {
+
         public static C2SLrtAttackPacket decode(FriendlyByteBuf b) {
             int ordinal = b.readInt();
             MeleeAction[] values = MeleeAction.values();
@@ -48,6 +51,7 @@ public final class SpectatorLrtAttackPackets {
     }
 
     public record S2CWatchedPlayerLrtAttackPacket(UUID id, MeleeAction action) {
+
         public static S2CWatchedPlayerLrtAttackPacket decode(FriendlyByteBuf b) {
             UUID playerId = b.readUUID();
             int ordinal = b.readInt();

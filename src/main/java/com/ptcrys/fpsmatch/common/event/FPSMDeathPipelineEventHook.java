@@ -1,14 +1,5 @@
 package com.ptcrys.fpsmatch.common.event;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.compat.PassThroughFlagResolver;
-import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.core.data.PlayerData;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.core.map.DeathContext;
-import com.ptcrys.fpsmatch.core.team.MapTeams;
-import com.ptcrys.fpsmatch.util.FPSMUtil;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -21,6 +12,16 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.compat.PassThroughFlagResolver;
+import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.data.PlayerData;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
+import com.ptcrys.fpsmatch.core.map.DeathContext;
+import com.ptcrys.fpsmatch.core.team.MapTeams;
+import com.ptcrys.fpsmatch.util.FPSMUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -107,8 +108,7 @@ public class FPSMDeathPipelineEventHook {
 
         PassThroughFlagResolver.Flags passThroughFlags = PassThroughFlagResolver.fromBulletAndTarget(
                 event.getBullet(),
-                event.getHurtEntity()
-        );
+                event.getHurtEntity());
         recentGunHits.put(hurt.getUUID(), new RecentGunHitDetail(
                 event.isHeadShot(),
                 attacker,
@@ -116,8 +116,7 @@ public class FPSMDeathPipelineEventHook {
                 event.getBullet(),
                 passThroughFlags.passWall(),
                 passThroughFlags.passSmoke(),
-                passThroughFlags.scoped()
-        ));
+                passThroughFlags.scoped()));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
@@ -154,8 +153,7 @@ public class FPSMDeathPipelineEventHook {
             return;
         }
 
-        if (event.getEntity() instanceof Player player && player.level().isClientSide
-                && FPSMCore.getInstance().getMapByPlayer(player).isPresent()) {
+        if (event.getEntity() instanceof Player player && player.level().isClientSide && FPSMCore.getInstance().getMapByPlayer(player).isPresent()) {
             event.setCanceled(true);
         }
     }
@@ -174,17 +172,14 @@ public class FPSMDeathPipelineEventHook {
 
         if (FPSMCore.getInstance().getMapByPlayer(attacker).orElse(null) != map) return;
 
-        DamageSource source = deadPlayer.getLastDamageSource() != null
-                ? deadPlayer.getLastDamageSource()
-                : deadPlayer.damageSources().generic();
+        DamageSource source = deadPlayer.getLastDamageSource() != null ? deadPlayer.getLastDamageSource() : deadPlayer.damageSources().generic();
         ItemStack gunStack = event.getGunItemStack();
         boolean recognizedGun = GunCompatManager.isGun(gunStack);
         ItemStack deathItem = recognizedGun ? gunStack : map.resolveDeathItem(attacker, source);
 
         PassThroughFlagResolver.Flags passThroughFlags = PassThroughFlagResolver.fromBulletAndTarget(
                 event.getBullet(),
-                event.getKilledEntity()
-        );
+                event.getKilledEntity());
         GunKillDetail detail = new GunKillDetail(
                 resolveGunKillHeadShot(deadPlayer, event.isHeadShot(), attacker),
                 event.getBullet(),
@@ -192,8 +187,7 @@ public class FPSMDeathPipelineEventHook {
                 deathItem,
                 passThroughFlags.passWall(),
                 passThroughFlags.passSmoke(),
-                passThroughFlags.scoped()
-        );
+                passThroughFlags.scoped());
         pendingGunKills.put(deadPlayer.getUUID(), detail);
         PendingDeath pendingDeath = readyDeaths.get(deadPlayer.getUUID());
         if (pendingDeath != null) {
@@ -208,8 +202,7 @@ public class FPSMDeathPipelineEventHook {
                     attacker,
                     source,
                     deathItem,
-                    deadPlayer.serverLevel().getGameTime()
-            );
+                    deadPlayer.serverLevel().getGameTime());
             applyGunKillDetail(context, detail);
             return new PendingDeath(map, context);
         });
@@ -323,10 +316,7 @@ public class FPSMDeathPipelineEventHook {
         }
 
         RecentGunHitDetail recentGunHit = recentGunHits.get(deadPlayer.getUUID());
-        return recentGunHit != null
-                && recentGunHit.isHeadShot()
-                && (attacker == null || recentGunHit.attacker().getUUID().equals(attacker.getUUID()))
-                && isRecentGunHitFresh(deadPlayer.serverLevel().getGameTime(), recentGunHit);
+        return recentGunHit != null && recentGunHit.isHeadShot() && (attacker == null || recentGunHit.attacker().getUUID().equals(attacker.getUUID())) && isRecentGunHitFresh(deadPlayer.serverLevel().getGameTime(), recentGunHit);
     }
 
     private static void applyRecentGunHitDetail(DeathContext context, @Nullable RecentGunHitDetail recentGunHit) {
@@ -363,18 +353,11 @@ public class FPSMDeathPipelineEventHook {
             return false;
         }
 
-        return isRecentGunHitFresh(context.getCreatedTick(), recentGunHit)
-                && (isDeathSourceFromRecentGunHit(context, recentGunHit)
-                || context.isGunKill()
-                || GunCompatManager.isGun(context.getDeathItem())
-                || hasDeathIconSignal(recentGunHit));
+        return isRecentGunHitFresh(context.getCreatedTick(), recentGunHit) && (isDeathSourceFromRecentGunHit(context, recentGunHit) || context.isGunKill() || GunCompatManager.isGun(context.getDeathItem()) || hasDeathIconSignal(recentGunHit));
     }
 
     private static boolean hasDeathIconSignal(RecentGunHitDetail recentGunHit) {
-        return recentGunHit.isHeadShot()
-                || recentGunHit.passWall()
-                || recentGunHit.passSmoke()
-                || recentGunHit.scopedKill();
+        return recentGunHit.isHeadShot() || recentGunHit.passWall() || recentGunHit.passSmoke() || recentGunHit.scopedKill();
     }
 
     private static boolean isDeathSourceFromRecentGunHit(DeathContext context, RecentGunHitDetail recentGunHit) {
@@ -395,18 +378,17 @@ public class FPSMDeathPipelineEventHook {
         recentGunHits.values().removeIf(hit -> currentTick - hit.createdTick() > RECENT_GUN_HIT_RETENTION_TICKS);
     }
 
-    private record PendingDeath(BaseMap map, DeathContext context) {
-    }
+    private record PendingDeath(BaseMap map, DeathContext context) {}
 
     private record GunKillDetail(
-            boolean isHeadShot,
-            @Nullable Entity bullet,
-            @Nullable ServerPlayer attacker,
-            ItemStack deathItem,
-            boolean passWall,
-            boolean passSmoke,
-            boolean scopedKill
-    ) {
+                                 boolean isHeadShot,
+                                 @Nullable Entity bullet,
+                                 @Nullable ServerPlayer attacker,
+                                 ItemStack deathItem,
+                                 boolean passWall,
+                                 boolean passSmoke,
+                                 boolean scopedKill) {
+
         GunKillDetail(boolean isHeadShot, @Nullable Entity bullet, @Nullable ServerPlayer attacker, ItemStack deathItem) {
             this(isHeadShot, bullet, attacker, deathItem, false, false, false);
         }
@@ -414,6 +396,5 @@ public class FPSMDeathPipelineEventHook {
 
     private record RecentGunHitDetail(boolean isHeadShot, ServerPlayer attacker, long createdTick,
                                       @Nullable Entity bullet, boolean passWall, boolean passSmoke,
-                                      boolean scopedKill) {
-    }
+                                      boolean scopedKill) {}
 }

@@ -1,20 +1,5 @@
 package com.ptcrys.fpsmatch.core.team;
 
-import com.mojang.datafixers.util.Pair;
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
-import com.ptcrys.fpsmatch.common.capability.team.TeamSwitchRestrictionCapability;
-import com.ptcrys.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.core.capability.CapabilityMap;
-import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
-import com.ptcrys.fpsmatch.core.data.PlayerData;
-import com.ptcrys.fpsmatch.core.data.SpawnPointData;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.common.capability.team.SpawnPointCapability;
-import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -23,6 +8,22 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
+
+import com.mojang.datafixers.util.Pair;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
+import com.ptcrys.fpsmatch.common.capability.team.SpawnPointCapability;
+import com.ptcrys.fpsmatch.common.capability.team.TeamSwitchRestrictionCapability;
+import com.ptcrys.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.capability.CapabilityMap;
+import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
+import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
+import com.ptcrys.fpsmatch.core.data.PlayerData;
+import com.ptcrys.fpsmatch.core.data.SpawnPointData;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -33,7 +34,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class MapTeams {
+
     public record JoinTeamResult(Status status, @Nullable String teamName) {
+
         public enum Status {
             JOINED,
             TEAM_NOT_FOUND,
@@ -59,37 +62,38 @@ public class MapTeams {
     protected final ServerLevel level;
     protected final BaseMap map;
     private final Map<String, ServerTeam> teams = new HashMap<>();
-    public final Map<UUID,Component> playerName = new HashMap<>();
+    public final Map<UUID, Component> playerName = new HashMap<>();
 
     /**
      * 构造函数，用于创建 MapTeams 对象
+     * 
      * @param level 服务器级别。
-     * @param map 地图对象。
+     * @param map   地图对象。
      */
-    public MapTeams(ServerLevel level, BaseMap map){
+    public MapTeams(ServerLevel level, BaseMap map) {
         this.level = level;
         this.map = map;
-        this.addTeam(TeamData.of("spectator",-1),true)
+        this.addTeam(TeamData.of("spectator", -1), true)
                 .getCapabilityMap()
-                .ifPresent(SpawnPointCapability.class,cap->{
+                .ifPresent(SpawnPointCapability.class, cap -> {
                     Vec3 vec3 = map.getMapArea().aabb().getCenter();
-                    cap.addSpawnPointData(new SpawnPointData(map.getServerLevel().dimension(),vec3,0,0));
+                    cap.addSpawnPointData(new SpawnPointData(map.getServerLevel().dimension(), vec3, 0, 0));
                 });
     }
 
     /**
      * 构造函数，用于创建 MapTeams 对象
+     * 
      * @param level 服务器级别。
      * @param teams 包含团队名称,能力,玩家限制的映射。
-     * @param map 地图对象。
+     * @param map   地图对象。
      */
     public MapTeams(ServerLevel level, List<TeamData> teams, BaseMap map) {
-        this(level,map);
+        this(level, map);
         teams.forEach(this::addTeam);
     }
 
-
-    public void tick(){
+    public void tick() {
         List<ServerPlayer> online = getOnlineWithSpec();
         for (ServerTeam team : teams.values()) {
             team.tick();
@@ -110,9 +114,9 @@ public class MapTeams {
      * @param team 队伍名称
      * @return 指定队伍的出生点数据列表，如果队伍不存在则返回 null
      */
-    public Optional<List<SpawnPointData>> getSpawnPointsByTeam(String team){
-        ServerTeam t = this.teams.getOrDefault(team,null);
-        if(t == null) return Optional.empty();
+    public Optional<List<SpawnPointData>> getSpawnPointsByTeam(String team) {
+        ServerTeam t = this.teams.getOrDefault(team, null);
+        if (t == null) return Optional.empty();
         return t.getCapabilityMap().get(SpawnPointCapability.class).map(SpawnPointCapability::getSpawnPointsData);
     }
 
@@ -125,21 +129,21 @@ public class MapTeams {
      * @param attackTeam 攻击方队伍
      * @param defendTeam 防守方队伍
      */
-    public void switchAttackAndDefend(BaseMap map , ServerTeam attackTeam, ServerTeam defendTeam) {
-        if(map == null || attackTeam == null || defendTeam == null) return;
+    public void switchAttackAndDefend(BaseMap map, ServerTeam attackTeam, ServerTeam defendTeam) {
+        if (map == null || attackTeam == null || defendTeam == null) return;
 
-        //交换玩家
+        // 交换玩家
         Map<UUID, PlayerData> tempPlayers = new HashMap<>(attackTeam.getPlayers());
-        attackTeam.clearAndPutPlayers(defendTeam.getPlayers(),this::addToUnableSwitch);
-        defendTeam.clearAndPutPlayers(tempPlayers,this::addToUnableSwitch);
+        attackTeam.clearAndPutPlayers(defendTeam.getPlayers(), this::addToUnableSwitch);
+        defendTeam.clearAndPutPlayers(tempPlayers, this::addToUnableSwitch);
 
         // 交换得分
         int tempScore = attackTeam.getScores();
         attackTeam.setScores(defendTeam.getScores());
         defendTeam.setScores(tempScore);
 
-        attackTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(attackTeam.getPlayerList()));
-        defendTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(defendTeam.getPlayerList()));
+        attackTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop -> shop.resetPlayerData(attackTeam.getPlayerList()));
+        defendTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop -> shop.resetPlayerData(defendTeam.getPlayerList()));
 
         randomSpawnPoints();
         syncCapabilities();
@@ -147,7 +151,7 @@ public class MapTeams {
     }
 
     public void addToUnableSwitch(ServerTeam team, PlayerData data) {
-        team.getCapabilityMap().get(TeamSwitchRestrictionCapability.class).ifPresent(cap->{
+        team.getCapabilityMap().get(TeamSwitchRestrictionCapability.class).ifPresent(cap -> {
             cap.addUnableToSwitchPlayer(data.getOwner());
         });
     }
@@ -159,10 +163,10 @@ public class MapTeams {
      *
      * @param data 包含队伍名称和出生点数据列表的 Map
      */
-    public void putAllSpawnPoints(Map<String,List<SpawnPointData>> data){
-        data.forEach((n,list)->{
-            if (teams.containsKey(n)){
-                teams.get(n).getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap->cap.addAllSpawnPointData(list));
+    public void putAllSpawnPoints(Map<String, List<SpawnPointData>> data) {
+        data.forEach((n, list) -> {
+            if (teams.containsKey(n)) {
+                teams.get(n).getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap -> cap.addAllSpawnPointData(list));
             }
         });
     }
@@ -172,10 +176,10 @@ public class MapTeams {
      * <p>
      * 遍历所有队伍，并调用队伍的随机出生点分配方法。
      */
-    public boolean randomSpawnPoints(){
+    public boolean randomSpawnPoints() {
         AtomicBoolean flag = new AtomicBoolean(true);
         this.teams.forEach(((s, t) -> {
-            if(t.isNormal() && flag.get()) flag.set(t.getCapabilityMap().get(SpawnPointCapability.class).map(SpawnPointCapability::assignNextSpawnPoints).orElse(false));
+            if (t.isNormal() && flag.get()) flag.set(t.getCapabilityMap().get(SpawnPointCapability.class).map(SpawnPointCapability::assignNextSpawnPoints).orElse(false));
         }));
         return flag.get();
     }
@@ -186,12 +190,12 @@ public class MapTeams {
      * 如果指定的队伍不存在，则不会执行任何操作。
      *
      * @param teamName 队伍名称
-     * @param data 出生点数据
+     * @param data     出生点数据
      */
     public void defineSpawnPoint(String teamName, SpawnPointData data) {
         ServerTeam team = this.teams.getOrDefault(teamName, null);
         if (team == null) return;
-        team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap->cap.addSpawnPointData(data));
+        team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap -> cap.addSpawnPointData(data));
     }
 
     /**
@@ -201,7 +205,7 @@ public class MapTeams {
      *
      * @param teamName 队伍名称
      */
-    public void resetSpawnPoints(String teamName){
+    public void resetSpawnPoints(String teamName) {
         ServerTeam team = this.teams.getOrDefault(teamName, null);
         if (team == null) return;
         team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(SpawnPointCapability::clearSpawnPointsData);
@@ -212,27 +216,27 @@ public class MapTeams {
      * <p>
      * 遍历所有队伍，并调用队伍的出生点数据重置方法。
      */
-    public void resetAllSpawnPoints(){
-        this.teams.forEach((s,t)-> t.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(SpawnPointCapability::clearSpawnPointsData));
+    public void resetAllSpawnPoints() {
+        this.teams.forEach((s, t) -> t.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(SpawnPointCapability::clearSpawnPointsData));
     }
 
-    public ServerTeam addTeam(TeamData data, boolean isSpectator){
+    public ServerTeam addTeam(TeamData data, boolean isSpectator) {
         String teamName = data.name();
         int limit = data.limit();
-        String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
+        String fixedName = map.getGameType() + "_" + map.getMapName() + "_" + teamName;
 
         Scoreboard scoreboard = this.level.getScoreboard();
         PlayerTeam invalid = scoreboard.getPlayerTeam(fixedName);
-        if(invalid != null) scoreboard.removePlayerTeam(invalid);
+        if (invalid != null) scoreboard.removePlayerTeam(invalid);
 
         PlayerTeam playerteam = scoreboard.addPlayerTeam(fixedName);
-        ServerTeam team = new ServerTeam(map,teamName,limit,playerteam);
-        for (Class<? extends TeamCapability> capClazz : data.getCapabilities()){
-            if(!team.getCapabilityMap().add(capClazz)){
-                FPSMatch.LOGGER.error("{} Team Capability is not registered : {}",fixedName,capClazz.getName());
+        ServerTeam team = new ServerTeam(map, teamName, limit, playerteam);
+        for (Class<? extends TeamCapability> capClazz : data.getCapabilities()) {
+            if (!team.getCapabilityMap().add(capClazz)) {
+                FPSMatch.LOGGER.error("{} Team Capability is not registered : {}", fixedName, capClazz.getName());
             }
         }
-        if(isSpectator) team.setSpectator(true);
+        if (isSpectator) team.setSpectator(true);
         this.teams.put(teamName, team);
         return team;
     }
@@ -245,8 +249,8 @@ public class MapTeams {
      *
      * @param data 队伍数据
      */
-    public ServerTeam addTeam(TeamData data){
-        return addTeam(data,false);
+    public ServerTeam addTeam(TeamData data) {
+        return addTeam(data, false);
     }
 
     /**
@@ -254,12 +258,12 @@ public class MapTeams {
      * <p>
      * 根据游戏类型、地图名称和队伍名称获取或创建队伍，并设置其颜色。
      *
-     * @param map 地图信息
+     * @param map      地图信息
      * @param teamName 队伍名称
-     * @param color 队伍名称颜色
+     * @param color    队伍名称颜色
      */
-    public void setTeamNameColor(BaseMap map, String teamName, ChatFormatting color){
-        String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
+    public void setTeamNameColor(BaseMap map, String teamName, ChatFormatting color) {
+        String fixedName = map.getGameType() + "_" + map.getMapName() + "_" + teamName;
         PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
         playerteam.setColor(color);
     }
@@ -271,7 +275,7 @@ public class MapTeams {
      *
      * @param team 要删除的队伍
      */
-    public void delTeam(PlayerTeam team){
+    public void delTeam(PlayerTeam team) {
         String teamName = null;
         for (Map.Entry<String, ServerTeam> entry : this.teams.entrySet()) {
             if (entry.getValue().getPlayerTeam().equals(team)) {
@@ -300,7 +304,7 @@ public class MapTeams {
     public Optional<ServerTeam> getTeamByPlayer(Player player) {
         ServerTeam team = null;
         for (ServerTeam baseTeam : this.teams.values()) {
-            if(baseTeam.hasPlayer(player.getUUID())){
+            if (baseTeam.hasPlayer(player.getUUID())) {
                 team = baseTeam;
                 break;
             }
@@ -308,7 +312,7 @@ public class MapTeams {
         return Optional.ofNullable(team);
     }
 
-    public ServerTeam getSpectatorTeam(){
+    public ServerTeam getSpectatorTeam() {
         return this.teams.get("spectator");
     }
 
@@ -333,24 +337,25 @@ public class MapTeams {
         }
         return Optional.empty();
     }
-    public Optional<Pair<ServerTeam,PlayerData>> getPlayerTeamAndData(ServerPlayer player){
+
+    public Optional<Pair<ServerTeam, PlayerData>> getPlayerTeamAndData(ServerPlayer player) {
         return getPlayerTeamAndData(player.getUUID());
     }
 
-    public Optional<Pair<ServerTeam,PlayerData>> getPlayerTeamAndData(UUID player){
+    public Optional<Pair<ServerTeam, PlayerData>> getPlayerTeamAndData(UUID player) {
         for (ServerTeam team : this.teams.values()) {
-            if(!team.isNormal()) continue;
-            Optional<Pair<ServerTeam,PlayerData>> opt = team.getPlayerData(player).map(data -> Pair.of(team, data));
-            if(opt.isPresent()) return opt;
+            if (!team.isNormal()) continue;
+            Optional<Pair<ServerTeam, PlayerData>> opt = team.getPlayerData(player).map(data -> Pair.of(team, data));
+            if (opt.isPresent()) return opt;
         }
         return Optional.empty();
     }
 
-    public Optional<PlayerData> getPlayerData(ServerPlayer player){
+    public Optional<PlayerData> getPlayerData(ServerPlayer player) {
         return getPlayerData(player.getUUID());
     }
 
-    public Optional<PlayerData> getPlayerData(UUID uuid){
+    public Optional<PlayerData> getPlayerData(UUID uuid) {
         for (ServerTeam team : this.teams.values()) {
             Optional<PlayerData> data = team.getPlayerData(uuid);
             if (data.isPresent()) return data;
@@ -359,21 +364,21 @@ public class MapTeams {
     }
 
     /**
-    * 获取除removal以外的队伍
-    * */
-    public List<ServerTeam> getNormalTeams(ServerTeam removal){
-        return this.getNormalTeams().stream().filter(t->!removal.equals(t)).toList();
+     * 获取除removal以外的队伍
+     */
+    public List<ServerTeam> getNormalTeams(ServerTeam removal) {
+        return this.getNormalTeams().stream().filter(t -> !removal.equals(t)).toList();
     }
 
-    public List<ServerTeam> getNormalTeams(){
+    public List<ServerTeam> getNormalTeams() {
         return this.teams.values().stream().filter(BaseTeam::isNormal).collect(Collectors.toList());
     }
 
-    public List<ServerTeam> getTeamsWithSpectator(){
+    public List<ServerTeam> getTeamsWithSpectator() {
         return new ArrayList<>(this.teams.values());
     }
 
-    public Map<ServerTeam,List<PlayerData>> getJoinedPlayersMap(){
+    public Map<ServerTeam, List<PlayerData>> getJoinedPlayersMap() {
         return this.teams.values().stream().collect(Collectors.toMap(Function.identity(), ServerTeam::getPlayersData));
     }
 
@@ -407,9 +412,7 @@ public class MapTeams {
         return uuids;
     }
 
-
-
-    public List<UUID> getSpecPlayers(){
+    public List<UUID> getSpecPlayers() {
         return this.getSpectatorTeam().getPlayerList();
     }
 
@@ -427,7 +430,7 @@ public class MapTeams {
      * <p>
      * 如果指定的队伍不存在，则不会执行任何操作。
      *
-     * @param player 玩家对象
+     * @param player   玩家对象
      * @param teamName 队伍名称
      */
     private boolean playerJoin(ServerPlayer player, String teamName) {
@@ -450,9 +453,7 @@ public class MapTeams {
         // stats below. A forced full broadcast here is O(players^2) and duplicates both
         // packets, which can stall the client while switching teams.
         this.syncToAll(FPSMAddTeamS2CPacket.of(team));
-        team.getPlayerData(player.getUUID()).ifPresent(playerData ->
-                this.syncToAll(TeamPlayerStatsS2CPacket.of(team, playerData))
-        );
+        team.getPlayerData(player.getUUID()).ifPresent(playerData -> this.syncToAll(TeamPlayerStatsS2CPacket.of(team, playerData)));
         return true;
     }
 
@@ -463,19 +464,19 @@ public class MapTeams {
      *
      * @param player 要同步数据的目标玩家
      */
-    public void sync(ServerPlayer player){
-        this.sync(List.of(player),true,false);
+    public void sync(ServerPlayer player) {
+        this.sync(List.of(player), true, false);
     }
 
-    public void broadcast(){
-        this.sync(getOnlineWithSpec(),true,false);
+    public void broadcast() {
+        this.sync(getOnlineWithSpec(), true, false);
     }
 
-    public void syncCapabilities(){
+    public void syncCapabilities() {
         for (ServerTeam team : this.teams.values()) {
             CapabilityMap<BaseTeam, TeamCapability> map = team.getCapabilityMap();
             map.stream()
-                    .filter(cap-> cap instanceof FPSMCapability.DataSynchronizable)
+                    .filter(cap -> cap instanceof FPSMCapability.DataSynchronizable)
                     .map(FPSMCapability.DataSynchronizable.class::cast)
                     .forEach(FPSMCapability.DataSynchronizable::sync);
         }
@@ -486,13 +487,13 @@ public class MapTeams {
      * 该方法会将所有队伍中标记为脏数据的玩家信息同步给指定的玩家集合。
      * 可以根据参数决定是否在同步后清除脏数据标记。
      *
-     * @param players 要同步数据的目标玩家集合
-     * @param force 是否无视标记
+     * @param players   要同步数据的目标玩家集合
+     * @param force     是否无视标记
      * @param setMarked 是否在同步后清除脏数据标记：
      *                  true - 同步后清除标记，表示数据已同步；
      *                  false - 同步后保留标记，数据仍视为脏数据
      */
-    public void sync(Collection<ServerPlayer> players, boolean force, boolean setMarked){
+    public void sync(Collection<ServerPlayer> players, boolean force, boolean setMarked) {
         Collection<ServerTeam> teams = this.teams.values();
 
         for (ServerTeam team : teams) {
@@ -512,7 +513,7 @@ public class MapTeams {
                     for (ServerPlayer player : players) {
                         FPSMatch.sendToPlayer(player, packet);
                     }
-                    if(setMarked) playerData.setDirty(false);
+                    if (setMarked) playerData.setDirty(false);
                 }
             }
         }
@@ -525,10 +526,10 @@ public class MapTeams {
      * 适用于游戏状态更新时的全局数据同步。
      */
     public void sync(Collection<ServerPlayer> players) {
-        sync(players,false, true);
+        sync(players, false, true);
     }
 
-    public List<ServerPlayer> getOnlineWithSpec(){
+    public List<ServerPlayer> getOnlineWithSpec() {
         List<ServerPlayer> allOnlinePlayers = new ArrayList<>();
         for (ServerTeam team : teams.values()) {
             for (PlayerData playerData : team.getPlayersData()) {
@@ -538,7 +539,7 @@ public class MapTeams {
         return allOnlinePlayers;
     }
 
-    public List<ServerPlayer> getOnline(){
+    public List<ServerPlayer> getOnline() {
         List<ServerPlayer> allOnlinePlayers = new ArrayList<>();
         for (ServerTeam team : getNormalTeams()) {
             for (PlayerData playerData : team.getPlayersData()) {
@@ -548,7 +549,7 @@ public class MapTeams {
         return allOnlinePlayers;
     }
 
-    public <M> void syncToAll(M msg){
+    public <M> void syncToAll(M msg) {
         for (ServerPlayer player : getOnlineWithSpec()) {
             FPSMatch.sendToPlayer(player, msg);
         }
@@ -576,8 +577,8 @@ public class MapTeams {
         }
     }
 
-    public static JoinTeamResult joinTeam(MapTeams mapTeams, String teamName, ServerPlayer player){
-        return mapTeams.joinTeam(teamName,player);
+    public static JoinTeamResult joinTeam(MapTeams mapTeams, String teamName, ServerPlayer player) {
+        return mapTeams.joinTeam(teamName, player);
     }
 
     /**
@@ -588,11 +589,11 @@ public class MapTeams {
      * @param teamName 队伍名称
      * @return 如果队伍可以被加入返回 true，否则返回 false
      */
-    public boolean canJoinTeam(String teamName){
+    public boolean canJoinTeam(String teamName) {
         return checkTeam(teamName) && !teamIsFull(teamName);
     }
 
-    public static boolean canJoinTeam(MapTeams mapTeams,String teamName){
+    public static boolean canJoinTeam(MapTeams mapTeams, String teamName) {
         return mapTeams.canJoinTeam(teamName);
     }
 
@@ -605,7 +606,7 @@ public class MapTeams {
      * @return 如果队伍存在返回 true，否则返回 false
      */
     public boolean checkTeam(String teamName) {
-        if(teamName.equals("spectator")) return true;
+        if (teamName.equals("spectator")) return true;
 
         return this.teams.containsKey(teamName);
     }
@@ -634,7 +635,7 @@ public class MapTeams {
      * @return 名称列表
      */
     public List<String> getNormalTeamsName() {
-        return teams.keySet().stream().filter(n->!n.equals("spectator")).toList();
+        return teams.keySet().stream().filter(n -> !n.equals("spectator")).toList();
     }
 
     /**
@@ -651,13 +652,13 @@ public class MapTeams {
     /**
      * 根据队伍名称获取队伍对象。
      * <p>
-
      *
+     * 
      * @param teamName 队伍名称
      * @return 队伍对象
      */
     public Optional<ServerTeam> getTeamByName(String teamName) {
-        return Optional.ofNullable(teams.getOrDefault(teamName,null));
+        return Optional.ofNullable(teams.getOrDefault(teamName, null));
     }
 
     /**
@@ -704,7 +705,7 @@ public class MapTeams {
         }
 
         for (ServerTeam team : teams.values()) {
-            if(team.hasPlayer(player.getUUID())) {
+            if (team.hasPlayer(player.getUUID())) {
                 team.leave(player);
             }
         }
@@ -713,6 +714,7 @@ public class MapTeams {
 
         syncToAll(new TeamPlayerLeaveS2CPacket(player.getUUID()));
     }
+
     /**
      * 让玩家离开当前所在的队伍。
      * <p>
@@ -746,7 +748,7 @@ public class MapTeams {
     public Map<ServerTeam, List<UUID>> getTeamsLiving() {
         Map<ServerTeam, List<UUID>> teamsLiving = new HashMap<>();
         teams.forEach((s, t) -> {
-            if(t.isNormal()){
+            if (t.isNormal()) {
                 List<UUID> list = t.getLivingPlayers();
                 if (!list.isEmpty()) {
                     teamsLiving.put(t, list);
@@ -755,7 +757,6 @@ public class MapTeams {
         });
         return teamsLiving;
     }
-
 
     /**
      * 获取与玩家同队的所有玩家 UUID 列表。
@@ -767,7 +768,7 @@ public class MapTeams {
      */
     public List<UUID> getSameTeamPlayerUUIDs(Player player) {
         List<UUID> uuids = new ArrayList<>();
-        getTeamByPlayer(player).ifPresent(t->{
+        getTeamByPlayer(player).ifPresent(t -> {
             uuids.addAll(t.getPlayerList());
             uuids.remove(player.getUUID());
         });
@@ -781,8 +782,8 @@ public class MapTeams {
      * 如果攻击者未加入任何队伍，则不会记录任何数据。
      *
      * @param attacker 攻击者玩家对象
-     * @param target 目标玩家的 UUID
-     * @param damage 伤害值
+     * @param target   目标玩家的 UUID
+     * @param damage   伤害值
      */
     public void addHurtData(ServerPlayer attacker, ServerPlayer target, float damage) {
         getTeamByPlayer(attacker)
@@ -888,7 +889,7 @@ public class MapTeams {
         return flag.get() == 0;
     }
 
-    public boolean isSameTeam(Player p1, Player p2){
+    public boolean isSameTeam(Player p1, Player p2) {
         if (p1.getUUID().equals(p2.getUUID())) {
             return true;
         }
@@ -951,9 +952,9 @@ public class MapTeams {
      *
      * @return 包含所有存活玩家伤害数据的 Map
      */
-    public Map<UUID,  Float> getLivingHurtData() {
-        Map<UUID,Float> hurtData = new HashMap<>();
-        teams.values().forEach((t)-> t.getPlayersData().forEach((data)-> hurtData.put(data.getOwner(),data.getDamage())));
+    public Map<UUID, Float> getLivingHurtData() {
+        Map<UUID, Float> hurtData = new HashMap<>();
+        teams.values().forEach((t) -> t.getPlayersData().forEach((data) -> hurtData.put(data.getOwner(), data.getDamage())));
         return hurtData;
     }
 
@@ -963,28 +964,29 @@ public class MapTeams {
         return hurtData;
     }
 
-    public Map<String, CapabilityMap.Wrapper> getData(){
+    public Map<String, CapabilityMap.Wrapper> getData() {
         Map<String, CapabilityMap.Wrapper> capabilityMap = new HashMap<>();
         teams.values().forEach((t) -> capabilityMap.put(t.getName(), t.getCapabilityMap().getData()));
         return capabilityMap;
     }
 
-    public void writeData(Map<String, CapabilityMap.Wrapper> capabilityMap){
+    public void writeData(Map<String, CapabilityMap.Wrapper> capabilityMap) {
         capabilityMap.forEach((name, wrapper) -> {
-            if(teams.containsKey(name)){
+            if (teams.containsKey(name)) {
                 teams.get(name).getCapabilityMap().write(wrapper);
-            }else{
+            } else {
                 FPSMatch.LOGGER.error("Team {} not found : capability is not instantiated", name);
             }
         });
     }
-    public Map<UUID, PlayerData.Damage> getDamageReceivedByPlayer(){
+
+    public Map<UUID, PlayerData.Damage> getDamageReceivedByPlayer() {
         Map<UUID, PlayerData.Damage> damageMap = new HashMap<>();
         for (ServerTeam team : getNormalTeams()) {
             for (PlayerData data : team.getPlayersData()) {
                 Map<UUID, PlayerData.Damage> map = data.getDamageData();
                 for (Map.Entry<UUID, PlayerData.Damage> entry : map.entrySet()) {
-                    damageMap.computeIfAbsent(entry.getKey(),k-> new PlayerData.Damage()).merge(entry.getValue());
+                    damageMap.computeIfAbsent(entry.getKey(), k -> new PlayerData.Damage()).merge(entry.getValue());
                 }
             }
         }
@@ -992,20 +994,19 @@ public class MapTeams {
         return damageMap;
     }
 
-
-    public Map<UUID,Float> getRemainHealth(){
-        Map<UUID,Float> remainHealth = new HashMap<>();
+    public Map<UUID, Float> getRemainHealth() {
+        Map<UUID, Float> remainHealth = new HashMap<>();
 
         for (ServerTeam team : getNormalTeams()) {
             for (PlayerData data : team.getPlayersData()) {
-                remainHealth.put(data.getOwner(),data.getHpServer());
+                remainHealth.put(data.getOwner(), data.getHpServer());
             }
         }
 
         return remainHealth;
     }
 
-    public Component getPlayerName(UUID uuid){
+    public Component getPlayerName(UUID uuid) {
         return playerName.getOrDefault(uuid, Component.literal(String.valueOf(uuid)));
     }
 
@@ -1024,10 +1025,8 @@ public class MapTeams {
      * <p>
      * 包含玩家的 UUID 和获得 MVP 的原因。
      *
-     * @param uuid 玩家的 UUID
+     * @param uuid   玩家的 UUID
      * @param reason 获得 MVP 的原因
      */
-    public record RawMVPData(UUID uuid, String reason) {
-    }
-
+    public record RawMVPData(UUID uuid, String reason) {}
 }

@@ -1,21 +1,23 @@
 package com.ptcrys.fpsmatch.common.client.screen;
 
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.FPSMClient;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMGuiTheme;
 import com.ptcrys.fpsmatch.common.packet.OpenSpawnPointToolScreenS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.SpawnPointToolActionC2SPacket;
 import com.ptcrys.fpsmatch.core.data.SpawnPointData;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SpawnPointToolScreen extends Screen {
+
     private static final int PANEL_WIDTH = 326;
     private static final int PANEL_HEIGHT = 220;
     // 统一设计 Token：遮罩/面板/边框全部引用 FPSMGuiTheme（原金色边框改为主题中性边框）
@@ -90,9 +92,9 @@ public class SpawnPointToolScreen extends Screen {
         var debugData = FPSMClient.getGlobalData().getDebugData();
         this.addRenderableWidget(new Button.Builder(Component.translatable(
                 debugData.isVisible() ? "gui.fpsm.preview.hide" : "gui.fpsm.preview.show"), button -> {
-            debugData.toggleVisibility();
-            button.setMessage(Component.translatable(debugData.isVisible() ? "gui.fpsm.preview.hide" : "gui.fpsm.preview.show"));
-        }).pos(left + 18, top + 194).size(140, 20).build());
+                    debugData.toggleVisibility();
+                    button.setMessage(Component.translatable(debugData.isVisible() ? "gui.fpsm.preview.hide" : "gui.fpsm.preview.show"));
+                }).pos(left + 18, top + 194).size(140, 20).build());
         this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.close"), button -> onClose())
                 .pos(left + 168, top + 194)
                 .size(140, 20)
@@ -225,7 +227,6 @@ public class SpawnPointToolScreen extends Screen {
                 this.selectedType,
                 this.selectedMap,
                 this.selectedTeam,
-                this.selectedIndex
-        ));
+                this.selectedIndex));
     }
 }

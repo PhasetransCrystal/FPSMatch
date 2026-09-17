@@ -1,12 +1,14 @@
 package com.ptcrys.fpsmatch.common.event;
 
-import com.ptcrys.fpsmatch.core.FPSMCore;
 import net.minecraftforge.eventbus.api.Event;
+
+import com.ptcrys.fpsmatch.core.FPSMCore;
 
 /**
  * FPSMatch重新加载事件
- * */
+ */
 public class FPSMReloadEvent extends Event {
+
     private final FPSMCore core;
 
     public FPSMReloadEvent(FPSMCore core) {

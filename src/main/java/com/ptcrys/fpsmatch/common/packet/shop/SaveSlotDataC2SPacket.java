@@ -1,17 +1,19 @@
 package com.ptcrys.fpsmatch.common.packet.shop;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.client.screen.EditShopSlotMenu;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraftforge.network.NetworkEvent;
 
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.client.screen.EditShopSlotMenu;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
+
 import java.util.function.Supplier;
 
 public class SaveSlotDataC2SPacket {
+
     private int ammoCount;
     private int defaultCost;
     private int groupId;
@@ -51,13 +53,10 @@ public class SaveSlotDataC2SPacket {
             if (player == null) {
                 return;
             }
-            EditShopSlotMenu.SaveResult result = player.containerMenu instanceof EditShopSlotMenu menu
-                    ? menu.trySaveData(player, ammoCount, defaultCost, groupId)
-                    : EditShopSlotMenu.SaveResult.INVALID_MENU;
+            EditShopSlotMenu.SaveResult result = player.containerMenu instanceof EditShopSlotMenu menu ? menu.trySaveData(player, ammoCount, defaultCost, groupId) : EditShopSlotMenu.SaveResult.INVALID_MENU;
             FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(
                     Component.translatable(result.translationKey()),
-                    !result.success()
-            ));
+                    !result.success()));
         });
         ctx.get().setPacketHandled(true); // 标记数据包已处理
     }

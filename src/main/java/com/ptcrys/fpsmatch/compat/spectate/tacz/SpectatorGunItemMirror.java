@@ -1,23 +1,24 @@
 package com.ptcrys.fpsmatch.compat.spectate.tacz;
 
-import com.tacz.guns.api.item.IGun;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+
+import com.tacz.guns.api.item.IGun;
 
 /**
  * Mirrors the spectated player's main-hand item into the local inventory slot
  * so TACZ renders the correct gun model in first person.
  */
 public final class SpectatorGunItemMirror {
+
     private static ItemStack oldStack = ItemStack.EMPTY;
     private static ItemStack mirrorStack = ItemStack.EMPTY;
     private static boolean isHoldingFake = false;
     private static int fakeSlotIndex = -1;
 
-    private SpectatorGunItemMirror() {
-    }
+    private SpectatorGunItemMirror() {}
 
     public static void equip(LocalPlayer localPlayer, ItemStack targetStack) {
         if (localPlayer == null) {

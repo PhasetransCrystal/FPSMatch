@@ -1,23 +1,24 @@
 package com.ptcrys.fpsmatch.common.packet;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.item.MatchConfigTool;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomActionService;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
 
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.item.MatchConfigTool;
+import com.ptcrys.fpsmatch.common.mapselect.MapRoomActionService;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
+
 import java.util.function.Supplier;
 
 public record MatchConfigToolActionC2SPacket(
-        Action action,
-        String selectedType,
-        String selectedMap,
-        String settingName,
-        String value
-) {
+                                             Action action,
+                                             String selectedType,
+                                             String selectedMap,
+                                             String settingName,
+                                             String value) {
+
     private static final int ID_MAX_LENGTH = 128;
     private static final int VALUE_MAX_LENGTH = 1024;
 
@@ -41,8 +42,7 @@ public record MatchConfigToolActionC2SPacket(
                 buf.readUtf(ID_MAX_LENGTH),
                 buf.readUtf(ID_MAX_LENGTH),
                 buf.readUtf(ID_MAX_LENGTH),
-                buf.readUtf(VALUE_MAX_LENGTH)
-        );
+                buf.readUtf(VALUE_MAX_LENGTH));
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {

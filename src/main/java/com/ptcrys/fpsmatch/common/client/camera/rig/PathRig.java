@@ -1,12 +1,16 @@
 package com.ptcrys.fpsmatch.common.client.camera.rig;
 
-import com.ptcrys.fpsmatch.common.client.camera.*;
 import net.minecraft.world.phys.Vec3;
+
+import com.ptcrys.fpsmatch.common.client.camera.*;
+
 import java.util.List;
 import java.util.function.Supplier;
 
 public final class PathRig implements CameraRig {
+
     public record Keyframe(double tick, CameraPose pose) {}
+
     private final List<Keyframe> keys;
     private final Supplier<Vec3> lookAt;
 
@@ -15,14 +19,14 @@ public final class PathRig implements CameraRig {
         this.keys = List.copyOf(keys);
         this.lookAt = lookAt;
         for (int i = 0; i < keys.size(); i++) {
-            if (!Double.isFinite(keys.get(i).tick) || keys.get(i).tick < 0
-                    || (i > 0 && keys.get(i).tick <= keys.get(i - 1).tick)) {
+            if (!Double.isFinite(keys.get(i).tick) || keys.get(i).tick < 0 || (i > 0 && keys.get(i).tick <= keys.get(i - 1).tick)) {
                 throw new IllegalArgumentException("Keyframe times must strictly increase");
             }
         }
     }
 
-    @Override public CameraFrame sample(double ticks) {
+    @Override
+    public CameraFrame sample(double ticks) {
         CameraPose pose = keys.get(0).pose;
         for (int i = 1; i < keys.size(); ++i) {
             Keyframe from = keys.get(i - 1), to = keys.get(i);

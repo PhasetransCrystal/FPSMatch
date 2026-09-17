@@ -10,6 +10,7 @@ import java.util.Optional;
  * 所有方法返回安全默认值，不会抛出异常。
  */
 public enum NoGunProvider implements IGunProvider {
+
     INSTANCE;
 
     @Override
@@ -43,8 +44,7 @@ public enum NoGunProvider implements IGunProvider {
     }
 
     @Override
-    public void setDummyAmmo(ItemStack stack, int amount) {
-    }
+    public void setDummyAmmo(ItemStack stack, int amount) {}
 
     @Override
     public int getMaxDummyAmmo(ItemStack stack) {
@@ -52,8 +52,7 @@ public enum NoGunProvider implements IGunProvider {
     }
 
     @Override
-    public void setMaxDummyAmmo(ItemStack stack, int amount) {
-    }
+    public void setMaxDummyAmmo(ItemStack stack, int amount) {}
 
     @Override
     public int getCurrentAmmo(ItemStack stack) {
@@ -61,12 +60,10 @@ public enum NoGunProvider implements IGunProvider {
     }
 
     @Override
-    public void setCurrentAmmo(ItemStack stack, int count) {
-    }
+    public void setCurrentAmmo(ItemStack stack, int count) {}
 
     @Override
-    public void useDummyAmmo(ItemStack stack) {
-    }
+    public void useDummyAmmo(ItemStack stack) {}
 
     @Override
     public Optional<GunDataDTO> getGunData(ItemStack stack) {

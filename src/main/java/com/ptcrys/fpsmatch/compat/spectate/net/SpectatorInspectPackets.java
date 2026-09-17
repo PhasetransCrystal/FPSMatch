@@ -1,22 +1,23 @@
 package com.ptcrys.fpsmatch.compat.spectate.net;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.simple.SimpleChannel;
 
+import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
+
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
  * Packets for TACZ inspect sync while spectating.
  */
 public final class SpectatorInspectPackets {
-    private SpectatorInspectPackets() {
-    }
+
+    private SpectatorInspectPackets() {}
 
     public static void register(SimpleChannel channel, AtomicInteger id) {
         channel.messageBuilder(C2SStartInspectPacket.class, id.getAndIncrement(), NetworkDirection.PLAY_TO_SERVER)
@@ -33,15 +34,16 @@ public final class SpectatorInspectPackets {
     }
 
     public record C2SStartInspectPacket() {
+
         public static C2SStartInspectPacket decode(FriendlyByteBuf b) {
             return new C2SStartInspectPacket();
         }
 
-        public static void encode(C2SStartInspectPacket p, FriendlyByteBuf b) {
-        }
+        public static void encode(C2SStartInspectPacket p, FriendlyByteBuf b) {}
     }
 
     public record S2CWatchedPlayerInspectPacket(UUID id) {
+
         public static S2CWatchedPlayerInspectPacket decode(FriendlyByteBuf b) {
             return new S2CWatchedPlayerInspectPacket(b.readUUID());
         }

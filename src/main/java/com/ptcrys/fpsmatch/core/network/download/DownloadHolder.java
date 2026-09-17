@@ -5,11 +5,11 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.io.File;
 
-public record DownloadHolder(String url,File file) implements IDownloadAble {
+public record DownloadHolder(String url, File file) implements IDownloadAble {
+
     public static final Codec<DownloadHolder> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("uuid").forGetter(DownloadHolder::url),
-            Codec.STRING.fieldOf("url").forGetter(DownloadHolder::getFileStr)
-    ).apply(instance, DownloadHolder::new));
+            Codec.STRING.fieldOf("url").forGetter(DownloadHolder::getFileStr)).apply(instance, DownloadHolder::new));
 
     public DownloadHolder(String url, String file) {
         this(url, new File(file));
@@ -25,7 +25,7 @@ public record DownloadHolder(String url,File file) implements IDownloadAble {
         return file;
     }
 
-    public String getFileStr(){
+    public String getFileStr() {
         return file.getAbsolutePath();
     }
 }

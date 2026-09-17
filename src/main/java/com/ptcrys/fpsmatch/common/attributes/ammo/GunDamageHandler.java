@@ -1,10 +1,5 @@
 package com.ptcrys.fpsmatch.common.attributes.ammo;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.config.FPSMConfig;
-import com.ptcrys.fpsmatch.common.event.FPSMGunDamageEvent;
-import com.ptcrys.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
-import com.ptcrys.fpsmatch.core.FPSMCore;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -14,10 +9,17 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.event.FPSMGunDamageEvent;
+import com.ptcrys.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
+import com.ptcrys.fpsmatch.config.FPSMConfig;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+
 import java.util.Optional;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class GunDamageHandler {
+
     @SubscribeEvent
     public static void onEntityHurtByGun(FPSMGunDamageEvent event) {
         if (!(event.getHurtEntity() instanceof ServerPlayer hurtEntity)) {

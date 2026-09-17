@@ -1,9 +1,10 @@
 package com.ptcrys.fpsmatch.core.capability;
 
+import net.minecraft.network.FriendlyByteBuf;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.core.capability.map.MapCapability;
 import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
-import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,14 +24,15 @@ public class FPSMCapabilityManager {
     // 存储能力类型与对应工厂的映射（键：能力Class，值：工厂实例）
     private static final Map<CapabilityType, Map<Class<? extends FPSMCapability<?>>, FPSMCapability.Factory<?, ?>>> CAPABILITY_FACTORIES = new ConcurrentHashMap<>();
 
-    private static final Map<CapabilityType,List<Class<? extends FPSMCapability<?>>>> ORIGINAL_CAPABILITIES = new ConcurrentHashMap<>();
+    private static final Map<CapabilityType, List<Class<? extends FPSMCapability<?>>>> ORIGINAL_CAPABILITIES = new ConcurrentHashMap<>();
 
     /**
      * 注册能力工厂
+     * 
      * @param capabilityClass 能力类型
-     * @param factory 能力工厂
-     * @param <H> 持有者类型
-     * @param <T> 能力类型
+     * @param factory         能力工厂
+     * @param <H>             持有者类型
+     * @param <T>             能力类型
      * @throws IllegalArgumentException 若能力已注册则抛出异常
      */
     public static <H, T extends FPSMCapability<H>> void register(CapabilityType type, Class<T> capabilityClass, FPSMCapability.Factory<H, T> factory) {
@@ -38,18 +40,18 @@ public class FPSMCapabilityManager {
             throw new IllegalArgumentException("Capability " + capabilityClass.getSimpleName() + " already registered!");
         }
         CAPABILITY_FACTORIES.computeIfAbsent(type, k -> new HashMap<>()).put(capabilityClass, factory);
-        if(factory.isOriginal()){
+        if (factory.isOriginal()) {
             ORIGINAL_CAPABILITIES.computeIfAbsent(type, k -> new ArrayList<>()).add(capabilityClass);
         }
     }
 
-    public static List<Class<? extends TeamCapability>> getOriginalTeamCapabilities(){
+    public static List<Class<? extends TeamCapability>> getOriginalTeamCapabilities() {
         return ORIGINAL_CAPABILITIES.getOrDefault(CapabilityType.TEAM, Collections.emptyList()).stream()
                 .map(cap -> (Class<? extends TeamCapability>) cap)
                 .collect(Collectors.toList());
     }
 
-    public static List<Class<? extends MapCapability>> getOriginalMapCapabilities(){
+    public static List<Class<? extends MapCapability>> getOriginalMapCapabilities() {
         return ORIGINAL_CAPABILITIES.getOrDefault(CapabilityType.MAP, Collections.emptyList()).stream()
                 .map(cap -> (Class<? extends MapCapability>) cap)
                 .collect(Collectors.toList());
@@ -93,7 +95,8 @@ public class FPSMCapabilityManager {
 
     /**
      * 为持有者创建能力实例
-     * @param holder 能力持有者
+     * 
+     * @param holder          能力持有者
      * @param capabilityClass 能力类型
      * @return 能力实例（若工厂存在则返回）
      */
@@ -114,7 +117,7 @@ public class FPSMCapabilityManager {
      * 根据条件过滤已注册的能力类型
      */
     public static List<Class<? extends FPSMCapability<?>>> getRegisteredCapabilities(CapabilityType type) {
-        return new ArrayList<>(CAPABILITY_FACTORIES.getOrDefault(type,new HashMap<>()).keySet());
+        return new ArrayList<>(CAPABILITY_FACTORIES.getOrDefault(type, new HashMap<>()).keySet());
     }
 
     /**
@@ -127,20 +130,21 @@ public class FPSMCapabilityManager {
                 .findFirst();
     }
 
-    public static <T extends FPSMCapability<?>> Optional<Class<T>> getRegisteredCapabilityClassByFormated(String className, Class<T> format){
+    public static <T extends FPSMCapability<?>> Optional<Class<T>> getRegisteredCapabilityClassByFormated(String className, Class<T> format) {
         Optional<Class<? extends FPSMCapability<?>>> cap = getCapabilityClassByName(className);
         if (cap.isPresent() && format.isAssignableFrom(cap.get())) {
             return Optional.of((Class<T>) cap.get());
-        }else{
+        } else {
             return Optional.empty();
         }
     }
 
     /**
      * 从网络缓冲区创建同步能力实例
-     * @param holder 能力持有者
+     * 
+     * @param holder    能力持有者
      * @param className 能力类名
-     * @param buf 网络缓冲区
+     * @param buf       网络缓冲区
      * @return 同步能力实例（若类型匹配且工厂存在）
      */
     @SuppressWarnings("unchecked")

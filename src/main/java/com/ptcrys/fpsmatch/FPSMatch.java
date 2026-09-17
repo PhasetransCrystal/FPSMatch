@@ -1,33 +1,5 @@
 package com.ptcrys.fpsmatch;
 
-import com.ptcrys.fpsmatch.bukkit.FPSMBukkit;
-import com.ptcrys.fpsmatch.common.capability.FPSMCapabilityRegister;
-import com.ptcrys.fpsmatch.common.client.screen.VanillaGuiRegister;
-import com.ptcrys.fpsmatch.common.command.FPSMCommand;
-import com.ptcrys.fpsmatch.common.client.net.FPSMClientNetwork;
-import com.ptcrys.fpsmatch.common.client.net.FPSMClientPacketRegistrar;
-import com.ptcrys.fpsmatch.common.drop.ThrowableRegistry;
-import com.ptcrys.fpsmatch.common.packet.*;
-import com.ptcrys.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.effect.FlashBombAddonS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.entity.ThrowEntityC2SPacket;
-import com.ptcrys.fpsmatch.common.packet.mapselect.*;
-import com.ptcrys.fpsmatch.common.packet.register.NetworkPacketRegister;
-import com.ptcrys.fpsmatch.common.effect.FPSMEffectRegister;
-import com.ptcrys.fpsmatch.common.entity.EntityRegister;
-import com.ptcrys.fpsmatch.common.gamerule.FPSMatchRule;
-import com.ptcrys.fpsmatch.common.item.FPSMItemRegister;
-import com.ptcrys.fpsmatch.common.packet.shop.*;
-import com.ptcrys.fpsmatch.common.packet.spec.SpectateModeS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.spec.SpectatorSwitchC2SPacket;
-import com.ptcrys.fpsmatch.common.packet.spec.SpectatorTargetS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.team.*;
-import com.ptcrys.fpsmatch.common.sound.FPSMSoundRegister;
-import com.ptcrys.fpsmatch.compat.CounterStrikeGrenadesCompat;
-import com.ptcrys.fpsmatch.compat.cloth.FPSMenuIntegration;
-import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
-import com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap;
-import com.ptcrys.fpsmatch.config.FPSMConfig;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -39,7 +11,6 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
@@ -47,26 +18,54 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
+
+import com.ptcrys.fpsmatch.bukkit.FPSMBukkit;
+import com.ptcrys.fpsmatch.common.capability.FPSMCapabilityRegister;
+import com.ptcrys.fpsmatch.common.client.net.FPSMClientNetwork;
+import com.ptcrys.fpsmatch.common.client.net.FPSMClientPacketRegistrar;
+import com.ptcrys.fpsmatch.common.client.screen.VanillaGuiRegister;
+import com.ptcrys.fpsmatch.common.command.FPSMCommand;
+import com.ptcrys.fpsmatch.common.drop.ThrowableRegistry;
+import com.ptcrys.fpsmatch.common.effect.FPSMEffectRegister;
+import com.ptcrys.fpsmatch.common.entity.EntityRegister;
+import com.ptcrys.fpsmatch.common.gamerule.FPSMatchRule;
+import com.ptcrys.fpsmatch.common.item.FPSMItemRegister;
+import com.ptcrys.fpsmatch.common.packet.*;
+import com.ptcrys.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.effect.FlashBombAddonS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.entity.ThrowEntityC2SPacket;
+import com.ptcrys.fpsmatch.common.packet.mapselect.*;
+import com.ptcrys.fpsmatch.common.packet.register.NetworkPacketRegister;
+import com.ptcrys.fpsmatch.common.packet.shop.*;
+import com.ptcrys.fpsmatch.common.packet.spec.SpectateModeS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.spec.SpectatorSwitchC2SPacket;
+import com.ptcrys.fpsmatch.common.packet.spec.SpectatorTargetS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.team.*;
+import com.ptcrys.fpsmatch.common.sound.FPSMSoundRegister;
+import com.ptcrys.fpsmatch.compat.CounterStrikeGrenadesCompat;
+import com.ptcrys.fpsmatch.compat.cloth.FPSMenuIntegration;
+import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
+import com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap;
+import com.ptcrys.fpsmatch.config.FPSMConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /*
-    <FPSMatch>
-    Copyright (C) <2025>  <SSOrangeCATY>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * <FPSMatch>
+ * Copyright (C) <2025> <SSOrangeCATY>
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 @Mod(FPSMatch.MODID)
 public class FPSMatch {
@@ -74,20 +73,17 @@ public class FPSMatch {
     public static final String MODID = "fpsmatch";
     public static final Logger LOGGER = LoggerFactory.getLogger("FPSMatch");
     private static final String PROTOCOL_VERSION = "1.4.2";
-    private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(ResourceLocation.tryBuild("fpsmatch", "main"),PROTOCOL_VERSION);
+    private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(ResourceLocation.tryBuild("fpsmatch", "main"), PROTOCOL_VERSION);
     public static final SimpleChannel INSTANCE = PACKET_REGISTER.getChannel();
     public static final String DEBUG_SYS_PROP = "fpsm.debug";
-    private static volatile boolean DEBUG_ENABLED =
-            Boolean.parseBoolean(System.getProperty(DEBUG_SYS_PROP, "false"));
+    private static volatile boolean DEBUG_ENABLED = Boolean.parseBoolean(System.getProperty(DEBUG_SYS_PROP, "false"));
 
     @SuppressWarnings("removal")
-    public FPSMatch()
-    {
+    public FPSMatch() {
         this(FMLJavaModLoadingContext.get());
     }
 
-    public FPSMatch(FMLJavaModLoadingContext context)
-    {
+    public FPSMatch(FMLJavaModLoadingContext context) {
         IEventBus modEventBus = context.getModEventBus();
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::onRegisterPackets);
@@ -104,17 +100,17 @@ public class FPSMatch {
         context.registerConfig(ModConfig.Type.CLIENT, FPSMConfig.clientSpec);
         context.registerConfig(ModConfig.Type.COMMON, FPSMConfig.commonSpec);
         context.registerConfig(ModConfig.Type.SERVER, FPSMConfig.initServer());
-        if(FPSMBukkit.isBukkitEnvironment()){
+        if (FPSMBukkit.isBukkitEnvironment()) {
             FPSMBukkit.register();
         }
     }
 
     @SubscribeEvent
     public void onEnqueue(final InterModEnqueueEvent event) {
-        event.enqueueWork(()->{
-            if(FPSMImpl.findClothConfig()){
+        event.enqueueWork(() -> {
+            if (FPSMImpl.findClothConfig()) {
                 DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> FPSMenuIntegration::registerModsPage);
-            }else{
+            } else {
                 if (FMLEnvironment.dist == Dist.CLIENT) {
                     try {
                         // 尝试通过 TACZ 兼容层注册无 Cloth Config 页面
@@ -128,14 +124,13 @@ public class FPSMatch {
         });
     }
 
-
     private void commonSetup(final FMLCommonSetupEvent event) {
-        event.enqueueWork(()->{
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.FLASH_BOMB.get(),ThrowableRegistry.FLASH_BANG);
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.GRENADE.get(),ThrowableRegistry.GRENADE);
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.SMOKE_SHELL.get(),ThrowableRegistry.SMOKE);
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.CT_INCENDIARY_GRENADE.get(),ThrowableRegistry.MOLOTOV);
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.T_INCENDIARY_GRENADE.get(),ThrowableRegistry.MOLOTOV);
+        event.enqueueWork(() -> {
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.FLASH_BOMB.get(), ThrowableRegistry.FLASH_BANG);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.GRENADE.get(), ThrowableRegistry.GRENADE);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.SMOKE_SHELL.get(), ThrowableRegistry.SMOKE);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.CT_INCENDIARY_GRENADE.get(), ThrowableRegistry.MOLOTOV);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.T_INCENDIARY_GRENADE.get(), ThrowableRegistry.MOLOTOV);
 
             // 兼容层注册（各模组兼容层在此统一注册）
             registerCompat();
@@ -231,19 +226,19 @@ public class FPSMatch {
         event.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> FPSMClientPacketRegistrar::registerAll));
     }
 
-    public static <M> void sendTo(Player player,M message){
-        if(player.level().isClientSide){
+    public static <M> void sendTo(Player player, M message) {
+        if (player.level().isClientSide) {
             sendToServer(message);
-        }else{
-            sendToPlayer((ServerPlayer)player, message);
+        } else {
+            sendToPlayer((ServerPlayer) player, message);
         }
     }
 
-    public static <M> void sendToPlayer(ServerPlayer player,M message){
+    public static <M> void sendToPlayer(ServerPlayer player, M message) {
         NetworkPacketRegister.getChannelFromCache(message.getClass()).send(PacketDistributor.PLAYER.with(() -> player), message);
     }
 
-    public static <M> void sendToServer(M message){
+    public static <M> void sendToServer(M message) {
         if (FMLEnvironment.dist != Dist.CLIENT || !FPSMClientNetwork.canSendToServer()) {
             return;
         }
@@ -255,20 +250,24 @@ public class FPSMatch {
         FPSMCommand.onRegisterCommands(event);
     }
 
-    public static synchronized boolean switchDebug(){
+    public static synchronized boolean switchDebug() {
         return DEBUG_ENABLED = !DEBUG_ENABLED;
     }
 
-    public static boolean isDebugEnabled(){
+    public static boolean isDebugEnabled() {
         return DEBUG_ENABLED;
     }
 
-    public static void debug(String msg, Object... args) { if (DEBUG_ENABLED) LOGGER.info(msg, args); }
+    public static void debug(String msg, Object... args) {
+        if (DEBUG_ENABLED) LOGGER.info(msg, args);
+    }
 
-    public static void info(String msg, Object... args) { LOGGER.info(msg,args);}
+    public static void info(String msg, Object... args) {
+        LOGGER.info(msg, args);
+    }
 
     @OnlyIn(Dist.CLIENT)
-    public static void pullGameInfo(){
+    public static void pullGameInfo() {
         sendToServer(new PullGameInfoC2SPacket());
     }
 }

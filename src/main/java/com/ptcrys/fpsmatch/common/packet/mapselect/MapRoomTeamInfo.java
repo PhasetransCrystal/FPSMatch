@@ -3,6 +3,7 @@ package com.ptcrys.fpsmatch.common.packet.mapselect;
 import net.minecraft.network.FriendlyByteBuf;
 
 public record MapRoomTeamInfo(String name, int currentPlayers, int playerLimit, boolean spectator) {
+
     private static final int NAME_MAX_LENGTH = 128;
 
     public static void encode(MapRoomTeamInfo info, FriendlyByteBuf buf) {

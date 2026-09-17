@@ -1,46 +1,49 @@
 package com.ptcrys.fpsmatch.common.drop;
 
-import com.ptcrys.fpsmatch.config.FPSMConfig;
-import com.ptcrys.fpsmatch.util.FPSMUtil;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+
+import com.ptcrys.fpsmatch.config.FPSMConfig;
+import com.ptcrys.fpsmatch.util.FPSMUtil;
+
 import java.util.function.Predicate;
 
 public enum DropType {
+
     MAIN_WEAPON((stack -> {
-        for(Predicate<ItemStack> predicate : FPSMUtil.MAIN_WEAPON_PREDICATE){
-            if(predicate.test(stack)){
+        for (Predicate<ItemStack> predicate : FPSMUtil.MAIN_WEAPON_PREDICATE) {
+            if (predicate.test(stack)) {
                 return true;
             }
         }
         return false;
-    }),0),
+    }), 0),
     SECONDARY_WEAPON((stack -> {
         for (Predicate<ItemStack> predicate : FPSMUtil.SECONDARY_WEAPON_PREDICATE) {
-            if(predicate.test(stack)){
+            if (predicate.test(stack)) {
                 return true;
             }
         }
         return false;
-    }),1),
+    }), 1),
     THIRD_WEAPON((stack -> {
         for (Predicate<ItemStack> predicate : FPSMUtil.THIRD_WEAPON_PREDICATE) {
-            if(predicate.test(stack)){
+            if (predicate.test(stack)) {
                 return true;
             }
         }
         return false;
-    }),2),
+    }), 2),
     THROW((stack -> {
         for (Predicate<ItemStack> predicate : FPSMUtil.THROW_PREDICATE) {
-            if(predicate.test(stack)){
+            if (predicate.test(stack)) {
                 return true;
             }
         }
         return false;
-    }),4,5,6,7),
-    MISC((stack -> true),8);
+    }), 4, 5, 6, 7),
+    MISC((stack -> true), 8);
 
     private final Predicate<ItemStack> predicate;
     private final int[] slotIndex;
@@ -50,7 +53,7 @@ public enum DropType {
         this.slotIndex = slotIndex;
     }
 
-    public Predicate<Player> inventoryMatch(){
+    public Predicate<Player> inventoryMatch() {
         return (player) -> {
             if (this == THROW) {
                 // 对于投掷物，使用更严格的检查
@@ -70,7 +73,7 @@ public enum DropType {
         }
 
         // 检查总投掷物数量限制
-        int total= player.getInventory().clearOrCountMatchingItems(predicate, 0, player.inventoryMenu.getCraftSlots());
+        int total = player.getInventory().clearOrCountMatchingItems(predicate, 0, player.inventoryMenu.getCraftSlots());
         if (total >= getLimit(this)) {
             return false;
         }
@@ -101,17 +104,16 @@ public enum DropType {
             count += player.getInventory().clearOrCountMatchingItems(
                     stack -> stack.getItem() == item,
                     0,
-                    player.inventoryMenu.getCraftSlots()
-            );
+                    player.inventoryMenu.getCraftSlots());
         }
         return count;
     }
 
-    public Predicate<ItemStack> itemMatch(){
+    public Predicate<ItemStack> itemMatch() {
         return predicate;
     }
 
-    public static int getLimit(DropType type){
+    public static int getLimit(DropType type) {
         return switch (type) {
             case MAIN_WEAPON -> FPSMConfig.common.mainWeaponCount.get();
             case SECONDARY_WEAPON -> FPSMConfig.common.secondaryWeaponCount.get();
@@ -123,7 +125,7 @@ public enum DropType {
 
     public static DropType getItemDropType(ItemStack itemStack) {
         for (DropType type : DropType.values()) {
-            if(type.itemMatch().test(itemStack)){
+            if (type.itemMatch().test(itemStack)) {
                 return type;
             }
         }

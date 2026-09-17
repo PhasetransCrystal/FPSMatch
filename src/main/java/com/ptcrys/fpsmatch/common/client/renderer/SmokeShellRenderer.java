@@ -1,8 +1,5 @@
 package com.ptcrys.fpsmatch.common.client.renderer;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.ptcrys.fpsmatch.common.entity.throwable.SmokeShellEntity;
-import com.ptcrys.fpsmatch.common.item.FPSMItemRegister;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
@@ -17,6 +14,10 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.common.Mod;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.ptcrys.fpsmatch.common.entity.throwable.SmokeShellEntity;
+import com.ptcrys.fpsmatch.common.item.FPSMItemRegister;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -27,7 +28,8 @@ public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEnti
     @Override
     public @NotNull EntityRenderer<SmokeShellEntity> create(@NotNull Context context) {
         return new EntityRenderer<>(context) {
-            final Map<SmokeShellEntity,List<Particle>> particleMap = new HashMap<>();
+
+            final Map<SmokeShellEntity, List<Particle>> particleMap = new HashMap<>();
             final ItemEntityRenderer itemRender = new ItemEntityRenderer(context);
             ItemEntity item = null;
 
@@ -44,24 +46,24 @@ public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEnti
             @Override
             public void render(@NotNull SmokeShellEntity entity, float yaw, float partialTicks,
                                @NotNull PoseStack poseStack, @NotNull MultiBufferSource buffer, int packedLight) {
-                if(!particleMap.containsKey(entity)) {
+                if (!particleMap.containsKey(entity)) {
                     particleMap.put(entity, new ArrayList<>());
                 }
 
-                if(entity.isRemoved()){
+                if (entity.isRemoved()) {
                     this.removeAllParticle(entity);
                     this.particleMap.remove(entity);
                     return;
                 }
 
-                if(entity.isActivated()){
-                    if(entity.getParticleCoolDown() == 0){
+                if (entity.isActivated()) {
+                    if (entity.getParticleCoolDown() == 0) {
                         ClientLevel level = Minecraft.getInstance().level;
-                        this.spawnSmokeLayer(entity,new Random(),level.getBlockState(entity.blockPosition().below()).isAir());
-                    }else{
+                        this.spawnSmokeLayer(entity, new Random(), level.getBlockState(entity.blockPosition().below()).isAir());
+                    } else {
                         this.removeAllParticle(entity);
                     }
-                }else{
+                } else {
                     if (item == null) {
                         item = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), new ItemStack(FPSMItemRegister.SMOKE_SHELL.get()));
                     }
@@ -89,19 +91,18 @@ public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEnti
                         x + xOffset + random.nextDouble(-0.2, 0.2),
                         y + yOffset + random.nextDouble(-0.1, 0.1),
                         z + zOffset + random.nextDouble(-0.2, 0.2),
-                        0, 0, 0
-                );
-                this.addParticle(entity,p);
+                        0, 0, 0);
+                this.addParticle(entity, p);
             }
 
-            private void addParticle(SmokeShellEntity entity,Particle particle){
-                if(particleMap.containsKey(entity)) {
+            private void addParticle(SmokeShellEntity entity, Particle particle) {
+                if (particleMap.containsKey(entity)) {
                     this.particleMap.get(entity).add(particle);
                     Minecraft.getInstance().particleEngine.add(particle);
                 }
             }
 
-            private void removeAllParticle(SmokeShellEntity entity){
+            private void removeAllParticle(SmokeShellEntity entity) {
                 if (this.particleMap.containsKey(entity)) {
                     this.particleMap.get(entity).forEach(Particle::remove);
                     this.particleMap.get(entity).clear();

@@ -1,11 +1,5 @@
 package com.ptcrys.fpsmatch.core.network.example;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.ptcrys.fpsmatch.core.network.ApiResponse;
@@ -13,11 +7,19 @@ import com.ptcrys.fpsmatch.core.network.NetworkModule;
 import com.ptcrys.fpsmatch.core.network.RequestMethod;
 import com.ptcrys.fpsmatch.core.network.download.DownloadException;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * API客户端使用示例
  */
 public class ApiClientExample {
+
     private static final NetworkModule network = NetworkModule.initializeNetworkModule("http://127.0.0.1:8081");
+
     public static void main(String[] args) throws Exception {
         download();
     }
@@ -29,7 +31,7 @@ public class ApiClientExample {
                 .downloadRequest()
                 .saveTo(path)
                 .callback(progress -> {
-                    System.out.printf("\r"+progress.toString());
+                    System.out.printf("\r" + progress.toString());
                 }).download();
 
         download.shutdown();
@@ -103,7 +105,7 @@ public class ApiClientExample {
             if (response.isSuccessful()) {
                 System.out.println("登录成功，Token: " + response.getData().getToken());
                 return response.getData();
-            }else{
+            } else {
                 System.err.println("登录失败: " + response.getError().getMessage());
             }
 
@@ -134,19 +136,19 @@ public class ApiClientExample {
 
     // 示例数据模型类
     public static class User {
+
         public static final Codec<User> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("id").forGetter(User::getId),
-            Codec.STRING.fieldOf("name").forGetter(User::getName),
-            Codec.STRING.fieldOf("email").forGetter(User::getEmail),
-            Codec.INT.fieldOf("age").forGetter(User::getAge)
-        ).apply(instance, (id, name, email, age) -> {
-            User user = new User();
-            user.setId(id);
-            user.setName(name);
-            user.setEmail(email);
-            user.setAge(age);
-            return user;
-        }));
+                Codec.STRING.fieldOf("id").forGetter(User::getId),
+                Codec.STRING.fieldOf("name").forGetter(User::getName),
+                Codec.STRING.fieldOf("email").forGetter(User::getEmail),
+                Codec.INT.fieldOf("age").forGetter(User::getAge)).apply(instance, (id, name, email, age) -> {
+                    User user = new User();
+                    user.setId(id);
+                    user.setName(name);
+                    user.setEmail(email);
+                    user.setAge(age);
+                    return user;
+                }));
 
         private String id;
         private String name;
@@ -154,35 +156,69 @@ public class ApiClientExample {
         private int age;
 
         // Getters and Setters
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
-        public int getAge() { return age; }
-        public void setAge(int age) { this.age = age; }
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
     }
 
     // 示例登录结果类
     public static class LoginResult {
+
         public static final Codec<LoginResult> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("token").forGetter(LoginResult::getToken),
-            User.CODEC.fieldOf("user").forGetter(LoginResult::getUser)
-        ).apply(instance, (token, user) -> {
-            LoginResult result = new LoginResult();
-            result.setToken(token);
-            result.setUser(user);
-            return result;
-        }));
+                Codec.STRING.fieldOf("token").forGetter(LoginResult::getToken),
+                User.CODEC.fieldOf("user").forGetter(LoginResult::getUser)).apply(instance, (token, user) -> {
+                    LoginResult result = new LoginResult();
+                    result.setToken(token);
+                    result.setUser(user);
+                    return result;
+                }));
 
         private String token;
         private User user;
 
         // Getters and Setters
-        public String getToken() { return token; }
-        public void setToken(String token) { this.token = token; }
-        public User getUser() { return user; }
-        public void setUser(User user) { this.user = user; }
+        public String getToken() {
+            return token;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
+        }
+
+        public User getUser() {
+            return user;
+        }
+
+        public void setUser(User user) {
+            this.user = user;
+        }
     }
 }

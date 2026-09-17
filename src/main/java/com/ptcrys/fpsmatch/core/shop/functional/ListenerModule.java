@@ -11,6 +11,7 @@ import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
  * 每个监听模块都有一个唯一的名称和优先级，用于控制事件处理的顺序。
  */
 public interface ListenerModule {
+
     /**
      * 处理商店槽位变更事件。
      * <p>
@@ -19,7 +20,7 @@ public interface ListenerModule {
      *
      * @param event 商店槽位变更事件
      */
-    default void onChange(ShopSlotChangeEvent event){}
+    default void onChange(ShopSlotChangeEvent event) {}
 
     /**
      * 处理商店槽位变更事件。
@@ -28,9 +29,9 @@ public interface ListenerModule {
      * 实现该方法时，可以访问事件对象以获取相关信息，并执行自定义逻辑。
      *
      * @param event 商店槽位价格检查事件
-     * @param slot 当前商店槽位
+     * @param slot  当前商店槽位
      */
-    default void onCostCheck(CheckCostEvent event, ShopSlot slot){}
+    default void onCostCheck(CheckCostEvent event, ShopSlot slot) {}
 
     /**
      * 处理商店槽位重置事件。
@@ -40,7 +41,7 @@ public interface ListenerModule {
      *
      * @param slot 商店槽位
      */
-    default void onReset(ShopSlot slot){}
+    default void onReset(ShopSlot slot) {}
 
     /**
      * 获取监听模块的名称。

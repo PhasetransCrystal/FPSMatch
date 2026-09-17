@@ -6,8 +6,8 @@ import com.ptcrys.fpsmatch.compat.spectate.net.SpectatorLrtAttackPackets;
 import com.ptcrys.fpsmatch.compat.spectate.tacz.SpectatorGunInspectNet;
 
 public final class SpectatorClientPacketHandlers {
-    private SpectatorClientPacketHandlers() {
-    }
+
+    private SpectatorClientPacketHandlers() {}
 
     public static void handleWatchedPlayerInspect(SpectatorInspectPackets.S2CWatchedPlayerInspectPacket packet) {
         SpectatorGunInspectNet.handleWatchedPlayerInspectPacket(packet);

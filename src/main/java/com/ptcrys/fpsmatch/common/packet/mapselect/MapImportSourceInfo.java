@@ -4,16 +4,16 @@ import net.minecraft.network.FriendlyByteBuf;
 
 /** A map-level import source and the configuration groups it can provide. */
 public record MapImportSourceInfo(
-        String id,
-        String archiveName,
-        String storageGroup,
-        String mapName,
-        boolean currentArchive,
-        boolean hasSettings,
-        boolean hasShop,
-        boolean hasStartKits,
-        int mappedTeams
-) {
+                                  String id,
+                                  String archiveName,
+                                  String storageGroup,
+                                  String mapName,
+                                  boolean currentArchive,
+                                  boolean hasSettings,
+                                  boolean hasShop,
+                                  boolean hasStartKits,
+                                  int mappedTeams) {
+
     private static final int MAX_LENGTH = 128;
 
     public void encode(FriendlyByteBuf buf) {

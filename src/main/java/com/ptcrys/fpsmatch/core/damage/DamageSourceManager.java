@@ -6,11 +6,11 @@ import java.util.Map;
 import java.util.Objects;
 
 public final class DamageSourceManager {
+
     private static final Map<String, DamageSourceCategory> DEFAULT_RULES = new HashMap<>();
     private static final Map<String, DamageSourceCategory> CUSTOM_RULES = new HashMap<>();
 
-    private DamageSourceManager() {
-    }
+    private DamageSourceManager() {}
 
     public static void registerDefaultId(String sourceId, DamageSourceCategory category) {
         DEFAULT_RULES.put(normalize(sourceId), Objects.requireNonNull(category));

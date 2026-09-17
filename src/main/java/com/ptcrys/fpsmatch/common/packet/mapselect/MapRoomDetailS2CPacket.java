@@ -1,12 +1,14 @@
 package com.ptcrys.fpsmatch.common.packet.mapselect;
 
-import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
 
 import java.util.function.Supplier;
 
 public record MapRoomDetailS2CPacket(MapRoomDetail detail, boolean passive) {
+
     /**
      * 主动(active)详情包：会在客户端未打开界面时强制打开详情界面（原有行为）。
      */

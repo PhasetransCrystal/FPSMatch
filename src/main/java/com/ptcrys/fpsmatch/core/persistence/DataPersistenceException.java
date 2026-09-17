@@ -1,6 +1,7 @@
 package com.ptcrys.fpsmatch.core.persistence;
 
 public class DataPersistenceException extends RuntimeException {
+
     public DataPersistenceException(String message) {
         super(message);
     }

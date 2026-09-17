@@ -1,6 +1,5 @@
 package com.ptcrys.fpsmatch.common.client.key;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -12,6 +11,8 @@ import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
 
 import static com.tacz.guns.util.InputExtraCheck.isInGame;
@@ -19,6 +20,7 @@ import static com.tacz.guns.util.InputExtraCheck.isInGame;
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class SwitchPreviousItemKey {
+
     private static int previous = -1;
     private static int current = 0;
 
@@ -50,18 +52,16 @@ public class SwitchPreviousItemKey {
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
             LocalPlayer player = Minecraft.getInstance().player;
-            if(player == null) return;
+            if (player == null) return;
             if (previous == -1) {
                 previous = player.getInventory().selected;
                 current = player.getInventory().selected;
-            }else{
-                if (current != player.getInventory().selected){
+            } else {
+                if (current != player.getInventory().selected) {
                     previous = current;
                     current = player.getInventory().selected;
                 }
             }
         }
     }
-
-
 }

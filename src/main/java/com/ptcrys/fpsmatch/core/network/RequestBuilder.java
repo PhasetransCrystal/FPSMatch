@@ -1,9 +1,9 @@
 package com.ptcrys.fpsmatch.core.network;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.JsonOps;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
 import com.ptcrys.fpsmatch.core.network.download.DownloadBuilder;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
  * 基于Java HttpClient的请求构建器
  */
 public class RequestBuilder<T> {
+
     private final NetworkModule module;
     private final Codec<T> codec;
     private String baseUrl;
@@ -50,7 +51,7 @@ public class RequestBuilder<T> {
         return module.getHttpClient();
     }
 
-    public NetworkModule getModule(){
+    public NetworkModule getModule() {
         return module;
     }
 
@@ -124,11 +125,11 @@ public class RequestBuilder<T> {
     public ApiResponse<T> execute() {
         ApiResponse<T> apiResponse = new ApiResponse<>();
         HttpRequest request = buildRequest();
-        try{
+        try {
             HttpResponse<String> response = getClient().send(request, HttpResponse.BodyHandlers.ofString());
             return parseResponse(response);
-        }catch (IOException | InterruptedException e){
-            apiResponse.setError(new ApiError(e.getMessage(),e));
+        } catch (IOException | InterruptedException e) {
+            apiResponse.setError(new ApiError(e.getMessage(), e));
             apiResponse.setRawBody(rawBody);
             return apiResponse;
         }

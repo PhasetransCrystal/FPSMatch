@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Downloader {
+
     private static final Logger logger = LoggerFactory.getLogger("FPSMatch Downloader");
     private static final Downloader INSTANCE = new Downloader();
     private final Map<String, NetworkModule> modules = new HashMap<>();
@@ -18,7 +19,7 @@ public class Downloader {
 
     public void download(IDownloadAble downloadAble) {
         String url = downloadAble.getUrl();
-        if(!modules.containsKey(url)) {
+        if (!modules.containsKey(url)) {
             NetworkModule module = NetworkModule.initializeNetworkModule(url);
             modules.put(url, module);
 
@@ -30,9 +31,9 @@ public class Downloader {
                         logger.info("Download Success: {}", result.fileName());
                     })
                     .whenComplete((result, throwable) -> {
-                        if(throwable != null) {
-                            logger.error("Download Fail: ",throwable);
-                        }else{
+                        if (throwable != null) {
+                            logger.error("Download Fail: ", throwable);
+                        } else {
                             downloadAble.onDownloadCompleted();
                         }
                         modules.remove(url);
@@ -42,11 +43,10 @@ public class Downloader {
 
     public void stop(IDownloadAble downloadAble) {
         String url = downloadAble.getUrl();
-        if(modules.containsKey(url)) {
+        if (modules.containsKey(url)) {
             NetworkModule module = modules.get(url);
             module.shutdown();
             modules.remove(url);
         }
     }
-
 }

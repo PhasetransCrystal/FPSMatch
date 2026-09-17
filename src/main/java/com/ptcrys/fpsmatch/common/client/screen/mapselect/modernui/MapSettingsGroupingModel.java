@@ -11,10 +11,11 @@ import java.util.Set;
 
 /** Stable grouping for the categorized map-settings list. */
 public final class MapSettingsGroupingModel {
-    private MapSettingsGroupingModel() {
-    }
+
+    private MapSettingsGroupingModel() {}
 
     public record Group(String category, List<MapRoomSettingInfo> settings) {
+
         public Group {
             settings = List.copyOf(settings);
         }

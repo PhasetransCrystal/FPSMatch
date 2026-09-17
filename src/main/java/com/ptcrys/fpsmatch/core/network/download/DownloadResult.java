@@ -7,7 +7,7 @@ import java.util.Map;
 
 public record DownloadResult(Path filePath, long fileSize, String fileName, Map<String, List<String>> headers) {
 
-    public static DownloadResult empty(){
-        return new DownloadResult(Path.of(""),0,"",new HashMap<>());
+    public static DownloadResult empty() {
+        return new DownloadResult(Path.of(""), 0, "", new HashMap<>());
     }
 }

@@ -1,12 +1,5 @@
 package com.ptcrys.fpsmatch.common.client.renderer;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-
-import com.mojang.math.Axis;
-import com.ptcrys.fpsmatch.common.entity.MatchDropEntity;
-import com.ptcrys.fpsmatch.compat.LrtacticalCompat;
-import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
-import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -17,15 +10,25 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
+import com.ptcrys.fpsmatch.common.entity.MatchDropEntity;
+import com.ptcrys.fpsmatch.compat.LrtacticalCompat;
+import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
+import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Random;
 
 public class MatchDropRenderer implements EntityRendererProvider<MatchDropEntity> {
+
     public static final Random RANDOM = new Random();
+
     @Override
     public @NotNull EntityRenderer<MatchDropEntity> create(@NotNull Context context) {
         return new EntityRenderer<>(context) {
+
             private final ItemRenderer itemRenderer = context.getItemRenderer();
             private final float yRotation = RANDOM.nextFloat(0f, 360f);
 

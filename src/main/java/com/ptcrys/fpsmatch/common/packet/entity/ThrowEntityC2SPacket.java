@@ -1,20 +1,23 @@
 package com.ptcrys.fpsmatch.common.packet.entity;
 
-import com.ptcrys.fpsmatch.core.item.IThrowEntityAble;
-import com.ptcrys.fpsmatch.common.item.BaseThrowAbleItem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.common.item.BaseThrowAbleItem;
+import com.ptcrys.fpsmatch.core.item.IThrowEntityAble;
 
 import java.util.function.Supplier;
 
 public class ThrowEntityC2SPacket {
 
     BaseThrowAbleItem.ThrowType type;
+
     public ThrowEntityC2SPacket(BaseThrowAbleItem.ThrowType type) {
         this.type = type;
     }
+
     public static void encode(ThrowEntityC2SPacket packet, FriendlyByteBuf buf) {
         buf.writeVarInt(packet.type == null ? -1 : packet.type.ordinal());
     }
@@ -26,7 +29,7 @@ public class ThrowEntityC2SPacket {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if(player == null) {
+            if (player == null) {
                 ctx.get().setPacketHandled(true);
                 return;
             }

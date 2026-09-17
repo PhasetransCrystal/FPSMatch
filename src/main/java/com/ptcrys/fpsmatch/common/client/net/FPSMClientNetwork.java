@@ -7,8 +7,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public final class FPSMClientNetwork {
-    private FPSMClientNetwork() {
-    }
+
+    private FPSMClientNetwork() {}
 
     public static boolean canSendToServer() {
         ClientPacketListener listener = Minecraft.getInstance().getConnection();

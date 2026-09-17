@@ -1,17 +1,20 @@
 package com.ptcrys.fpsmatch.common.command;
 
-import com.mojang.brigadier.tree.ArgumentCommandNode;
-import com.mojang.brigadier.tree.CommandNode;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.*;
+
+import com.mojang.brigadier.tree.ArgumentCommandNode;
+import com.mojang.brigadier.tree.CommandNode;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
 /** Descriptions are registered by modules; command structure and permissions come from Brigadier. */
 public final class FPSMHelpManager {
+
     private record Description(MutableComponent text, @Nullable MutableComponent hover) {}
+
     private static final FPSMHelpManager INSTANCE = new FPSMHelpManager();
     private final Map<String, Description> descriptions = new HashMap<>();
     private final Map<CommandNode<CommandSourceStack>, Integer> ids = new IdentityHashMap<>();
@@ -20,8 +23,13 @@ public final class FPSMHelpManager {
     private CommandNode<CommandSourceStack> root;
     private int nextId;
 
-    private FPSMHelpManager() { reset(); }
-    public static FPSMHelpManager getInstance() { return INSTANCE; }
+    private FPSMHelpManager() {
+        reset();
+    }
+
+    public static FPSMHelpManager getInstance() {
+        return INSTANCE;
+    }
 
     public void reset() {
         descriptions.clear();
@@ -72,11 +80,18 @@ public final class FPSMHelpManager {
         }
     }
 
-    public void registerCommandHelp(String path, String key) { registerCommandHelp(path, Component.translatable(key)); }
-    public void registerCommandHelp(String path) { registerCommandHelp(path, Component.empty()); }
+    public void registerCommandHelp(String path, String key) {
+        registerCommandHelp(path, Component.translatable(key));
+    }
+
+    public void registerCommandHelp(String path) {
+        registerCommandHelp(path, Component.empty());
+    }
 
     /** Compatibility API: argument order and optional branches now come from the registered command tree. */
-    public void registerCommandParameters(String path, String... parameters) { normalize(path); }
+    public void registerCommandParameters(String path, String... parameters) {
+        normalize(path);
+    }
 
     public boolean addChildCommand(String path, String child, MutableComponent description) {
         registerCommandHelp(path + " " + child, description);
@@ -94,7 +109,9 @@ public final class FPSMHelpManager {
                 .sorted(Comparator.comparing(CommandNode::getName)).toList();
     }
 
-    public boolean toggleNodeExpanded(int id) { return toggleNodeExpanded(id, null); }
+    public boolean toggleNodeExpanded(int id) {
+        return toggleNodeExpanded(id, null);
+    }
 
     public boolean toggleNodeExpanded(int id, @Nullable CommandSourceStack source) {
         var path = paths.get(id);
@@ -142,7 +159,10 @@ public final class FPSMHelpManager {
         }
     }
 
-    public List<MutableComponent> getCommandTree() { return getCommandTree(null); }
+    public List<MutableComponent> getCommandTree() {
+        return getCommandTree(null);
+    }
+
     public List<MutableComponent> getCommandTree(@Nullable CommandSourceStack source) {
         List<MutableComponent> lines = new ArrayList<>();
         if (root != null && (source == null || root.canUse(source))) render(root, "", "", 0, source, lines);
@@ -156,11 +176,19 @@ public final class FPSMHelpManager {
         return result;
     }
 
-    public MutableComponent buildCommandTreeHelp() { return buildCommandTreeHelp(null); }
+    public MutableComponent buildCommandTreeHelp() {
+        return buildCommandTreeHelp(null);
+    }
+
     public MutableComponent buildCommandTreeHelp(@Nullable CommandSourceStack source) {
         return buildHelpMessage(Component.translatable("commands.fpsm.help.header"), getCommandTree(source));
     }
 
-    public static String withTeamCapability(String command) { return "fpsm map modify team teams capability " + command; }
-    public static String withMapCapability(String command) { return "fpsm map modify capability " + command; }
+    public static String withTeamCapability(String command) {
+        return "fpsm map modify team teams capability " + command;
+    }
+
+    public static String withMapCapability(String command) {
+        return "fpsm map modify capability " + command;
+    }
 }

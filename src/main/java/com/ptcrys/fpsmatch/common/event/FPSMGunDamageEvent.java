@@ -11,6 +11,7 @@ import javax.annotation.Nullable;
  * 由 TACZ 兼容层（TACZGunEventBridge）桥接触发。
  */
 public class FPSMGunDamageEvent extends Event {
+
     private final LivingEntity attacker;
     private final LivingEntity hurtEntity;
     private float baseAmount;
@@ -32,12 +33,36 @@ public class FPSMGunDamageEvent extends Event {
         this.bullet = bullet;
     }
 
-    public LivingEntity getAttacker() { return attacker; }
-    public LivingEntity getHurtEntity() { return hurtEntity; }
-    public float getBaseAmount() { return baseAmount; }
-    public void setBaseAmount(float baseAmount) { this.baseAmount = baseAmount; }
-    public boolean isHeadShot() { return isHeadShot; }
-    @Nullable public Entity getBullet() { return bullet; }
-    public float getHeadshotMultiplier() { return headshotMultiplier; }
-    public void setHeadshotMultiplier(float headshotMultiplier) { this.headshotMultiplier = headshotMultiplier; }
+    public LivingEntity getAttacker() {
+        return attacker;
+    }
+
+    public LivingEntity getHurtEntity() {
+        return hurtEntity;
+    }
+
+    public float getBaseAmount() {
+        return baseAmount;
+    }
+
+    public void setBaseAmount(float baseAmount) {
+        this.baseAmount = baseAmount;
+    }
+
+    public boolean isHeadShot() {
+        return isHeadShot;
+    }
+
+    @Nullable
+    public Entity getBullet() {
+        return bullet;
+    }
+
+    public float getHeadshotMultiplier() {
+        return headshotMultiplier;
+    }
+
+    public void setHeadshotMultiplier(float headshotMultiplier) {
+        this.headshotMultiplier = headshotMultiplier;
+    }
 }

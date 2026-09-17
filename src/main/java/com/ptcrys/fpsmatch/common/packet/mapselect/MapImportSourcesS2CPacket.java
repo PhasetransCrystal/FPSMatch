@@ -1,18 +1,19 @@
 package com.ptcrys.fpsmatch.common.packet.mapselect;
 
-import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
 public record MapImportSourcesS2CPacket(
-        String gameType,
-        String mapName,
-        List<MapImportSourceInfo> sources
-) {
+                                        String gameType,
+                                        String mapName,
+                                        List<MapImportSourceInfo> sources) {
+
     private static final int MAX_LENGTH = 128;
 
     public static void encode(MapImportSourcesS2CPacket packet, FriendlyByteBuf buf) {

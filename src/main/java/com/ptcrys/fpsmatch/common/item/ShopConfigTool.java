@@ -1,15 +1,16 @@
 package com.ptcrys.fpsmatch.common.item;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.item.tool.CreatorToolItem;
-import com.ptcrys.fpsmatch.common.item.tool.handler.ClickActionContext;
-import com.ptcrys.fpsmatch.common.packet.shop.OpenShopConfigToolScreenS2CPacket;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.item.tool.CreatorToolItem;
+import com.ptcrys.fpsmatch.common.item.tool.handler.ClickActionContext;
+import com.ptcrys.fpsmatch.common.packet.shop.OpenShopConfigToolScreenS2CPacket;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -21,13 +22,13 @@ import java.util.List;
  * 通过 Modern UI 商店配置总览进入服务端拥有的编辑菜单。
  */
 public class ShopConfigTool extends CreatorToolItem {
+
     public ShopConfigTool(Properties properties) {
         super(properties.stacksTo(1));
     }
 
     @Override
-    protected void onLeftClick(ClickActionContext context) {
-    }
+    protected void onLeftClick(ClickActionContext context) {}
 
     @Override
     protected void onRightClick(ClickActionContext context) {

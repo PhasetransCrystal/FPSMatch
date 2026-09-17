@@ -1,33 +1,56 @@
 package com.ptcrys.fpsmatch.common.client.camera.rig;
 
-import com.ptcrys.fpsmatch.common.client.camera.*;
-import com.ptcrys.fpsmatch.common.client.spec.SpectateTarget;
-import com.ptcrys.fpsmatch.common.client.spec.SpectatorCameraMath;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+
+import com.ptcrys.fpsmatch.common.client.camera.*;
+import com.ptcrys.fpsmatch.common.client.spec.SpectateTarget;
+import com.ptcrys.fpsmatch.common.client.spec.SpectatorCameraMath;
+
 import java.util.function.Supplier;
 
 /** Instance-owned orbit state; sampling is called once per rendered frame by the director. */
 public final class OrbitRig implements CameraRig {
+
     private final Supplier<SpectateTarget> target;
     private float yaw, pitch, targetYaw, targetPitch;
     private double radius = SpectatorCameraMath.DEFAULT_ORBIT_RADIUS;
     private long lastFrame;
 
-    public OrbitRig(Supplier<SpectateTarget> target) { this.target = target; }
-    public void reset() { yaw = pitch = targetYaw = targetPitch = 0; radius = SpectatorCameraMath.DEFAULT_ORBIT_RADIUS; lastFrame = 0; }
+    public OrbitRig(Supplier<SpectateTarget> target) {
+        this.target = target;
+    }
+
+    public void reset() {
+        yaw = pitch = targetYaw = targetPitch = 0;
+        radius = SpectatorCameraMath.DEFAULT_ORBIT_RADIUS;
+        lastFrame = 0;
+    }
+
     public void setAngles(float yaw, float pitch) {
         this.yaw = targetYaw = yaw;
         this.pitch = targetPitch = SpectatorCameraMath.clampPitch(pitch);
         lastFrame = 0;
     }
-    @Override public void turn(float yaw, float pitch) { targetYaw += yaw; targetPitch = SpectatorCameraMath.clampPitch(targetPitch + pitch); }
-    public float yaw() { return yaw; }
-    public float pitch() { return pitch; }
 
-    @Override public CameraFrame sample(double ticks) {
+    @Override
+    public void turn(float yaw, float pitch) {
+        targetYaw += yaw;
+        targetPitch = SpectatorCameraMath.clampPitch(targetPitch + pitch);
+    }
+
+    public float yaw() {
+        return yaw;
+    }
+
+    public float pitch() {
+        return pitch;
+    }
+
+    @Override
+    public CameraFrame sample(double ticks) {
         SpectateTarget view = target.get();
         if (view == null) return null;
         long now = System.nanoTime();

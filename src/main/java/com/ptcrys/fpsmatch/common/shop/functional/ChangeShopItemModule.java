@@ -1,20 +1,21 @@
 package com.ptcrys.fpsmatch.common.shop.functional;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.core.persistence.SaveHolder;
-import com.ptcrys.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
-import com.ptcrys.fpsmatch.core.shop.event.ShopSlotChangeEvent;
-import com.ptcrys.fpsmatch.core.shop.functional.ListenerModule;
-import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
-import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
-import com.ptcrys.fpsmatch.compat.gun.IGunProvider;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
+import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
+import com.ptcrys.fpsmatch.compat.gun.IGunProvider;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.persistence.SaveHolder;
+import com.ptcrys.fpsmatch.core.shop.event.ShopSlotChangeEvent;
+import com.ptcrys.fpsmatch.core.shop.functional.ListenerModule;
+import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
 
 /**
  * 改变商店物品的监听模块。
@@ -24,6 +25,7 @@ import net.minecraftforge.fml.common.Mod;
  */
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemStack changedItem, int changedCost) implements ListenerModule {
+
     /**
      * 该模块的编解码器，用于序列化和反序列化。
      */
@@ -31,8 +33,7 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
             ItemStack.CODEC.fieldOf("defaultItem").forGetter(ChangeShopItemModule::defaultItem),
             Codec.INT.fieldOf("defaultCost").forGetter(ChangeShopItemModule::defaultCost),
             ItemStack.CODEC.fieldOf("changedItem").forGetter(ChangeShopItemModule::changedItem),
-            Codec.INT.fieldOf("changedCost").forGetter(ChangeShopItemModule::changedCost)
-    ).apply(instance, ChangeShopItemModule::new));
+            Codec.INT.fieldOf("changedCost").forGetter(ChangeShopItemModule::changedCost)).apply(instance, ChangeShopItemModule::new));
 
     /**
      * 注册该模块到监听模块管理器。
@@ -64,12 +65,12 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
         }
     }
 
-
     @Override
-    public void onReset(ShopSlot slot){
+    public void onReset(ShopSlot slot) {
         slot.itemSupplier = defaultItem::copy;
         slot.setCost(defaultCost);
     }
+
     /**
      * 获取该模块的名称。
      * <p>
@@ -82,16 +83,17 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
     public String getName() {
         String name;
         IGunProvider provider = GunCompatManager.findProvider(this.changedItem);
-        if(provider.isGun(this.changedItem)){
-            name = provider.getGunId(this.changedItem).toString().replace(":","_");
-        }else{
-            name = BuiltInRegistries.ITEM.getKey(this.defaultItem.getItem()).toString().replace(":","_");
+        if (provider.isGun(this.changedItem)) {
+            name = provider.getGunId(this.changedItem).toString().replace(":", "_");
+        } else {
+            name = BuiltInRegistries.ITEM.getKey(this.defaultItem.getItem()).toString().replace(":", "_");
         }
         return "changeItem_" + name;
     }
 
     /**
      * 获取该模块的优先级。
+     * 
      * @return 模块优先级
      */
     @Override
@@ -99,17 +101,14 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
         return 1;
     }
 
-
     @SubscribeEvent
     public static void onDataRegister(RegisterFPSMSaveDataEvent event) {
         event.registerData(ChangeShopItemModule.class, "ListenerModule", new SaveHolder.Builder<>(ChangeShopItemModule.CODEC)
                 .withLoadHandler(ChangeShopItemModule::read)
-                .withSaveHandler((manager) ->
-                        FPSMCore.getInstance().getListenerModuleManager().getRegistry().forEach((name, module) -> {
-                            if (module instanceof ChangeShopItemModule cSIM) {
-                                manager.saveData(cSIM, cSIM.getName(),true);
-                            }
-                        })
-                ).build());
+                .withSaveHandler((manager) -> FPSMCore.getInstance().getListenerModuleManager().getRegistry().forEach((name, module) -> {
+                    if (module instanceof ChangeShopItemModule cSIM) {
+                        manager.saveData(cSIM, cSIM.getName(), true);
+                    }
+                })).build());
     }
 }

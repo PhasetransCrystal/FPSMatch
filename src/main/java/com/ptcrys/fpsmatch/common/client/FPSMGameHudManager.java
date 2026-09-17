@@ -1,9 +1,5 @@
 package com.ptcrys.fpsmatch.common.client;
 
-import com.google.common.collect.Maps;
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.client.data.FPSMClientGlobalData;
-import com.ptcrys.fpsmatch.common.client.screen.hud.IHudRenderer;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
@@ -11,12 +7,19 @@ import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import com.google.common.collect.Maps;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.client.data.FPSMClientGlobalData;
+import com.ptcrys.fpsmatch.common.client.screen.hud.IHudRenderer;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class FPSMGameHudManager implements IGuiOverlay {
+
     public static boolean enable = true;
     public static final FPSMGameHudManager INSTANCE = new FPSMGameHudManager();
     private final Map<String, List<IHudRenderer>> gameHudMap = Maps.newHashMap();

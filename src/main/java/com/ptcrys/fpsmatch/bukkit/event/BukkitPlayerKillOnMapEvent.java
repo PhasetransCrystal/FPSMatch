@@ -11,10 +11,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 public class BukkitPlayerKillOnMapEvent extends Event {
+
     private static final HandlerList handlers = new HandlerList();
     private final BaseMap map;
     private final UUID dead;
-    @Nullable private final UUID killer;
+    @Nullable
+    private final UUID killer;
 
     public BukkitPlayerKillOnMapEvent(BaseMap map, UUID dead, @Nullable UUID killer) {
         this.map = map;
@@ -22,13 +24,32 @@ public class BukkitPlayerKillOnMapEvent extends Event {
         this.killer = killer;
     }
 
-    public BaseMap getMap() { return map; }
-    public UUID getDead() { return dead; }
-    public @Nullable Player getDeadPlayer() { return Bukkit.getPlayer(dead); }
-    public @Nullable UUID getKiller() { return killer; }
-    public @Nullable Player getKillerPlayer() { return killer == null ? null : Bukkit.getPlayer(killer); }
+    public BaseMap getMap() {
+        return map;
+    }
+
+    public UUID getDead() {
+        return dead;
+    }
+
+    public @Nullable Player getDeadPlayer() {
+        return Bukkit.getPlayer(dead);
+    }
+
+    public @Nullable UUID getKiller() {
+        return killer;
+    }
+
+    public @Nullable Player getKillerPlayer() {
+        return killer == null ? null : Bukkit.getPlayer(killer);
+    }
 
     @Override
-    public @NotNull HandlerList getHandlers() { return handlers; }
-    public static HandlerList getHandlerList() { return handlers; }
+    public @NotNull HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
 }

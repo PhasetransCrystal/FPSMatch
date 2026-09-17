@@ -12,12 +12,13 @@ import java.util.Map;
 import java.util.Optional;
 
 public class MvpMusicApi {
+
     private final NetworkModule network;
-    private final Function3<String,String,NetworkModule,RequestBuilder<OnlineMusic>> requestBuilder;
+    private final Function3<String, String, NetworkModule, RequestBuilder<OnlineMusic>> requestBuilder;
 
     public MvpMusicApi(String url) {
         this.network = NetworkModule.initializeNetworkModule(url);
-        this.requestBuilder = (uuid,playerName,module)->{
+        this.requestBuilder = (uuid, playerName, module) -> {
             Map<String, String> formData = new HashMap<>();
             formData.put("uuid", uuid);
             formData.put("playerName", playerName);
@@ -28,19 +29,19 @@ public class MvpMusicApi {
         };
     }
 
-    public MvpMusicApi(String url,Function3<String,String,NetworkModule,RequestBuilder<OnlineMusic>> requestBuilder) {
+    public MvpMusicApi(String url, Function3<String, String, NetworkModule, RequestBuilder<OnlineMusic>> requestBuilder) {
         this.network = NetworkModule.initializeNetworkModule(url);
         this.requestBuilder = requestBuilder;
     }
 
-    public MvpMusicApi(NetworkModule module,Function3<String,String,NetworkModule,RequestBuilder<OnlineMusic>> requestBuilder) {
+    public MvpMusicApi(NetworkModule module, Function3<String, String, NetworkModule, RequestBuilder<OnlineMusic>> requestBuilder) {
         this.network = module;
         this.requestBuilder = requestBuilder;
     }
 
     public Optional<OnlineMusic> requestMusicInfo(String uuid, String playerName) {
         try {
-            ApiResponse<OnlineMusic> response = requestBuilder.apply(uuid,playerName,network).execute();
+            ApiResponse<OnlineMusic> response = requestBuilder.apply(uuid, playerName, network).execute();
             if (response.isSuccessful()) {
                 return Optional.ofNullable(response.getData());
             } else {
@@ -51,5 +52,4 @@ public class MvpMusicApi {
         }
         return Optional.empty();
     }
-
 }

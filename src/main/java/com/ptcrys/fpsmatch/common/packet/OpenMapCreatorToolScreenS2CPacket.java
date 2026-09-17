@@ -1,12 +1,13 @@
 package com.ptcrys.fpsmatch.common.packet;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.network.NetworkEvent;
+
 import com.ptcrys.fpsmatch.common.item.MapCreatorTool;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
-import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -14,14 +15,14 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public record OpenMapCreatorToolScreenS2CPacket(
-        List<String> availableTypes,
-        String selectedType,
-        String selectedMap,
-        List<MapEntry> maps,
-        String draftMapName,
-        @Nullable BlockPos pos1,
-        @Nullable BlockPos pos2
-) {
+                                                List<String> availableTypes,
+                                                String selectedType,
+                                                String selectedMap,
+                                                List<MapEntry> maps,
+                                                String draftMapName,
+                                                @Nullable BlockPos pos1,
+                                                @Nullable BlockPos pos2) {
+
     public static OpenMapCreatorToolScreenS2CPacket fromStack(ItemStack stack, List<String> availableTypes) {
         return new OpenMapCreatorToolScreenS2CPacket(
                 List.copyOf(availableTypes),
@@ -30,8 +31,7 @@ public record OpenMapCreatorToolScreenS2CPacket(
                 collectMaps(),
                 MapCreatorTool.getDraftMapName(stack),
                 MapCreatorTool.getBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_1),
-                MapCreatorTool.getBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_2)
-        );
+                MapCreatorTool.getBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_2));
     }
 
     public static void encode(OpenMapCreatorToolScreenS2CPacket packet, FriendlyByteBuf buf) {
@@ -66,8 +66,7 @@ public record OpenMapCreatorToolScreenS2CPacket(
                 maps,
                 buf.readUtf(),
                 readNullableBlockPos(buf),
-                readNullableBlockPos(buf)
-        );
+                readNullableBlockPos(buf));
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
@@ -114,6 +113,5 @@ public record OpenMapCreatorToolScreenS2CPacket(
         return maps;
     }
 
-    public record MapEntry(String type, String name, BlockPos pos1, BlockPos pos2) {
-    }
+    public record MapEntry(String type, String name, BlockPos pos1, BlockPos pos2) {}
 }

@@ -2,10 +2,11 @@ package com.ptcrys.fpsmatch.common.client.shop;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+
 import org.jetbrains.annotations.Nullable;
 
+public class ClientShopSlot {
 
-public class ClientShopSlot{
     private ItemStack itemStack;
     private int cost;
     @Nullable
@@ -14,8 +15,8 @@ public class ClientShopSlot{
     private boolean locked = false;
     private int groupId = -1;
 
-    public static ClientShopSlot empty(){
-        return new ClientShopSlot(ItemStack.EMPTY,0);
+    public static ClientShopSlot empty() {
+        return new ClientShopSlot(ItemStack.EMPTY, 0);
     }
 
     private ClientShopSlot(ItemStack itemStack, int defaultCost) {
@@ -23,7 +24,7 @@ public class ClientShopSlot{
         this.cost = defaultCost;
     }
 
-    public int groupId(){
+    public int groupId() {
         return groupId;
     }
 
@@ -31,33 +32,34 @@ public class ClientShopSlot{
         this.groupId = groupId;
     }
 
-    public int cost(){
+    public int cost() {
         return cost;
     }
 
-    public ResourceLocation texture(){
+    public ResourceLocation texture() {
         return texture;
     }
 
-    public ItemStack itemStack(){
+    public ItemStack itemStack() {
         return itemStack;
     }
 
-    public int boughtCount(){
+    public int boughtCount() {
         return boughtCount;
     }
 
-    public boolean isLocked(){
+    public boolean isLocked() {
         return locked;
     }
 
-    public void setLock(boolean lock){
+    public void setLock(boolean lock) {
         this.locked = lock;
     }
 
-    public void setBoughtCount(int count){
+    public void setBoughtCount(int count) {
         this.boughtCount = count;
     }
+
     public void setItemStack(ItemStack itemStack) {
         this.itemStack = itemStack;
     }
@@ -71,7 +73,7 @@ public class ClientShopSlot{
     }
 
     public String name() {
-        return this.itemStack.getDisplayName().getString().replace("[","").replace("]","").replaceAll("§.", "");
+        return this.itemStack.getDisplayName().getString().replace("[", "").replace("]", "").replaceAll("§.", "");
     }
 
     public boolean canReturn() {

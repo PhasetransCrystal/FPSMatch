@@ -1,11 +1,12 @@
 package com.ptcrys.fpsmatch.mixin.compat.spectate.lrt;
 
-import com.ptcrys.fpsmatch.compat.spectate.SpectatorMotion;
-import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
-import me.xjqsh.lrtactical.api.animation.BaseAnimationStateContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.LivingEntity;
+
+import com.ptcrys.fpsmatch.compat.spectate.SpectatorMotion;
+import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
+import me.xjqsh.lrtactical.api.animation.BaseAnimationStateContext;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  */
 @Mixin(value = BaseAnimationStateContext.class, remap = false)
 public abstract class MixinLrtBaseAnimationStateContext {
+
     @Inject(method = "isInputUp", at = @At("HEAD"), cancellable = true)
     private void fpsmatch$useSpectatedInputUp(CallbackInfoReturnable<Boolean> cir) {
         LivingEntity target = getSpectated();

@@ -9,8 +9,8 @@ package com.ptcrys.fpsmatch.common.client.screen.mapselect;
  * 颜色格式为 ARGB int（0xAARRGGBB）。
  */
 public final class FPSMGuiTheme {
-    private FPSMGuiTheme() {
-    }
+
+    private FPSMGuiTheme() {}
 
     // ===== 背景层级 =====
     /** 大厅/界面底色（深蓝灰，替代原 0xFF444444 平铺灰） */

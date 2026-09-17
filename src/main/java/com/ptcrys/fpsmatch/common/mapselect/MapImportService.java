@@ -1,5 +1,10 @@
 package com.ptcrys.fpsmatch.common.mapselect;
 
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.fml.loading.FMLLoader;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -9,15 +14,11 @@ import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
 import com.ptcrys.fpsmatch.common.capability.team.StartKitsCapability;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapImportSourceInfo;
 import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import com.ptcrys.fpsmatch.core.data.Setting;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.shop.FPSMShop;
+import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import com.ptcrys.fpsmatch.util.FPSMCodec;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fml.loading.FMLLoader;
 
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -34,6 +35,7 @@ import java.util.stream.Stream;
 
 /** Map-level configuration importer. It deliberately excludes map/region/point data. */
 public final class MapImportService {
+
     private static final Gson GSON = new Gson();
     private static final int MAX_SOURCES = 256;
     private static final long MAX_MAP_FILE_BYTES = 16L * 1024L * 1024L;
@@ -47,9 +49,9 @@ public final class MapImportService {
     }
 
     public static MapRoomActionService.Result importInto(ServerPlayer player, String targetGameType,
-                                                           String targetMapName, String sourceId,
-                                                           boolean importSettings, boolean importShop,
-                                                           boolean importStartKits) {
+                                                         String targetMapName, String sourceId,
+                                                         boolean importSettings, boolean importShop,
+                                                         boolean importStartKits) {
         if (!MapRoomQueryService.isMapOperator(player)) {
             return MapRoomActionService.Result.failure(Component.translatable(
                     "gui.fpsm.map_select.action.no_permission"));
@@ -124,17 +126,16 @@ public final class MapImportService {
         return values;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private static Object decodeSetting(Setting<?> setting, JsonElement value) {
         com.mojang.serialization.DataResult result = ((com.mojang.serialization.Codec) setting.codec())
                 .decode(JsonOps.INSTANCE, value);
-        com.mojang.datafixers.util.Pair pair = (com.mojang.datafixers.util.Pair)
-                result.getOrThrow(false, error -> error.toString());
+        com.mojang.datafixers.util.Pair pair = (com.mojang.datafixers.util.Pair) result.getOrThrow(false, error -> error.toString());
         return pair.getFirst();
     }
 
     private static List<TeamImport> validateTeams(BaseMap target, Source source, boolean shop, boolean kits)
-            throws ImportFailure {
+                                                                                                             throws ImportFailure {
         List<TeamImport> result = new ArrayList<>();
         for (ServerTeam targetTeam : target.getMapTeams().getNormalTeams()) {
             JsonObject sourceTeam = source.teams().get(targetTeam.getName());
@@ -170,7 +171,7 @@ public final class MapImportService {
         return result;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private static FPSMShop<?> decodeShop(FPSMShop<?> target, JsonElement json) {
         return (FPSMShop<?>) FPSMCodec.decodeFromJson((com.mojang.serialization.Codec) target.getCodec(), json);
     }
@@ -182,8 +183,7 @@ public final class MapImportService {
     }
 
     private static JsonElement capability(JsonObject team, Class<?> capability) {
-        JsonObject capabilities = team.has("capabilities") && team.get("capabilities").isJsonObject()
-                ? team.getAsJsonObject("capabilities") : null;
+        JsonObject capabilities = team.has("capabilities") && team.get("capabilities").isJsonObject() ? team.getAsJsonObject("capabilities") : null;
         return capabilities == null ? null : capabilities.get(capability.getSimpleName());
     }
 
@@ -275,8 +275,8 @@ public final class MapImportService {
     }
 
     private static MapImportSourceInfo sourceInfo(String fingerprint, String archive, String group, String map,
-                                                   boolean current, BaseMap target, Map<String, JsonObject> teams,
-                                                   boolean hasSettings) {
+                                                  boolean current, BaseMap target, Map<String, JsonObject> teams,
+                                                  boolean hasSettings) {
         int mapped = 0;
         boolean shop = false;
         boolean kits = false;
@@ -284,10 +284,8 @@ public final class MapImportService {
             JsonObject source = teams.get(team.getName());
             if (source == null) continue;
             mapped++;
-            shop |= capability(source, ShopCapability.class) != null
-                    && team.getCapabilityMap().get(ShopCapability.class).isPresent();
-            kits |= capability(source, StartKitsCapability.class) != null
-                    && team.getCapabilityMap().get(StartKitsCapability.class).isPresent();
+            shop |= capability(source, ShopCapability.class) != null && team.getCapabilityMap().get(ShopCapability.class).isPresent();
+            kits |= capability(source, StartKitsCapability.class) != null && team.getCapabilityMap().get(StartKitsCapability.class).isPresent();
         }
         return new MapImportSourceInfo(UUID.nameUUIDFromBytes(fingerprint.getBytes(StandardCharsets.UTF_8)).toString(),
                 label(archive), label(group), label(map), current, hasSettings, shop, kits, mapped);
@@ -312,7 +310,11 @@ public final class MapImportService {
 
     private record Source(MapImportSourceInfo info, String gameType, String mapName,
                           JsonObject settings, Map<String, JsonObject> teams) {
-        boolean hasSettings() { return info.hasSettings(); }
+
+        boolean hasSettings() {
+            return info.hasSettings();
+        }
+
         boolean matches(BaseMap target) {
             return info.currentArchive() && gameType.equals(target.getGameType()) && mapName.equals(target.getMapName());
         }
@@ -322,13 +324,26 @@ public final class MapImportService {
 
     private record TeamImport(ShopCapability shopCapability, StartKitsCapability kitsCapability,
                               FPSMShop<?> shop, List<ItemStack> kits) {
-        boolean hasShop() { return shop != null && shopCapability != null; }
-        boolean hasKits() { return kitsCapability != null && kits != null; }
-        StartKitsCapability targetKits() { return kitsCapability; }
+
+        boolean hasShop() {
+            return shop != null && shopCapability != null;
+        }
+
+        boolean hasKits() {
+            return kitsCapability != null && kits != null;
+        }
+
+        StartKitsCapability targetKits() {
+            return kitsCapability;
+        }
     }
 
     private static final class ImportFailure extends Exception {
+
         private final Component message;
-        private ImportFailure(String key) { this.message = Component.translatable(key); }
+
+        private ImportFailure(String key) {
+            this.message = Component.translatable(key);
+        }
     }
 }

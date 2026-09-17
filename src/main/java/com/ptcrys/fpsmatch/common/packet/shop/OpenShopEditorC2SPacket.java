@@ -1,5 +1,12 @@
 package com.ptcrys.fpsmatch.common.packet.shop;
 
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.SimpleMenuProvider;
+import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.NetworkHooks;
+
 import com.google.gson.Gson;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
@@ -12,18 +19,13 @@ import com.ptcrys.fpsmatch.core.shop.INamedType;
 import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import com.ptcrys.fpsmatch.util.FPSMCodec;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.SimpleMenuProvider;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.NetworkHooks;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 public record OpenShopEditorC2SPacket(String gameType, String mapName, String teamName) {
+
     private static final int ID_MAX_LENGTH = 128;
 
     public static void encode(OpenShopEditorC2SPacket packet, FriendlyByteBuf buf) {
@@ -63,8 +65,7 @@ public record OpenShopEditorC2SPacket(String gameType, String mapName, String te
             NetworkHooks.openScreen(player,
                     new SimpleMenuProvider(
                             (windowId, inv, p) -> new EditorShopContainer(windowId, inv, shop, gameType, mapName, teamName),
-                            Component.translatable("gui.fpsm.shop_editor.title")
-                    ),
+                            Component.translatable("gui.fpsm.shop_editor.title")),
                     buf -> {
                         buf.writeUtf(gameType);
                         buf.writeUtf(mapName);
@@ -91,8 +92,7 @@ public record OpenShopEditorC2SPacket(String gameType, String mapName, String te
                                 }
                             }
                         }
-                    }
-            );
+                    });
         });
         ctx.get().setPacketHandled(true);
     }

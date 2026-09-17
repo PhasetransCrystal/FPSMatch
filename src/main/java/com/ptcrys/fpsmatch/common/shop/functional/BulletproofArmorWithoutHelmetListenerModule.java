@@ -5,11 +5,12 @@ import com.ptcrys.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.ptcrys.fpsmatch.core.shop.functional.ListenerModule;
 
 public class BulletproofArmorWithoutHelmetListenerModule implements ListenerModule {
+
     @Override
     public void onChange(ShopSlotChangeEvent event) {
         if (event.flag >= 1) {
-            BulletproofArmorAttribute.addPlayer(event.player,new BulletproofArmorAttribute(false));
-        }else{
+            BulletproofArmorAttribute.addPlayer(event.player, new BulletproofArmorAttribute(false));
+        } else {
             BulletproofArmorAttribute.removePlayer(event.player);
         }
     }

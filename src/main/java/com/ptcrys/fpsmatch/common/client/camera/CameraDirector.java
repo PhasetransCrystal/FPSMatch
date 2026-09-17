@@ -1,18 +1,21 @@
 package com.ptcrys.fpsmatch.common.client.camera;
 
-import com.mojang.logging.LogUtils;
-import com.ptcrys.fpsmatch.common.camera.*;
-import com.ptcrys.fpsmatch.common.client.spec.*;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+
+import com.mojang.logging.LogUtils;
+import com.ptcrys.fpsmatch.common.camera.*;
+import com.ptcrys.fpsmatch.common.client.spec.*;
 import org.slf4j.Logger;
+
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /** Client-thread only. Base spectator state keeps updating while a temporary scene owns the view. */
 public final class CameraDirector {
+
     public static final int DEATH_PRIORITY = 100;
     public static final int CINEMATIC_PRIORITY = 200;
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -44,8 +47,11 @@ public final class CameraDirector {
         CameraSession session = new CameraSession(rig, policy, clock, valid, mc.level, duration, lifetime);
         session.lease = ownership.acquire(owner, priority, session, reason -> {
             session.clock.cancel();
-            try { onEnd.accept(reason); }
-            catch (RuntimeException error) { LOGGER.error("Camera cleanup failed for {}", owner, error); }
+            try {
+                onEnd.accept(reason);
+            } catch (RuntimeException error) {
+                LOGGER.error("Camera cleanup failed for {}", owner, error);
+            }
         });
         if (session.lease == null || !session.isActive()) return null;
         frame = null;
@@ -57,8 +63,13 @@ public final class CameraDirector {
         return ownership.active() != null && ownership.active().value() == session;
     }
 
-    public static boolean hasSession() { return ownership.active() != null; }
-    public static boolean accepts(int priority) { return !hasSession() || priority >= ownership.active().priority(); }
+    public static boolean hasSession() {
+        return ownership.active() != null;
+    }
+
+    public static boolean accepts(int priority) {
+        return !hasSession() || priority >= ownership.active().priority();
+    }
 
     static void stop(CameraSession session, CameraEndReason reason) {
         if (ownership.release(session.lease, reason)) {
@@ -76,7 +87,9 @@ public final class CameraDirector {
             frame = null;
             CameraBackend.bind(null);
             CameraBackend.clear();
-        } finally { resetting = false; }
+        } finally {
+            resetting = false;
+        }
     }
 
     /** Spawn/respawn can occur under a prearmed cinematic cover. */
@@ -150,9 +163,18 @@ public final class CameraDirector {
     }
 
     /** Called on packet changes and ownership handoff, never by competing controllers. */
-    public static void refresh() { if (!resetting) prepareFrame(0); }
-    public static CameraFrame frame() { return frame; }
-    public static void apply(Camera camera) { CameraBackend.apply(camera, frame); }
+    public static void refresh() {
+        if (!resetting) prepareFrame(0);
+    }
+
+    public static CameraFrame frame() {
+        return frame;
+    }
+
+    public static void apply(Camera camera) {
+        CameraBackend.apply(camera, frame);
+    }
+
     public static void turn(float yaw, float pitch) {
         if (policy().look() != CameraPolicy.LookInput.ORBIT) return;
         if (hasSession()) ownership.active().value().rig.turn(yaw, pitch);
@@ -184,13 +206,15 @@ public final class CameraDirector {
 
     /** Re-evaluate the base on release; do not restore a stale saved entity. */
     public static void restoreBase() {
-        if (hasSession()) { refresh(); return; }
+        if (hasSession()) {
+            refresh();
+            return;
+        }
         frame = baseFrame();
         CameraBackend.bind(frame);
     }
 
     public static String status() {
-        return hasSession() ? ownership.active().owner() + " tick=" + ownership.active().value().clock.ticks()
-                + " priority=" + ownership.active().priority() : "base=" + SpectateState.get();
+        return hasSession() ? ownership.active().owner() + " tick=" + ownership.active().value().clock.ticks() + " priority=" + ownership.active().priority() : "base=" + SpectateState.get();
     }
 }

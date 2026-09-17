@@ -7,11 +7,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public final class ShopActionResultListener {
-    private static final AtomicReference<Consumer<ShopActionResultS2CPacket>> LISTENER =
-            new AtomicReference<>();
 
-    private ShopActionResultListener() {
-    }
+    private static final AtomicReference<Consumer<ShopActionResultS2CPacket>> LISTENER = new AtomicReference<>();
+
+    private ShopActionResultListener() {}
 
     public static AutoCloseable install(Consumer<ShopActionResultS2CPacket> listener) {
         Objects.requireNonNull(listener, "listener");

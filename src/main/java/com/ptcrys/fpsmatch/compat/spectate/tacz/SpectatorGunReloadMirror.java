@@ -1,24 +1,24 @@
 package com.ptcrys.fpsmatch.compat.spectate.tacz;
 
-import com.tacz.guns.api.TimelessAPI;
-import com.tacz.guns.api.client.animation.statemachine.LuaAnimationStateMachine;
-import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.client.resource.GunDisplayInstance;
-import com.tacz.guns.client.resource.index.ClientGunIndex;
-import com.tacz.guns.client.sound.SoundPlayManager;
-import com.tacz.guns.resource.pojo.data.gun.Bolt;
-import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
+import com.tacz.guns.api.TimelessAPI;
+import com.tacz.guns.api.client.animation.statemachine.LuaAnimationStateMachine;
+import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.client.resource.index.ClientGunIndex;
+import com.tacz.guns.client.sound.SoundPlayManager;
+import com.tacz.guns.resource.pojo.data.gun.Bolt;
+import com.tacz.guns.resource.pojo.data.gun.GunData;
+
 /**
  * Mirrors reload start and cancel animations while spectating.
  */
 public final class SpectatorGunReloadMirror {
-    private SpectatorGunReloadMirror() {
-    }
+
+    private SpectatorGunReloadMirror() {}
 
     public static void start(LivingEntity spectated, boolean playSound) {
         ItemStack stack = SpectatorGunStacks.current(spectated);

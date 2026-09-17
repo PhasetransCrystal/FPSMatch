@@ -1,14 +1,16 @@
 package com.ptcrys.fpsmatch.core.map;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.core.FPSMCore;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.core.FPSMCore;
 
 import java.util.*;
 import java.util.function.LongSupplier;
 
 public class VoteObj {
+
     private final long endVoteTimer;
     private final LongSupplier clock;
     /** 时钟每秒对应的单位数：墙钟毫秒=1000，游戏 tick=20。 */
@@ -27,37 +29,41 @@ public class VoteObj {
 
     // 投票状态枚举
     public enum VoteStatus {
-        ONGOING, SUCCESS, FAILED
+        ONGOING,
+        SUCCESS,
+        FAILED
     }
 
     /**
      * 投票超时结算策略。
-     *   {@link #FAIL} —— 超时一律判失败（历史默认行为）。
-     *   {@link #PASS_IF_MAJORITY} —— 超时时按“已投票玩家的严格多数”结算，避免多数赞成却因超时被否决。
+     * {@link #FAIL} —— 超时一律判失败（历史默认行为）。
+     * {@link #PASS_IF_MAJORITY} —— 超时时按“已投票玩家的严格多数”结算，避免多数赞成却因超时被否决。
      *
      */
     public enum TimeoutPolicy {
-        FAIL, PASS_IF_MAJORITY
+        FAIL,
+        PASS_IF_MAJORITY
     }
 
     /**
      * 弃权计票策略。
      * 
-     *   {@link #COUNT_AS_NO} —— 弃权视为反对：门槛分母为全部在线有资格者（历史默认行为）。
-     *   {@link #IGNORE} —— 弃权忽略：超时结算时分母只算已投票人数。
+     * {@link #COUNT_AS_NO} —— 弃权视为反对：门槛分母为全部在线有资格者（历史默认行为）。
+     * {@link #IGNORE} —— 弃权忽略：超时结算时分母只算已投票人数。
      * 
      */
     public enum AbstentionPolicy {
-        COUNT_AS_NO, IGNORE
+        COUNT_AS_NO,
+        IGNORE
     }
 
     /**
-     * @param voteTitle 投票标题
-     * @param message 投票消息
-     * @param duration 投票持续时间（秒）
+     * @param voteTitle       投票标题
+     * @param message         投票消息
+     * @param duration        投票持续时间（秒）
      * @param requiredPercent 通过所需的玩家比例 (0.0 到 1.0)
-     * @param onSuccess 投票成功时的回调
-     * @param onFailure 投票失败时的回调
+     * @param onSuccess       投票成功时的回调
+     * @param onFailure       投票失败时的回调
      * @param eligiblePlayers 有资格投票的玩家集合
      */
     public VoteObj(String voteTitle, Component message, int duration, float requiredPercent,
@@ -71,26 +77,27 @@ public class VoteObj {
      * {@link AbstentionPolicy#COUNT_AS_NO} 委托到此处，保证向后兼容。
      */
     public VoteObj(String voteTitle, Component message, int duration, float requiredPercent,
-               Runnable onSuccess, Runnable onFailure, Collection<UUID> eligiblePlayers,
-               TimeoutPolicy timeoutPolicy, AbstentionPolicy abstentionPolicy) {
-    // 向后兼容：默认使用墙钟(毫秒)作为计时源
-    this(voteTitle, message, duration, requiredPercent, onSuccess, onFailure, eligiblePlayers,
-            timeoutPolicy, abstentionPolicy, System::currentTimeMillis, 1000L);
-}
+                   Runnable onSuccess, Runnable onFailure, Collection<UUID> eligiblePlayers,
+                   TimeoutPolicy timeoutPolicy, AbstentionPolicy abstentionPolicy) {
+        // 向后兼容：默认使用墙钟(毫秒)作为计时源
+        this(voteTitle, message, duration, requiredPercent, onSuccess, onFailure, eligiblePlayers,
+                timeoutPolicy, abstentionPolicy, System::currentTimeMillis, 1000L);
+    }
 
-/**
- * 使用自定义时钟的完整构造。
- * <p>服务端可传入基于游戏时间(tick)的时钟与 {@code unitsPerSecond=20L}，
- * 使投票计时跟随游戏节奏而非墙钟，避免服务器暂停/卡顿时计时漂移。
- */
-public VoteObj(String voteTitle, Component message, int duration, float requiredPercent,
-               Runnable onSuccess, Runnable onFailure, Collection<UUID> eligiblePlayers,
-               TimeoutPolicy timeoutPolicy, AbstentionPolicy abstentionPolicy,
-               LongSupplier clock, long unitsPerSecond) {
-    this.endVoteTimer = clock.getAsLong() + duration * unitsPerSecond;
-    this.clock = clock;
-    this.unitsPerSecond = unitsPerSecond;
-    this.voteTitle = voteTitle;
+    /**
+     * 使用自定义时钟的完整构造。
+     * <p>
+     * 服务端可传入基于游戏时间(tick)的时钟与 {@code unitsPerSecond=20L}，
+     * 使投票计时跟随游戏节奏而非墙钟，避免服务器暂停/卡顿时计时漂移。
+     */
+    public VoteObj(String voteTitle, Component message, int duration, float requiredPercent,
+                   Runnable onSuccess, Runnable onFailure, Collection<UUID> eligiblePlayers,
+                   TimeoutPolicy timeoutPolicy, AbstentionPolicy abstentionPolicy,
+                   LongSupplier clock, long unitsPerSecond) {
+        this.endVoteTimer = clock.getAsLong() + duration * unitsPerSecond;
+        this.clock = clock;
+        this.unitsPerSecond = unitsPerSecond;
+        this.voteTitle = voteTitle;
         this.message = message;
         this.requiredPercent = Math.min(Math.max(requiredPercent, 0f), 1f); // 确保在0-1范围内
         this.onSuccess = onSuccess;
@@ -134,6 +141,7 @@ public VoteObj(String voteTitle, Component message, int duration, float required
 
     /**
      * 自动检查投票状态并执行相应操作
+     * 
      * @return true 如果投票已结束，false 如果投票仍在进行中
      */
     public boolean tick() {
@@ -272,7 +280,7 @@ public VoteObj(String voteTitle, Component message, int duration, float required
     public int getEligiblePlayerCount() {
         int count = 0;
         for (UUID player : eligiblePlayers) {
-            if(FPSMCore.getInstance().getPlayerByUUID(player).isPresent()){
+            if (FPSMCore.getInstance().getPlayerByUUID(player).isPresent()) {
                 count++;
             }
         }

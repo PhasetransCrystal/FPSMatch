@@ -1,16 +1,18 @@
 package com.ptcrys.fpsmatch.common.packet.shop;
 
-import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
-import com.ptcrys.fpsmatch.core.shop.UnknownShopType;
-import com.ptcrys.fpsmatch.core.shop.INamedType;
-import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
 
+import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
+import com.ptcrys.fpsmatch.core.shop.INamedType;
+import com.ptcrys.fpsmatch.core.shop.UnknownShopType;
+import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
+
 import java.util.function.Supplier;
 
 public class ShopDataSlotS2CPacket {
+
     public final INamedType type;
     public final int index;
     public final ItemStack itemStack;
@@ -18,16 +20,16 @@ public class ShopDataSlotS2CPacket {
     public final int cost;
     public final boolean locked;
 
-    public ShopDataSlotS2CPacket(INamedType type, int index, ItemStack itemStack, int cost,int boughtCount,boolean locked){
+    public ShopDataSlotS2CPacket(INamedType type, int index, ItemStack itemStack, int cost, int boughtCount, boolean locked) {
         this.type = type;
         this.index = index;
-        this.itemStack =itemStack;
+        this.itemStack = itemStack;
         this.cost = cost;
         this.boughtCount = boughtCount;
         this.locked = locked;
     }
 
-    public ShopDataSlotS2CPacket(INamedType type, ShopSlot shopSlot){
+    public ShopDataSlotS2CPacket(INamedType type, ShopSlot shopSlot) {
         this.type = type;
         this.index = shopSlot.getIndex();
         this.itemStack = shopSlot.process();
@@ -52,8 +54,7 @@ public class ShopDataSlotS2CPacket {
                 buf.readItem(),
                 buf.readInt(),
                 buf.readInt(),
-                buf.readBoolean()
-        );
+                buf.readBoolean());
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {

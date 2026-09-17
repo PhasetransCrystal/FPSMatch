@@ -1,5 +1,8 @@
 package com.ptcrys.fpsmatch.core.network.interceptor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -8,13 +11,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * HTTP请求日志拦截器，用于记录Java HttpClient的请求和响应信息
  */
 public class LoggingInterceptor implements Interceptor {
+
     private static final Logger logger = LoggerFactory.getLogger("FPSMatch HTTP Logger");
     private static final Charset UTF8 = StandardCharsets.UTF_8;
     private static final String REQUEST_START_HEADER = "X-Request-Start-Time";

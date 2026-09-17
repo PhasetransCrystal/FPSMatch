@@ -5,6 +5,7 @@ package com.ptcrys.fpsmatch.compat.gun;
  * 同时作为枪械音效注册的 key 类型。
  */
 public enum GunTabTypeEnum {
+
     PISTOL,
     RIFLE,
     SHOTGUN,

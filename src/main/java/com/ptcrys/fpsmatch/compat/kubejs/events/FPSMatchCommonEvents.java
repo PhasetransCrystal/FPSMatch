@@ -1,15 +1,16 @@
 package com.ptcrys.fpsmatch.compat.kubejs.events;
 
-import com.ptcrys.fpsmatch.common.event.FPSMapEvent;
-import com.ptcrys.fpsmatch.common.event.FPSMTeamEvent;
-import dev.latvian.mods.kubejs.event.EventHandler;
-import dev.latvian.mods.kubejs.event.EventJS;
-import dev.latvian.mods.kubejs.script.ScriptType;
-import dev.latvian.mods.kubejs.script.ScriptTypePredicate;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModList;
+
+import com.ptcrys.fpsmatch.common.event.FPSMTeamEvent;
+import com.ptcrys.fpsmatch.common.event.FPSMapEvent;
+import dev.latvian.mods.kubejs.event.EventHandler;
+import dev.latvian.mods.kubejs.event.EventJS;
+import dev.latvian.mods.kubejs.script.ScriptType;
+import dev.latvian.mods.kubejs.script.ScriptTypePredicate;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +19,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class FPSMatchCommonEvents {
+
     public static final FPSMatchCommonEvents INSTANCE = new FPSMatchCommonEvents();
 
     private final Map<Class<? extends Event>, Consumer<Event>> eventHandlers = new HashMap<>();
@@ -39,11 +41,10 @@ public class FPSMatchCommonEvents {
     public static EventHandler TEAM_LEAVE;
 
     private <E extends Event> EventHandler registerFPSMatchEvent(
-            String name,
-            Class<? extends FPSMatchKubeJSEvents.FPSMatchEventJS<E>> jsClass,
-            Class<E> forgeClass,
-            Function<E, ? extends FPSMatchKubeJSEvents.FPSMatchEventJS<E>> factory
-    ) {
+                                                                 String name,
+                                                                 Class<? extends FPSMatchKubeJSEvents.FPSMatchEventJS<E>> jsClass,
+                                                                 Class<E> forgeClass,
+                                                                 Function<E, ? extends FPSMatchKubeJSEvents.FPSMatchEventJS<E>> factory) {
         Supplier<Class<? extends EventJS>> supplier = () -> jsClass;
         EventHandler handler = FPSMatchKubeJSEvents.GROUP.add(name, ScriptTypePredicate.STARTUP_OR_SERVER, supplier);
 
@@ -113,41 +114,67 @@ public class FPSMatchCommonEvents {
     }
 
     @SubscribeEvent
-    public void onMapStart(FPSMapEvent.StartEvent event) { postKubeJSEvent(event); }
+    public void onMapStart(FPSMapEvent.StartEvent event) {
+        postKubeJSEvent(event);
+    }
 
     @SubscribeEvent
-    public void onMapVictory(FPSMapEvent.VictoryEvent event) { postKubeJSEvent(event); }
+    public void onMapVictory(FPSMapEvent.VictoryEvent event) {
+        postKubeJSEvent(event);
+    }
 
     @SubscribeEvent
-    public void onMapClear(FPSMapEvent.ClearEvent event) { postKubeJSEvent(event); }
+    public void onMapClear(FPSMapEvent.ClearEvent event) {
+        postKubeJSEvent(event);
+    }
 
     @SubscribeEvent
-    public void onMapReset(FPSMapEvent.ResetEvent event) { postKubeJSEvent(event); }
+    public void onMapReset(FPSMapEvent.ResetEvent event) {
+        postKubeJSEvent(event);
+    }
 
     @SubscribeEvent
-    public void onPlayerJoin(FPSMapEvent.PlayerEvent.JoinEvent event) { postKubeJSEvent(event); }
+    public void onPlayerJoin(FPSMapEvent.PlayerEvent.JoinEvent event) {
+        postKubeJSEvent(event);
+    }
 
     @SubscribeEvent
-    public void onPlayerLeave(FPSMapEvent.PlayerEvent.LeaveEvent event) { postKubeJSEvent(event); }
+    public void onPlayerLeave(FPSMapEvent.PlayerEvent.LeaveEvent event) {
+        postKubeJSEvent(event);
+    }
 
     @SubscribeEvent
-    public void onPlayerHurt(FPSMapEvent.PlayerEvent.HurtEvent event) { postKubeJSEvent(event); }
+    public void onPlayerHurt(FPSMapEvent.PlayerEvent.HurtEvent event) {
+        postKubeJSEvent(event);
+    }
 
     @SubscribeEvent
-    public void onPlayerDeath(FPSMapEvent.PlayerEvent.DeathEvent event) { postKubeJSEvent(event); }
+    public void onPlayerDeath(FPSMapEvent.PlayerEvent.DeathEvent event) {
+        postKubeJSEvent(event);
+    }
 
     @SubscribeEvent
-    public void onPlayerKill(FPSMapEvent.PlayerEvent.KillEvent event) { postKubeJSEvent(event); }
+    public void onPlayerKill(FPSMapEvent.PlayerEvent.KillEvent event) {
+        postKubeJSEvent(event);
+    }
 
     @SubscribeEvent
-    public void onPlayerLoggedIn(FPSMapEvent.PlayerEvent.LoggedInEvent event) { postKubeJSEvent(event); }
+    public void onPlayerLoggedIn(FPSMapEvent.PlayerEvent.LoggedInEvent event) {
+        postKubeJSEvent(event);
+    }
 
     @SubscribeEvent
-    public void onPlayerLoggedOut(FPSMapEvent.PlayerEvent.LoggedOutEvent event) { postKubeJSEvent(event); }
+    public void onPlayerLoggedOut(FPSMapEvent.PlayerEvent.LoggedOutEvent event) {
+        postKubeJSEvent(event);
+    }
 
     @SubscribeEvent
-    public void onTeamJoin(FPSMTeamEvent.JoinEvent event) { postKubeJSEvent(event); }
+    public void onTeamJoin(FPSMTeamEvent.JoinEvent event) {
+        postKubeJSEvent(event);
+    }
 
     @SubscribeEvent
-    public void onTeamLeave(FPSMTeamEvent.LeaveEvent event) { postKubeJSEvent(event); }
+    public void onTeamLeave(FPSMTeamEvent.LeaveEvent event) {
+        postKubeJSEvent(event);
+    }
 }

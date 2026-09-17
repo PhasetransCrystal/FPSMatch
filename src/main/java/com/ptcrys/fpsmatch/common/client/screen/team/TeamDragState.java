@@ -5,6 +5,7 @@ import java.util.UUID;
 
 /** Tracks a player row drag without deciding whether the server will accept it. */
 public final class TeamDragState {
+
     private static final double DRAG_THRESHOLD = 4.0;
 
     private UUID player;
@@ -38,9 +39,7 @@ public final class TeamDragState {
         if (!active()) {
             return Optional.empty();
         }
-        Optional<Drop> result = moved && hoverTeam != null && !hoverTeam.equals(sourceTeam)
-                ? Optional.of(new Drop(player, sourceTeam, hoverTeam))
-                : Optional.empty();
+        Optional<Drop> result = moved && hoverTeam != null && !hoverTeam.equals(sourceTeam) ? Optional.of(new Drop(player, sourceTeam, hoverTeam)) : Optional.empty();
         clear();
         return result;
     }
@@ -76,6 +75,5 @@ public final class TeamDragState {
         moved = false;
     }
 
-    public record Drop(UUID player, String sourceTeam, String targetTeam) {
-    }
+    public record Drop(UUID player, String sourceTeam, String targetTeam) {}
 }

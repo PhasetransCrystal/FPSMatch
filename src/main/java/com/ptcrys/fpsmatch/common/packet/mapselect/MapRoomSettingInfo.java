@@ -1,12 +1,14 @@
 package com.ptcrys.fpsmatch.common.packet.mapselect;
 
-import com.ptcrys.fpsmatch.core.data.Setting;
 import net.minecraft.network.FriendlyByteBuf;
+
+import com.ptcrys.fpsmatch.core.data.Setting;
 
 public record MapRoomSettingInfo(String name, String value, String defaultValue, boolean editable,
                                  String translationKey, SettingType type, String descriptionKey,
                                  boolean slider, double minValue, double maxValue, double step,
                                  String category) {
+
     private static final int NAME_MAX_LENGTH = 128;
     private static final int VALUE_MAX_LENGTH = 1024;
     public static final String CATEGORY_TRANSLATION_PREFIX = "setting.fpsm.category.";

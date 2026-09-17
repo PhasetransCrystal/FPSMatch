@@ -1,21 +1,5 @@
 package com.ptcrys.fpsmatch.common.client.screen;
 
-
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
-import com.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorValues;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.core.shop.FPSMShop;
-import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
-import com.ptcrys.fpsmatch.core.team.ServerTeam;
-import com.ptcrys.fpsmatch.util.FPSMCodec;
-import com.ptcrys.fpsmatch.util.FPSMUtil;
-import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
@@ -25,11 +9,27 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
+import com.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorValues;
+import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
+import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
+import com.ptcrys.fpsmatch.core.shop.FPSMShop;
+import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
+import com.ptcrys.fpsmatch.core.team.ServerTeam;
+import com.ptcrys.fpsmatch.util.FPSMCodec;
+import com.ptcrys.fpsmatch.util.FPSMUtil;
+
 import java.util.List;
 import java.util.Optional;
 
-
 public class EditShopSlotMenu extends AbstractContainerMenu {
+
     private static final int ID_MAX_LENGTH = 128;
 
     private final ContainerData data;
@@ -56,8 +56,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
                 buf.readUtf(ID_MAX_LENGTH),
                 buf.readUtf(ID_MAX_LENGTH),
                 buf.readUtf(ID_MAX_LENGTH),
-                buf.readInt()
-        );
+                buf.readInt());
         // Read names directly: a module registered only on the server need not exist client-side.
         listeners = buf.readCollection(FriendlyByteBuf.limitValue(java.util.ArrayList::new, ShopEditorValues.MAX_CATALOG),
                 in -> in.readUtf(ShopEditorValues.MAX_MODULE_NAME));
@@ -88,7 +87,6 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         addDataSlots(data);
     }
 
-
     private void addPlayerInventory(Inventory playerInventory, int x, int y) {
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -107,12 +105,11 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
 
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
-        if (player instanceof ServerPlayer serverPlayer
-                && (!MapRoomQueryService.isMapOperator(serverPlayer)
-                || resolveCurrentShop().isEmpty())) {
+        if (player instanceof ServerPlayer serverPlayer && (!MapRoomQueryService.isMapOperator(serverPlayer) || resolveCurrentShop().isEmpty())) {
             FPSMatch.sendToPlayer(serverPlayer, new MapRoomToastS2CPacket(
                     net.minecraft.network.chat.Component.translatable(
-                            "gui.fpsm.shop_editor.open.no_permission"), true));
+                            "gui.fpsm.shop_editor.open.no_permission"),
+                    true));
             return;
         }
         if (slotId == 0) {
@@ -129,9 +126,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         if (player.level().isClientSide) {
             return true;
         }
-        return player instanceof ServerPlayer serverPlayer
-                && MapRoomQueryService.isMapOperator(serverPlayer)
-                && resolveCurrentShop().isPresent();
+        return player instanceof ServerPlayer serverPlayer && MapRoomQueryService.isMapOperator(serverPlayer) && resolveCurrentShop().isPresent();
     }
 
     @Override
@@ -160,14 +155,11 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         }
         var manager = FPSMCore.getInstance().getListenerModuleManager();
         if (!ShopEditorValues.validModules(modules, manager.getListenerModules())) return SaveResult.INVALID_MODULE;
-        if (defaultCost < 0 || defaultCost > 1_000_000
-                || ammoCount < 0 || ammoCount > 999_999
-                || groupId < -1 || groupId > 999_999) {
+        if (defaultCost < 0 || defaultCost > 1_000_000 || ammoCount < 0 || ammoCount > 999_999 || groupId < -1 || groupId > 999_999) {
             return SaveResult.INVALID_VALUE;
         }
         ItemStack editedStack = itemHandler.getStackInSlot(0).copy();
-        if (editedStack.isEmpty() || editedStack.getCount() <= 0
-                || editedStack.getCount() > editedStack.getMaxStackSize()) {
+        if (editedStack.isEmpty() || editedStack.getCount() <= 0 || editedStack.getCount() > editedStack.getMaxStackSize()) {
             return SaveResult.INVALID_ITEM;
         }
 
@@ -194,11 +186,9 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
             FPSMUtil.setTotalDummyAmmo(
                     editedStack,
                     GunCompatManager.findProvider(editedStack),
-                    ammoCount
-            );
+                    ammoCount);
         }
-        if (sameConfiguration(current, editedStack, defaultCost, groupId)
-                && current.getListenerNames().equals(modules)) {
+        if (sameConfiguration(current, editedStack, defaultCost, groupId) && current.getListenerNames().equals(modules)) {
             setAmmo(ammoCount);
             setPrice(defaultCost);
             setGroupId(groupId);
@@ -231,17 +221,15 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     }
 
     private static boolean sameConfiguration(
-            ShopSlot current,
-            ItemStack editedStack,
-            int defaultCost,
-            int groupId
-    ) {
-        return current.getDefaultCost() == defaultCost
-                && current.getGroupId() == groupId
-                && ItemStack.matches(current.process(), editedStack);
+                                             ShopSlot current,
+                                             ItemStack editedStack,
+                                             int defaultCost,
+                                             int groupId) {
+        return current.getDefaultCost() == defaultCost && current.getGroupId() == groupId && ItemStack.matches(current.process(), editedStack);
     }
 
     public enum SaveResult {
+
         SUCCESS("gui.fpsm.shop_editor.save.success"),
         NO_PERMISSION("gui.fpsm.shop_editor.save.no_permission"),
         INVALID_MENU("gui.fpsm.shop_editor.save.invalid_menu"),
@@ -275,9 +263,11 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         return List.copyOf(listeners);
     }
 
-    public List<String> getAvailableListeners() { return List.copyOf(availableListeners); }
+    public List<String> getAvailableListeners() {
+        return List.copyOf(availableListeners);
+    }
 
-    public boolean isGun(){
+    public boolean isGun() {
         return GunCompatManager.isGun(this.slots.get(0).getItem());
     }
 

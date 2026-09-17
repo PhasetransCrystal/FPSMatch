@@ -5,13 +5,13 @@ import net.minecraft.world.phys.Vec3;
 
 /** NaN FOV means inherit the player's current FOV. */
 public record CameraPose(Vec3 position, float yaw, float pitch, float roll, double fov) {
+
     public CameraPose {
-        if (position == null || !Double.isFinite(position.x) || !Double.isFinite(position.y)
-                || !Double.isFinite(position.z) || !Float.isFinite(yaw) || !Float.isFinite(pitch)
-                || !Float.isFinite(roll) || (!Double.isNaN(fov) && (!Double.isFinite(fov) || fov <= 0 || fov >= 180))) {
+        if (position == null || !Double.isFinite(position.x) || !Double.isFinite(position.y) || !Double.isFinite(position.z) || !Float.isFinite(yaw) || !Float.isFinite(pitch) || !Float.isFinite(roll) || (!Double.isNaN(fov) && (!Double.isFinite(fov) || fov <= 0 || fov >= 180))) {
             throw new IllegalArgumentException("Invalid camera pose");
         }
     }
+
     public CameraPose(Vec3 position, float yaw, float pitch) {
         this(position, yaw, pitch, 0, Double.NaN);
     }

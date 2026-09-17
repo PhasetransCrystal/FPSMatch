@@ -1,21 +1,22 @@
 package com.ptcrys.fpsmatch.common.packet.shop;
 
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
+
 import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
 import com.ptcrys.fpsmatch.core.shop.ShopAction;
 import com.ptcrys.fpsmatch.core.shop.ShopActionResult;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
 
 import java.util.Objects;
 import java.util.function.Supplier;
 
 public record ShopActionResultS2CPacket(
-        long requestId,
-        String type,
-        int index,
-        ShopAction action,
-        ShopActionResult result
-) {
+                                        long requestId,
+                                        String type,
+                                        int index,
+                                        ShopAction action,
+                                        ShopActionResult result) {
+
     public ShopActionResultS2CPacket {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(action, "action");
@@ -36,8 +37,7 @@ public record ShopActionResultS2CPacket(
                 buffer.readUtf(),
                 buffer.readInt(),
                 buffer.readEnum(ShopAction.class),
-                new ShopActionResult(buffer.readEnum(ShopActionResult.Code.class))
-        );
+                new ShopActionResult(buffer.readEnum(ShopActionResult.Code.class)));
     }
 
     public void handle(Supplier<NetworkEvent.Context> context) {

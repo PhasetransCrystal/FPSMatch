@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class SaveHolder<T> implements ISavePort<T> {
+
     private final Codec<T> codec;
     private final Consumer<T> readHandler;
     private final Consumer<FPSMDataManager> writeHandler;
@@ -21,6 +22,7 @@ public class SaveHolder<T> implements ISavePort<T> {
     private final Supplier<T> initializer;
 
     public static class Builder<T> {
+
         private final Codec<T> codec;
         private Consumer<T> readHandler = data -> {};
         private Consumer<FPSMDataManager> writeHandler = manager -> {};
@@ -37,13 +39,40 @@ public class SaveHolder<T> implements ISavePort<T> {
             };
         }
 
-        public Builder<T> withVersion(int version) { this.version = version; return this; }
-        public Builder<T> withInitializer(Supplier<T> initializer) { this.initializer = initializer; return this; }
-        public Builder<T> withLoadHandler(Consumer<T> handler) { this.readHandler = handler; return this; }
-        public Builder<T> withSaveHandler(Consumer<FPSMDataManager> handler) { this.writeHandler = handler; return this; }
-        public Builder<T> isGlobal(boolean global) { this.isGlobal = global; return this; }
-        public Builder<T> withMergeHandler(BiFunction<T, T, T> handler) { this.mergeHandler = handler; return this; }
-        public Builder<T> withFileType(String type) { this.fileType = type; return this; }
+        public Builder<T> withVersion(int version) {
+            this.version = version;
+            return this;
+        }
+
+        public Builder<T> withInitializer(Supplier<T> initializer) {
+            this.initializer = initializer;
+            return this;
+        }
+
+        public Builder<T> withLoadHandler(Consumer<T> handler) {
+            this.readHandler = handler;
+            return this;
+        }
+
+        public Builder<T> withSaveHandler(Consumer<FPSMDataManager> handler) {
+            this.writeHandler = handler;
+            return this;
+        }
+
+        public Builder<T> isGlobal(boolean global) {
+            this.isGlobal = global;
+            return this;
+        }
+
+        public Builder<T> withMergeHandler(BiFunction<T, T, T> handler) {
+            this.mergeHandler = handler;
+            return this;
+        }
+
+        public Builder<T> withFileType(String type) {
+            this.fileType = type;
+            return this;
+        }
 
         public SaveHolder<T> build() {
             return new SaveHolder<>(this);
@@ -69,15 +98,39 @@ public class SaveHolder<T> implements ISavePort<T> {
         return clazz == null ? SaveHolder.class : clazz;
     }
 
-    @Override public int getVersion() { return version; }
-    @Override public Supplier<T> getInitializer() { return initializer; }
+    @Override
+    public int getVersion() {
+        return version;
+    }
 
-    @Override public Codec<T> codec() { return codec; }
-    @Override public Consumer<T> readHandler() { return readHandler; }
-    public Consumer<FPSMDataManager> writeHandler() { return writeHandler; }
+    @Override
+    public Supplier<T> getInitializer() {
+        return initializer;
+    }
 
-    @Override public boolean isGlobal() { return isGlobal; }
-    @Override public String getFileType() { return fileType; }
+    @Override
+    public Codec<T> codec() {
+        return codec;
+    }
+
+    @Override
+    public Consumer<T> readHandler() {
+        return readHandler;
+    }
+
+    public Consumer<FPSMDataManager> writeHandler() {
+        return writeHandler;
+    }
+
+    @Override
+    public boolean isGlobal() {
+        return isGlobal;
+    }
+
+    @Override
+    public String getFileType() {
+        return fileType;
+    }
 
     @Override
     public T mergeHandler(@Nullable T oldData, T newData) {

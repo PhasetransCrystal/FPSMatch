@@ -3,6 +3,7 @@ package com.ptcrys.fpsmatch.common.drop;
 import java.util.Objects;
 
 public class ThrowableSubType {
+
     private final String id;
     private final int defaultLimit;
     private final String displayName;
@@ -17,9 +18,17 @@ public class ThrowableSubType {
         this(id, defaultLimit, id);
     }
 
-    public String getId() { return id; }
-    public int getDefaultLimit() { return defaultLimit; }
-    public String getDisplayName() { return displayName; }
+    public String getId() {
+        return id;
+    }
+
+    public int getDefaultLimit() {
+        return defaultLimit;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
 
     @Override
     public boolean equals(Object o) {

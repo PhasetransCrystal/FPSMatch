@@ -6,6 +6,7 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public record RemoveDebugDataByPrefixS2CPacket(String prefix) {
+
     public static void encode(RemoveDebugDataByPrefixS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeUtf(packet.prefix());
     }

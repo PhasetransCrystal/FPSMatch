@@ -8,6 +8,7 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public record AddPointDataS2CPacket(String key, Component name, int color, Vec3 position) {
+
     public static void encode(AddPointDataS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeUtf(packet.key());
         buf.writeComponent(packet.name());
@@ -22,8 +23,7 @@ public record AddPointDataS2CPacket(String key, Component name, int color, Vec3 
                 buf.readUtf(),
                 buf.readComponent(),
                 buf.readInt(),
-                new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble())
-        );
+                new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble()));
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {

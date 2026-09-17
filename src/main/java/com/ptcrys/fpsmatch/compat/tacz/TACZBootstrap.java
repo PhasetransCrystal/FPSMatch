@@ -1,10 +1,11 @@
 package com.ptcrys.fpsmatch.compat.tacz;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.DistExecutor;
+
 import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
 import com.ptcrys.fpsmatch.compat.spectate.tacz.*;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
 
 /**
  * TACZ 兼容层注册入口。

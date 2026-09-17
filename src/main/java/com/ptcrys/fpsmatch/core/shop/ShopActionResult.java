@@ -3,6 +3,7 @@ package com.ptcrys.fpsmatch.core.shop;
 import java.util.Objects;
 
 public record ShopActionResult(Code code) {
+
     public ShopActionResult {
         Objects.requireNonNull(code, "code");
     }

@@ -15,7 +15,7 @@ public class FileHashUtil {
         MessageDigest digest = MessageDigest.getInstance(algorithm);
 
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
-             FileChannel channel = randomAccessFile.getChannel()) {
+                FileChannel channel = randomAccessFile.getChannel()) {
 
             long position = 0;
             long length = file.length();
@@ -43,21 +43,21 @@ public class FileHashUtil {
             throw new RuntimeException("Unsupported algorithm: " + algorithm, e);
         }
     }
-    
+
     private static String calculateFileHash(File file, MessageDigest digest) throws IOException {
         try (FileInputStream fis = new FileInputStream(file)) {
             byte[] byteArray = new byte[8192];
             int bytesCount;
-            
+
             while ((bytesCount = fis.read(byteArray)) != -1) {
                 digest.update(byteArray, 0, bytesCount);
             }
         }
-        
+
         byte[] bytes = digest.digest();
         return bytesToHex(bytes);
     }
-    
+
     private static String bytesToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {

@@ -1,10 +1,12 @@
 package com.ptcrys.fpsmatch.common.event;
 
-import com.ptcrys.fpsmatch.core.team.BaseTeam;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.eventbus.api.Event;
 
+import com.ptcrys.fpsmatch.core.team.BaseTeam;
+
 public class FPSMTeamEvent extends Event {
+
     private final BaseTeam team;
 
     public FPSMTeamEvent(BaseTeam team) {
@@ -16,6 +18,7 @@ public class FPSMTeamEvent extends Event {
     }
 
     public static class JoinEvent extends FPSMTeamEvent {
+
         private final Player player;
 
         public JoinEvent(BaseTeam team, Player player) {
@@ -29,6 +32,7 @@ public class FPSMTeamEvent extends Event {
     }
 
     public static class LeaveEvent extends FPSMTeamEvent {
+
         private final Player player;
 
         public LeaveEvent(BaseTeam team, Player player) {

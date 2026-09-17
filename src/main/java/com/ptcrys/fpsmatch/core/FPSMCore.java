@@ -1,15 +1,5 @@
 package com.ptcrys.fpsmatch.core;
 
-import com.mojang.datafixers.util.Function3;
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.core.data.AreaData;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager;
-import com.ptcrys.fpsmatch.core.persistence.FPSMDataManager;
-import com.ptcrys.fpsmatch.common.event.FPSMReloadEvent;
-import com.ptcrys.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
-import com.ptcrys.fpsmatch.common.event.register.RegisterFPSMapEvent;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.core.shop.functional.LMManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.BlockPos;
@@ -25,6 +15,17 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.server.ServerLifecycleHooks;
+
+import com.mojang.datafixers.util.Function3;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.event.FPSMReloadEvent;
+import com.ptcrys.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
+import com.ptcrys.fpsmatch.common.event.register.RegisterFPSMapEvent;
+import com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager;
+import com.ptcrys.fpsmatch.core.data.AreaData;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
+import com.ptcrys.fpsmatch.core.persistence.FPSMDataManager;
+import com.ptcrys.fpsmatch.core.shop.functional.LMManager;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -32,10 +33,11 @@ import java.util.*;
 @SuppressWarnings("unchecked")
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMCore {
+
     private static FPSMCore INSTANCE;
     public final String archiveName;
     private final Map<String, List<BaseMap>> GAMES = new HashMap<>();
-    private final Map<String, Function3<ServerLevel,String,AreaData, BaseMap>> REGISTRY = new HashMap<>();
+    private final Map<String, Function3<ServerLevel, String, AreaData, BaseMap>> REGISTRY = new HashMap<>();
     private final Map<UUID, BaseMap> playerToMapCache = new HashMap<>();
     private final FPSMDataManager fpsmDataManager;
     private final LMManager listenerModuleManager;
@@ -46,37 +48,36 @@ public class FPSMCore {
         this.fpsmDataManager = new FPSMDataManager(archiveName);
     }
 
-    public static FPSMCore getInstance(){
-        if(INSTANCE == null) throw new RuntimeException("FPSMatch is not install.");
+    public static FPSMCore getInstance() {
+        if (INSTANCE == null) throw new RuntimeException("FPSMatch is not install.");
         return INSTANCE;
     }
 
-    public static boolean initialized(){
+    public static boolean initialized() {
         return INSTANCE != null;
     }
 
-    public boolean isRegistered(BaseMap map){
-        return isRegistered(map.getGameType(),map.getMapName());
+    public boolean isRegistered(BaseMap map) {
+        return isRegistered(map.getGameType(), map.getMapName());
     }
 
-    public boolean isRegistered(String type){
+    public boolean isRegistered(String type) {
         return REGISTRY.containsKey(type);
     }
 
-    public boolean isRegistered(String type, String name){
+    public boolean isRegistered(String type, String name) {
         return REGISTRY.containsKey(type) && GAMES.containsKey(type) && getMapNames(type).contains(name);
     }
 
-    public boolean isInGame(Player player){
+    public boolean isInGame(Player player) {
         return getMapByPlayer(player).isPresent();
     }
 
-
-    public Optional<BaseMap> getMapByPlayer(Player player){
+    public Optional<BaseMap> getMapByPlayer(Player player) {
         return getMapByPlayer(player.getUUID());
     }
 
-    public Optional<BaseMap> getMapByPlayer(UUID player){
+    public Optional<BaseMap> getMapByPlayer(UUID player) {
         BaseMap cached = playerToMapCache.get(player);
         if (cached != null && cached.checkGameHasPlayer(player)) {
             return Optional.of(cached);
@@ -84,12 +85,12 @@ public class FPSMCore {
         return Optional.empty();
     }
 
-    public Optional<BaseMap> getMapByPlayerWithSpec(Player player){
+    public Optional<BaseMap> getMapByPlayerWithSpec(Player player) {
         BaseMap cached = playerToMapCache.get(player.getUUID());
         if (cached != null) return Optional.of(cached);
         for (List<BaseMap> list : GAMES.values()) {
-            for (BaseMap map : list){
-                if(map.checkSpecHasPlayer(player)) return Optional.of(map);
+            for (BaseMap map : list) {
+                if (map.checkSpecHasPlayer(player)) return Optional.of(map);
             }
         }
         return Optional.empty();
@@ -109,46 +110,46 @@ public class FPSMCore {
         playerToMapCache.remove(player, map);
     }
 
-    public boolean registerMap(String type, BaseMap map){
-        if(REGISTRY.containsKey(type)) {
-            if(getMapNames(type).contains(map.getMapName())){
+    public boolean registerMap(String type, BaseMap map) {
+        if (REGISTRY.containsKey(type)) {
+            if (getMapNames(type).contains(map.getMapName())) {
                 FPSMatch.LOGGER.error("FPSMatch Core : has same map name -> {}", map.getMapName());
                 return false;
             }
-            List<BaseMap> maps = GAMES.getOrDefault(type,new ArrayList<>());
+            List<BaseMap> maps = GAMES.getOrDefault(type, new ArrayList<>());
             maps.add(map);
-            GAMES.put(type,maps);
+            GAMES.put(type, maps);
             return true;
-        }else{
+        } else {
             FPSMatch.LOGGER.error("FPSMatch Core : unregister game type {}", type);
             return false;
         }
     }
 
-    public Optional<BaseMap> getMapByTypeWithName(String type,String name){
-        if(!checkGameType(type)) return Optional.empty();
-        if(!GAMES.containsKey(type)) return Optional.empty();
+    public Optional<BaseMap> getMapByTypeWithName(String type, String name) {
+        if (!checkGameType(type)) return Optional.empty();
+        if (!GAMES.containsKey(type)) return Optional.empty();
         List<BaseMap> maps = GAMES.get(type);
-        for (BaseMap map : maps){
-            if(map.getMapName().equals(name)) return Optional.of(map);
+        for (BaseMap map : maps) {
+            if (map.getMapName().equals(name)) return Optional.of(map);
         }
         return Optional.empty();
     }
 
-    public Optional<BaseMap> getMapByName(String name){
+    public Optional<BaseMap> getMapByName(String name) {
         for (List<BaseMap> list : GAMES.values()) {
-            for (BaseMap map : list){
-                if(map.getMapName().equals(name)) return Optional.of(map);
+            for (BaseMap map : list) {
+                if (map.getMapName().equals(name)) return Optional.of(map);
             }
         }
         return Optional.empty();
     }
 
-    public <T> List<T> getMapByClass(Class<T> clazz){
+    public <T> List<T> getMapByClass(Class<T> clazz) {
         ArrayList<T> list = new ArrayList<>();
         for (List<BaseMap> maps : GAMES.values()) {
             for (BaseMap map : maps) {
-                if (clazz.isInstance(map)){
+                if (clazz.isInstance(map)) {
                     list.add((T) map);
                 }
             }
@@ -156,13 +157,13 @@ public class FPSMCore {
         return list;
     }
 
-    public List<String> getMapNames(){
+    public List<String> getMapNames() {
         List<String> names = new ArrayList<>();
-        GAMES.forEach((type,mapList)-> mapList.forEach((map-> names.add(map.getMapName()))));
+        GAMES.forEach((type, mapList) -> mapList.forEach((map -> names.add(map.getMapName()))));
         return names;
     }
 
-    public List<String> getMapNamesWithType(String type){
+    public List<String> getMapNamesWithType(String type) {
         List<String> names = new ArrayList<>();
         if (GAMES.containsKey(type)) {
             GAMES.get(type).forEach(map -> names.add(map.getMapName()));
@@ -177,8 +178,7 @@ public class FPSMCore {
 
         for (List<BaseMap> maps : GAMES.values()) {
             for (BaseMap map : maps) {
-                if (map.getServerLevel().dimension().equals(level.dimension())
-                        && map.getMapArea().isBlockPosInArea(pos)) {
+                if (map.getServerLevel().dimension().equals(level.dimension()) && map.getMapArea().isBlockPosInArea(pos)) {
                     return Optional.of(map);
                 }
             }
@@ -186,41 +186,41 @@ public class FPSMCore {
         return Optional.empty();
     }
 
-    public List<String> getMapNames(String type){
+    public List<String> getMapNames(String type) {
         List<String> names = new ArrayList<>();
-        List<BaseMap> maps = GAMES.getOrDefault(type,new ArrayList<>());
-        maps.forEach((map-> names.add(map.getMapName())));
+        List<BaseMap> maps = GAMES.getOrDefault(type, new ArrayList<>());
+        maps.forEach((map -> names.add(map.getMapName())));
         return names;
     }
 
-    public boolean checkGameType(String mapType){
-       return REGISTRY.containsKey(mapType);
+    public boolean checkGameType(String mapType) {
+        return REGISTRY.containsKey(mapType);
     }
 
-    @Nullable public Function3<ServerLevel,String, AreaData, BaseMap> getPreBuildGame(String mapType){
-         if(checkGameType(mapType)) return REGISTRY.get(mapType);
-         return null;
+    @Nullable
+    public Function3<ServerLevel, String, AreaData, BaseMap> getPreBuildGame(String mapType) {
+        if (checkGameType(mapType)) return REGISTRY.get(mapType);
+        return null;
     }
 
-    public void registerGameType(String typeName, Function3<ServerLevel,String, AreaData, BaseMap> map){
+    public void registerGameType(String typeName, Function3<ServerLevel, String, AreaData, BaseMap> map) {
         ResourceLocation.isValidResourceLocation(typeName);
-        REGISTRY.put(typeName,map);
+        REGISTRY.put(typeName, map);
     }
 
-    public List<String> getGameTypes(){
+    public List<String> getGameTypes() {
         return REGISTRY.keySet().stream().toList();
     }
 
-
-    public Map<String, List<BaseMap>> getAllMaps(){
+    public Map<String, List<BaseMap>> getAllMaps() {
         return GAMES;
     }
 
-    public void onServerTick(){
-        this.GAMES.forEach((type,mapList) -> mapList.forEach((map)->{
-            try{
+    public void onServerTick() {
+        this.GAMES.forEach((type, mapList) -> mapList.forEach((map) -> {
+            try {
                 map.mapTick();
-            }catch(Exception e){
+            } catch (Exception e) {
                 // 记录错误并继续，不要调用 map.reset() 丢弃整局对局/积分数据
                 FPSMatch.LOGGER.error("FPSMatch Core -> {} map error: ", map.getMapName(), e);
             }
@@ -228,19 +228,19 @@ public class FPSMCore {
         MapRoomSyncManager.tick(getServer());
     }
 
-    protected void clearData(){
+    protected void clearData() {
         GAMES.clear();
         REGISTRY.clear();
         playerToMapCache.clear();
         MapRoomSyncManager.clear();
     }
 
-    public static void checkAndLeaveTeam(ServerPlayer player){
+    public static void checkAndLeaveTeam(ServerPlayer player) {
         Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayerWithSpec(player);
         map.ifPresent(baseMap -> baseMap.leave(player));
     }
 
-    public void shutdown(){
+    public void shutdown() {
         FPSMCore.getInstance().fpsmDataManager.saveAllData();
 
         for (List<BaseMap> list : GAMES.values()) {
@@ -251,7 +251,7 @@ public class FPSMCore {
     }
 
     @SubscribeEvent
-    public static void onServerStoppingEvent(ServerStoppingEvent event){
+    public static void onServerStoppingEvent(ServerStoppingEvent event) {
         FPSMCore.getInstance().shutdown();
     }
 
@@ -267,14 +267,13 @@ public class FPSMCore {
         INSTANCE.fpsmDataManager.readAllData();
     }
 
-
     @SubscribeEvent
     public static void onReloadEvent(FPSMReloadEvent event) {
         for (List<BaseMap> maps : INSTANCE.GAMES.values()) {
             for (BaseMap map : maps) {
-                try{
+                try {
                     map.reload();
-                }catch (Exception e){
+                } catch (Exception e) {
                     FPSMatch.LOGGER.error("FPSMatch Core -> {} map reload error: ", map.getMapName(), e);
                 }
             }
@@ -285,7 +284,7 @@ public class FPSMCore {
         return ServerLifecycleHooks.getCurrentServer();
     }
 
-    public Optional<ServerPlayer> getPlayerByUUID(UUID uuid){
+    public Optional<ServerPlayer> getPlayerByUUID(UUID uuid) {
         return Optional.ofNullable(this.getServer().getPlayerList().getPlayer(uuid));
     }
 
@@ -293,17 +292,17 @@ public class FPSMCore {
         return fpsmDataManager;
     }
 
-    public LMManager getListenerModuleManager(){
+    public LMManager getListenerModuleManager() {
         return listenerModuleManager;
     }
 
     /*
-    * 获取当前FPSMatch运行在何种环境
-    * */
+     * 获取当前FPSMatch运行在何种环境
+     */
     public static FPSMDist getCurrentEnvironment() {
         if (FMLEnvironment.dist.isDedicatedServer()) {
             return FPSMDist.SERVER;
-        }else{
+        } else {
             Minecraft mc = Minecraft.getInstance();
             IntegratedServer localServer = mc.getSingleplayerServer();
             if (localServer != null) {
