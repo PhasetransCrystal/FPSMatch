@@ -4,9 +4,9 @@
   "mixinextras": {
     "minVersion": "0.5.0"
   },
-  "package": "com.ptcrys.fpsmatch.mixin",
+  "package": "net.ptcrys.fpsmatch.mixin",
   "compatibilityLevel": "JAVA_8",
-  "plugin": "com.ptcrys.fpsmatch.mixin.FPSMatchMixinPlugin",
+  "plugin": "net.ptcrys.fpsmatch.mixin.FPSMatchMixinPlugin",
   "refmap": "fpsmatch.refmap.json",
   "mixins": [
     "compat.grenades.FlashBangStatsMixin",
