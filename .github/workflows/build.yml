@@ -80,41 +80,13 @@ jobs:
           ORG_GRADLE_PROJECT_ptcrysUsername: ${{ secrets.PTCRYS_USERNAME }}
           ORG_GRADLE_PROJECT_ptcrysPassword: ${{ secrets.PTCRYS_PASSWORD }}
 
-      - name: Resolve published snapshot version
+      - name: Resolve GitHub snapshot version
         id: snapshot-version
         run: |
-          ./gradlew generatePomFileForMavenJavaPublication --quiet
-          readarray -t coordinates < <(python3 - <<'PY'
-          import xml.etree.ElementTree as ET
-
-          root = ET.parse('build/publications/mavenJava/pom-default.xml').getroot()
-          namespace = {'m': 'http://maven.apache.org/POM/4.0.0'}
-          for element in ('groupId', 'artifactId', 'version'):
-              print(root.findtext(f'm:{element}', namespaces=namespace))
-          PY
-          )
-          group_path=${coordinates[0]//./\/}
-          artifact=${coordinates[1]}
-          base_version=${coordinates[2]}
-          metadata_url="https://maven.ptcrys.net/snapshots/$group_path/$artifact/$base_version/maven-metadata.xml?run=$GITHUB_RUN_ID"
-          curl --fail --silent --show-error --retry 5 --retry-all-errors \
-            --header 'Cache-Control: no-cache' \
-            --output maven-metadata.xml "$metadata_url"
-          snapshot_version=$(python3 - <<'PY'
-          import xml.etree.ElementTree as ET
-
-          root = ET.parse('maven-metadata.xml').getroot()
-          candidates = []
-          for entry in root.findall('./versioning/snapshotVersions/snapshotVersion'):
-              if entry.findtext('extension') != 'jar' or entry.findtext('classifier'):
-                  continue
-              candidates.append((entry.findtext('updated', ''), entry.findtext('value', '')))
-          if not candidates:
-              raise SystemExit('Maven metadata does not contain a main JAR snapshot version')
-          print(max(candidates)[1])
-          PY
-          )
-          test -n "$snapshot_version"
+          base_version=$(./gradlew -q properties | awk '/^version:/ { print $2; exit }')
+          test -n "$base_version"
+          [[ "$base_version" == *-SNAPSHOT ]]
+          snapshot_version="${base_version%-SNAPSHOT}-$(date -u +'%Y%m%d.%H%M%S')-${GITHUB_RUN_ATTEMPT}"
           echo "value=$snapshot_version" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub snapshot pre-release
