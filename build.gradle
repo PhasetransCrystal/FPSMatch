@@ -10,10 +10,24 @@ plugins {
     alias libs.plugins.spotless
 }
 
-// Project identity
+allprojects {
+    group = 'net.ptcrys'
+}
+
+def isRelease = System.getenv('RELEASE_BUILD') == 'true'
+def buildDate = new Date()
+def year = String.format('%ty', buildDate)
+def month = buildDate.month + 1
+def day = buildDate.date
+def dynamicVersion
+if (isRelease) {
+    dynamicVersion = "${mod_major_version}.${year}.${month}.${day}"
+} else {
+    dynamicVersion = "${mod_major_version}.${year}.${month}-SNAPSHOT"
+}
+ext.mod_version = dynamicVersion
+version = dynamicVersion
 group = mod_group_id
-version = "${minecraft_version}-${mod_version}-${file_version}"
-def isRelease = file_version != "forge-snapshot"
 
 tasks.named('wrapper', Wrapper).configure {
     distributionType = Wrapper.DistributionType.BIN
@@ -48,24 +62,9 @@ jar{
     exclude "**/SimplifiedToTraditional.properties"
 }
 
-tasks.register('cameraSystemCheck', JavaExec) {
-    dependsOn tasks.named('testClasses')
-    classpath = sourceSets.test.output + sourceSets.main.output + sourceSets.main.compileClasspath
-    mainClass = 'com.ptcrys.fpsmatch.common.camera.CameraSystemCheck'
+java {
+    withSourcesJar()
 }
-
-tasks.named('check') { dependsOn tasks.named('cameraSystemCheck') }
-
-tasks.register('commandTreeCheck', JavaExec) {
-    dependsOn tasks.named('testClasses')
-    // Use runtime Log4j, not the old compile-only copy brought in by server compatibility dependencies.
-    classpath = sourceSets.test.output + sourceSets.main.output +
-            sourceSets.main.runtimeClasspath.filter { it.name.startsWith('log4j-') } +
-            sourceSets.main.compileClasspath.filter { !it.name.startsWith('log4j-') }
-    mainClass = 'com.ptcrys.fpsmatch.common.command.CommandTreeCheck'
-    classpath += files(layout.buildDirectory.file("moddev/artifacts/client-extra-${minecraft_version}-${forge_version}.jar"))
-}
-tasks.named('check') { dependsOn tasks.named('commandTreeCheck') }
 
 // Maven publication
 publishing {

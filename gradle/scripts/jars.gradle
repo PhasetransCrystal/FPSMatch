@@ -19,3 +19,6 @@ mixin {
     add sourceSets.main, "${mod_id}.refmap.json"
     config "${mod_id}.mixins.json"
 }
+
+sourceSets.main.resources {srcDir 'src/generated/resources'}
+sourceSets.main.kotlin {srcDir("src/main/java")}

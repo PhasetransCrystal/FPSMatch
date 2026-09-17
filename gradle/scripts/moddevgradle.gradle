@@ -51,6 +51,3 @@ legacyForge {
         }
     }
 }
-
-sourceSets.main.resources {srcDir 'src/generated/resources'}
-sourceSets.main.kotlin {srcDir("src/main/java")}
