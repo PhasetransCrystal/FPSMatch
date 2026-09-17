@@ -1,0 +1,50 @@
+name: 🐛 Bug 报告
+description: 报告模组缺陷或崩溃
+title: "[Bug] "
+labels: ["bug"]
+
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 已搜索现有 Issues
+          required: true
+        - label: 使用最新版模组测试
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      placeholder: 发生了什么？
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 
+        2. 
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 崩溃日志 / 关键错误
+      description: 粘贴 `crash-reports/` 内容或 [mclo.gs](https://mclo.gs/) 链接
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 环境信息（可选）
+      placeholder: |
+        - 单人/服务器？
+        - 安装的其他模组？

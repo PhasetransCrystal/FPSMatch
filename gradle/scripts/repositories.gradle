@@ -1,0 +1,124 @@
+repositories {
+    mavenCentral()
+    mavenLocal()
+    flatDir {
+        dir "libs"
+    }
+    maven {
+        name = "Ptcrys Releases"
+        url = uri("https://maven.ptcrys.net/releases")
+    }
+    maven {
+        name = "Ptcrys Snapshots"
+        url = uri("https://maven.ptcrys.net/snapshots")
+    }
+    maven {
+        name = "Ptcrys Private"
+        url = uri("https://maven.ptcrys.net/private")
+        credentials {
+            username = project.findProperty('ptcrysUsername')
+            password = project.findProperty('ptcrysPassword')
+        }
+    }
+    maven { url = "https://repo1.maven.org/maven2/" }
+    exclusiveContent { // Modrinth Maven
+        forRepository { maven { url = "https://api.modrinth.com/maven/" } }
+        filter { includeGroup("maven.modrinth") }
+    }
+    exclusiveContent { // Curseforge Maven
+        forRepository { maven { url = "https://cursemaven.com/" } }
+        filter { includeGroup("curse.maven") }
+    }
+    maven {
+        name = 'Kotlin for Forge'
+        url = 'https://thedarkcolour.github.io/KotlinForForge/'
+    }
+    maven {
+        url "https://maven.shadowsoffire.dev/releases"
+        content {
+            includeGroup "dev.shadowsoffire"
+        }
+    }
+    exclusiveContent { // tterrag - registrate
+        forRepository { maven { url = "https://maven.tterrag.com/" } }
+        filter { includeGroup("com.tterrag.registrate") }
+    }
+    // Ldlib2
+    maven {
+        url "https://maven.firstdarkdev.xyz/snapshots/"
+    }
+    maven {
+        name = "Curios"
+        url = uri("https://maven.theillusivec4.top/")
+    }
+    maven {
+        url "https://maven.blamejared.com/"
+    }
+    maven {
+        url "https://maven.izzel.io/"
+    }
+    maven {
+        url "https://maven.quiltmc.org/repository/release/"
+    }
+    maven {
+        url "https://maven.parchmentmc.org"
+    }
+    maven {
+        url "https://maven.architectury.dev/"
+    }
+    maven {
+        url "https://maven.teamresourceful.com/repository/maven-public/"
+    }
+    maven {
+        url "https://maven.jt-dev.tech/releases/"
+    }
+    maven {
+        url "https://mvnrepository.com/artifact/com.hollingsworth.ars_nouveau"
+    }
+    maven {
+        url "https://maven.bawnorton.com/releases"
+    }
+    maven {
+        url "https://maven.enjarai.dev/mirrors"
+    }
+    maven {
+        url "https://maven.twelveiterations.com/repository/maven-public/"
+
+        content {
+            includeGroup "net.blay09.mods"
+        }
+    }
+    maven {
+        name 'Configuration'
+        url 'https://repo.repsy.io/mvn/toma/public/'
+    }
+
+    maven {
+        name = 'SpigotMC'
+        url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
+        content { includeGroup 'org.spigotmc' }
+    }
+    maven {
+        name = 'MohistMC'
+        url = 'https://maven.mohistmc.com/'
+        content { includeGroup 'com.mohistmc' }
+    }
+    maven {
+        name = 'LatvianDev'
+        url = 'https://maven.latvian.dev/releases'
+        content {
+            includeGroup 'dev.latvian.mods'
+            includeGroup 'dev.latvian.apps'
+        }
+    }
+    maven {
+        name = 'Architectury'
+        url = 'https://maven.architectury.dev'
+        content { includeGroup 'dev.architectury' }
+    }
+
+    maven {
+        name 'IzzelAliz Maven'
+        url 'https://maven.izzel.io/releases/'
+    }
+}

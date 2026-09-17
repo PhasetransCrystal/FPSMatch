@@ -1,0 +1,29 @@
+name: ✨ 功能请求
+description: 提议新功能或改进
+title: "[Feature] "
+labels: ["enhancement"]
+
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 已搜索现有 Issues
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 功能描述
+      placeholder: 你想实现什么？
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: 使用场景
+      placeholder: 这个功能在什么情况下有用？
+    validations:
+      required: true

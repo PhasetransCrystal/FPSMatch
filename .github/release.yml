@@ -1,0 +1,36 @@
+changelog:
+  exclude:
+    labels:
+      - duplicate
+      - invalid
+      - question
+      - skip-changelog
+      - wont-fix
+  categories:
+    - title: "破坏性变更 / Breaking Changes"
+      labels:
+        - breaking-change
+    - title: "安全更新 / Security"
+      labels:
+        - security
+    - title: "新功能 / New Features"
+      labels:
+        - enhancement
+    - title: "问题修复 / Bug Fixes"
+      labels:
+        - bug
+    - title: "性能优化 / Performance"
+      labels:
+        - performance
+    - title: "依赖更新 / Dependencies"
+      labels:
+        - dependencies
+    - title: "文档 / Documentation"
+      labels:
+        - documentation
+    - title: "维护 / Maintenance"
+      labels:
+        - maintenance
+    - title: "其他变更 / Other Changes"
+      labels:
+        - "*"
