@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_summary:
+        description: "发布摘要（支持 Markdown）"
+        required: false
+        type: string
+      related_items:
+        description: "关联的 PR/Issue 编号或 commit SHA，使用空格或逗号分隔"
+        required: false
+        type: string
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: read
+      pull-requests: read
+    timeout-minutes: 30
+    env:
+      RELEASE_BUILD: 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and publish release to Maven
+        run: |
+          chmod +x gradlew
+          ./gradlew build publish --build-cache --stacktrace
+        env:
+          ORG_GRADLE_PROJECT_ptcrysUsername: ${{ secrets.PTCRYS_USERNAME }}
+          ORG_GRADLE_PROJECT_ptcrysPassword: ${{ secrets.PTCRYS_PASSWORD }}
+
+      - name: Resolve release version
+        id: version
+        run: |
+          version=$(./gradlew -q properties | awk '/^version:/ { print $2; exit }')
+          test -n "$version"
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build release preface
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SUMMARY: ${{ inputs.release_summary }}
+          RELATED_ITEMS: ${{ inputs.related_items }}
+        run: |
+          set -euo pipefail
+          set -f
+          : > release-preface.md
+
+          if [[ -n "$RELEASE_SUMMARY" ]]; then
+            printf '## 发布摘要 / Release Summary\n\n%s\n' "$RELEASE_SUMMARY" >> release-preface.md
+          fi
+
+          normalized_items=${RELATED_ITEMS//,/ }
+          if [[ -n "${normalized_items//[[:space:]]/}" ]]; then
+            printf '\n## 关联项 / Related Items\n\n' >> release-preface.md
+            for item in $normalized_items; do
+              if [[ "$item" =~ ^#?([0-9]+)$ ]]; then
+                number=${BASH_REMATCH[1]}
+                gh api "repos/$GITHUB_REPOSITORY/issues/$number" \
+                  --jq '"- " + (if has("pull_request") then "PR" else "Issue" end) + " [#" + (.number | tostring) + " " + .title + "](" + .html_url + ")"' \
+                  >> release-preface.md
+              elif [[ "$item" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
+                gh api "repos/$GITHUB_REPOSITORY/commits/$item" \
+                  --jq '"- Commit [" + .sha[0:7] + "](" + .html_url + "): " + (.commit.message | split("\n")[0])' \
+                  >> release-preface.md
+              else
+                echo "Unsupported related item: $item" >&2
+                exit 1
+              fi
+            done
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.value }}
+          name: v${{ steps.version.outputs.value }}
+          body_path: release-preface.md
+          generate_release_notes: true
+          files: build/libs/*.jar

@@ -1,28 +1,41 @@
 name: Spotless Code Format Check
+
 on:
+  pull_request:
   push:
   workflow_dispatch:
+
+concurrency:
+  group: spotless-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+
 jobs:
   spotless:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Setup JDK 25
+
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '25'
+          java-version: '17'
           distribution: 'temurin'
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          cache-read-only: false
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
       - name: Spotless check
         run: |
           chmod +x gradlew
-          ./gradlew spotlessCheck --no-daemon
+          ./gradlew spotlessCheck --stacktrace
+
       - name: Format failure summary
         if: failure()
         run: |
