@@ -82,9 +82,6 @@ jobs:
 
       - name: Resolve published snapshot version
         id: snapshot-version
-        env:
-          MAVEN_USERNAME: ${{ secrets.PTCRYS_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.PTCRYS_PASSWORD }}
         run: |
           ./gradlew generatePomFileForMavenJavaPublication --quiet
           readarray -t coordinates < <(python3 - <<'PY'
@@ -102,7 +99,6 @@ jobs:
           metadata_url="https://maven.ptcrys.net/snapshots/$group_path/$artifact/$base_version/maven-metadata.xml?run=$GITHUB_RUN_ID"
           curl --fail --silent --show-error --retry 5 --retry-all-errors \
             --header 'Cache-Control: no-cache' \
-            --user "$MAVEN_USERNAME:$MAVEN_PASSWORD" \
             --output maven-metadata.xml "$metadata_url"
           snapshot_version=$(python3 - <<'PY'
           import xml.etree.ElementTree as ET
