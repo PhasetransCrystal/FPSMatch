@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: spotless-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: spotless-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
