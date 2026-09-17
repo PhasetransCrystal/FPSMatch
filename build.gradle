@@ -1,8 +1,13 @@
 plugins {
+    id 'java-library'
     id 'eclipse'
     id 'idea'
-    id 'net.neoforged.moddev.legacyforge' version '2.0.140'
     id 'maven-publish'
+    alias libs.plugins.modDevGradleLegacy
+    alias libs.plugins.kotlinDevGradleLegacy
+    alias libs.plugins.lombokLegacy
+    alias libs.plugins.kotlinLombokLegacy
+    alias libs.plugins.spotless
 }
 
 // Project identity
@@ -10,8 +15,8 @@ group = mod_group_id
 version = "${minecraft_version}-${mod_version}-${file_version}"
 def isRelease = file_version != "forge-snapshot"
 
-base {
-    archivesName = mod_id
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
 }
 
 java {
@@ -19,218 +24,28 @@ java {
     withSourcesJar()
 }
 
-// Minecraft development environment
-legacyForge {
-    version = "${minecraft_version}-${forge_version}"
+apply from: "$projectDir/gradle/scripts/moddevgradle.gradle"
+apply from: "$projectDir/dependencies.gradle"
+apply from: "$projectDir/gradle/scripts/resources.gradle"
+apply from: "$projectDir/gradle/scripts/jars.gradle"
+apply from: "$projectDir/gradle/scripts/repositories.gradle"
+apply from: "$projectDir/gradle/scripts/spotless.gradle"
 
-    parchment {
-        minecraftVersion = mapping_mc_version
-        mappingsVersion = mapping_version
-    }
-
-    validateAccessTransformers = true
-
-    runs {
-        configureEach {
-            gameDirectory = project.file('run')
-            systemProperty 'forge.logging.markers', 'REGISTRIES'
-            logLevel = org.slf4j.event.Level.DEBUG
-        }
-
-        client {
-            client()
-            systemProperty 'mixin.env.remapRefMap', 'true'
-            systemProperty 'mixin.env.refMapRemappingFile',
-                    "${projectDir}/build/moddev/artifacts/intermediateToNamed.srg"
-            systemProperty 'forge.enabledGameTestNamespaces', mod_id
-        }
-
-        server {
-            server()
-            systemProperty 'mixin.env.remapRefMap', 'true'
-            systemProperty 'mixin.env.refMapRemappingFile',
-                    "${projectDir}/build/moddev/artifacts/intermediateToNamed.srg"
-            systemProperty 'forge.enabledGameTestNamespaces', mod_id
-            programArgument '--nogui'
-        }
-
-        gameTestServer {
-            type = 'gameTestServer'
-            gameDirectory = project.file('build/run-gametest')
-            systemProperty 'forge.enabledGameTestNamespaces', mod_id
-        }
-
-        data {
-            data()
-            gameDirectory = project.file('run-data')
-            programArguments.addAll(
-                    '--mod', mod_id,
-                    '--all',
-                    '--output', file('src/generated/resources').absolutePath,
-                    '--existing', file('src/main/resources').absolutePath
-            )
-        }
-    }
-
-    mods {
-        "${mod_id}" {
-            sourceSet sourceSets.main
-        }
-    }
+generateModMetadata.doFirst {
+    mkdir('run/client')
+    mkdir('run/server')
+    mkdir('run/clientData')
+    mkdir('run/serverTest')
 }
-
-mixin {
-    add sourceSets.main, "${mod_id}.refmap.json"
-    config "${mod_id}.mixins.json"
-}
-
-// Dependency repositories
-repositories {
-    mavenCentral()
-    maven { name = 'IzzelAliz'; url = 'https://maven.izzel.io/releases/' }
-
-    maven {
-        name = 'PtcrysMaven'
-        url = uri('https://maven.ptcrys.net/releases')
-    }
-
-    maven {
-        name = 'CurseMaven'
-        url = 'https://www.cursemaven.com'
-        content { includeGroup 'curse.maven' }
-    }
-    maven {
-        name = 'Modrinth'
-        url = 'https://api.modrinth.com/maven'
-        content { includeGroup 'maven.modrinth' }
-    }
-    maven {
-        name = 'SpigotMC'
-        url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
-        content { includeGroup 'org.spigotmc' }
-    }
-    maven {
-        name = 'MohistMC'
-        url = 'https://maven.mohistmc.com/'
-        content { includeGroup 'com.mohistmc' }
-    }
-    maven {
-        name = 'LatvianDev'
-        url = 'https://maven.latvian.dev/releases'
-        content {
-            includeGroup 'dev.latvian.mods'
-            includeGroup 'dev.latvian.apps'
-        }
-    }
-    maven {
-        name = 'Architectury'
-        url = 'https://maven.architectury.dev'
-        content { includeGroup 'dev.architectury' }
-    }
-
-}
-
-// Modern UI shares these libraries with Minecraft.
-def withoutMinecraftLibraries = { dependency ->
-    dependency.exclude group: 'org.apache.logging.log4j'
-    dependency.exclude group: 'com.google.code.findbugs', module: 'jsr305'
-    dependency.exclude group: 'org.jetbrains', module: 'annotations'
-    dependency.exclude group: 'com.ibm.icu', module: 'icu4j'
-    dependency.exclude group: 'it.unimi.dsi', module: 'fastutil'
-}
-
-// Dependencies
-dependencies {
-    withoutMinecraftLibraries(additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Core:${modernui_core_version}")))
-    withoutMinecraftLibraries(additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Markflow:${modernui_core_version}")))
-    modImplementation "icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}"
-
-
-    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixinextras_version}"))
-    implementation(jarJar("io.github.llamalad7:mixinextras-forge:${mixinextras_version}"))
-    jarJar(implementation("io.github.erdtman:java-json-canonicalization")) {
-        version {
-            strictly "[${json_canonicalization_version}]"
-            prefer json_canonicalization_version
-        }
-    }
-    annotationProcessor "org.spongepowered:mixin:${mixin_processor_version}:processor"
-
-    modCompileOnly "maven.modrinth:timeless-and-classics-zero:${tacz_version}"
-    modRuntimeOnly "maven.modrinth:timeless-and-classics-zero:${tacz_version}"
-    modCompileOnly "maven.modrinth:tacz-tweaks:${tacztweak_version}"
-    modCompileOnly "maven.modrinth:lr-tactical:${lrtactical_version}"
-    modImplementation "maven.modrinth:counterstrikegrenade:${cs_grenade_version}"
-    modRuntimeOnly "maven.modrinth:kotlin-for-forge:${kotlin_forge_version}"
-    modImplementation "maven.modrinth:cloth-config:${cloth_config_version}"
-    modCompileOnly "org.apache.commons:commons-math3:3.6.1"
-    modCompileOnly "org.spigotmc:spigot-api:${spigot_api_version}"
-    modCompileOnly "org.jetbrains:annotations:${jetbrains_annotations_version}"
-    modCompileOnly "com.mohistmc:mohistdev:${mohistdev_version}"
-    modCompileOnly "dev.latvian.mods:kubejs-forge:${kubejs_version}"
-    modCompileOnly "dev.latvian.mods:rhino-forge:${rhino_version}"
-    modCompileOnly "dev.architectury:architectury-forge:${architectury_version}"
-}
-
-// Generated resources and packaging
-def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
-    def metadata = [
-            minecraft_version      : minecraft_version,
-            minecraft_version_range: minecraft_version_range,
-            forge_version          : forge_version,
-            forge_version_range    : forge_version_range,
-            loader_version_range   : loader_version_range,
-            mod_id                 : mod_id,
-            mod_name               : mod_name,
-            mod_license            : mod_license,
-            mod_version            : mod_version,
-            mod_authors            : mod_authors,
-            mod_description        : mod_description
-    ]
-    inputs.properties metadata
-    expand metadata
-    from 'src/main/templates'
-    into layout.buildDirectory.dir('generated/resources/modMetadata')
-}
-
-sourceSets {
-    test.compileClasspath += sourceSets.main.compileClasspath
-    main.resources {
-        srcDir 'src/generated/resources'
-        srcDir generateModMetadata
-    }
-    performanceAcceptance {
-        java.srcDir 'src/performanceAcceptance/java'
-        compileClasspath = sourceSets.main.output + sourceSets.main.compileClasspath
-        runtimeClasspath = output + compileClasspath
-    }
-}
-legacyForge.ideSyncTask generateModMetadata
-
-def syncGameTestStructures = tasks.register('syncGameTestStructures', Sync) {
-    from "src/main/resources/data/${mod_id}/gameteststructures"
-    into layout.buildDirectory.dir('run-gametest/gameteststructures')
-}
-
-tasks.named('runGameTestServer') {
-    dependsOn syncGameTestStructures
-}
-
-tasks.named('jar', Jar) {
-    manifest.attributes('MixinConfigs': "${mod_id}.mixins.json")
-}
-
-tasks.named('createMinecraftArtifacts') {
-    def java21 = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(21)
-    }.map { it.executablePath.asFile.absolutePath }
-    toolsJavaExecutable.set(java21)
-    javaExecutable.set(java21)
-}
-
 
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.compilerArgs << "-Xlint:-deprecation" << "-Xlint:-removal"
+}
+
+jar{
+    exclude "**/.cache"
+    exclude "**/SimplifiedToTraditional.properties"
 }
 
 tasks.register('cameraSystemCheck', JavaExec) {

@@ -1,0 +1,17 @@
+spotless {
+    encoding 'UTF-8'
+    java {
+        target 'src/main/java/**/*.java'
+        toggleOffOn()
+        importOrderFile(file("$projectDir/gradle/spotless/spotless.importorder"))
+        removeUnusedImports('cleanthat-javaparser-unnecessaryimport')
+        endWithNewline()
+        eclipse('4.31').configFile(file("$projectDir/gradle/spotless/spotless.eclipseformat.xml"))
+    }
+    kotlin {
+        target 'src/main/java/**/*.kt'
+        ktlint().setEditorConfigPath("$projectDir/gradle/spotless/spotless.ktlint")
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}

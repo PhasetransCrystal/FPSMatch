@@ -1,0 +1,46 @@
+// Modern UI shares these libraries with Minecraft.
+def withoutMinecraftLibraries = { dependency ->
+    dependency.exclude group: 'org.apache.logging.log4j'
+    dependency.exclude group: 'com.google.code.findbugs', module: 'jsr305'
+    dependency.exclude group: 'org.jetbrains', module: 'annotations'
+    dependency.exclude group: 'com.ibm.icu', module: 'icu4j'
+    dependency.exclude group: 'it.unimi.dsi', module: 'fastutil'
+}
+
+// Dependencies
+dependencies {
+    withoutMinecraftLibraries(additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Core:${modernui_core_version}")))
+    withoutMinecraftLibraries(additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Markflow:${modernui_core_version}")))
+    modImplementation "icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}"
+
+
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixinextras_version}"))
+    implementation(jarJar("io.github.llamalad7:mixinextras-forge:${mixinextras_version}"))
+    jarJar(implementation("io.github.erdtman:java-json-canonicalization")) {
+        version {
+            strictly "[${json_canonicalization_version}]"
+            prefer json_canonicalization_version
+        }
+    }
+    annotationProcessor "org.spongepowered:mixin:${mixin_processor_version}:processor"
+
+    modCompileOnly "maven.modrinth:timeless-and-classics-zero:${tacz_version}"
+    modRuntimeOnly "maven.modrinth:timeless-and-classics-zero:${tacz_version}"
+    modCompileOnly "maven.modrinth:tacz-tweaks:${tacztweak_version}"
+    modCompileOnly "maven.modrinth:lr-tactical:${lrtactical_version}"
+    modImplementation "maven.modrinth:counterstrikegrenade:${cs_grenade_version}"
+    modRuntimeOnly "maven.modrinth:kotlin-for-forge:${kotlin_forge_version}"
+    modImplementation "maven.modrinth:cloth-config:${cloth_config_version}"
+    modCompileOnly "org.apache.commons:commons-math3:3.6.1"
+    modCompileOnly "org.spigotmc:spigot-api:${spigot_api_version}"
+    modCompileOnly "org.jetbrains:annotations:${jetbrains_annotations_version}"
+    modCompileOnly "com.mohistmc:mohistdev:${mohistdev_version}"
+    modCompileOnly "dev.latvian.mods:kubejs-forge:${kubejs_version}"
+    modCompileOnly "dev.latvian.mods:rhino-forge:${rhino_version}"
+    modCompileOnly "dev.architectury:architectury-forge:${architectury_version}"
+
+    testImplementation("org.junit.jupiter:junit-jupiter:6.0.1")
+    testImplementation("com.google.guava:guava:33.5.0-jre")
+    testImplementation("it.unimi.dsi:fastutil:8.5.18")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
