@@ -1,0 +1,87 @@
+name: Build Wiki
+on:
+  push:
+    branches: ["master"]
+    paths: ["README.md", "README_ZH-CN.md", "docs/**", "website/**", ".github/workflows/deploy-docs.yml"]
+  pull_request:
+    paths: ["README.md", "README_ZH-CN.md", "docs/**", "website/**", ".github/workflows/deploy-docs.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: website/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm run build
+        env:
+          DOCUSAURUS_BASE_URL: /${{ github.event.repository.name }}/${{ github.ref_name }}/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wiki-${{ github.ref_name }}
+          path: website/build
+
+  publish:
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: wiki-${{ github.ref_name }}
+          path: branch-build
+      - name: Prepare gh-pages checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir pages
+          cd pages
+          git init
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch --depth=1 origin gh-pages; then
+            git checkout -B gh-pages FETCH_HEAD
+          else
+            git checkout --orphan gh-pages
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+      - name: Update branch directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch_path="${GITHUB_REF_NAME//\//-}"
+          rm -rf "pages/${branch_path}"
+          mkdir -p "pages/${branch_path}"
+          cp -R branch-build/. "pages/${branch_path}/"
+          touch pages/.nojekyll
+          cat > pages/index.html <<'HTML'
+          <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./master/"><title>FPSMatch Wiki</title></head><body><a href="./master/">Open the FPSMatch Wiki</a></body></html>
+          HTML
+      - name: Commit and push gh-pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Deploy Wiki for ${GITHUB_REF_NAME}"
+          git push origin gh-pages

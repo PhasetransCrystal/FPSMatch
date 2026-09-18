@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="GPL-3.0-only"
+[[mods]]
+modId="elimination_addon"
+version="1.0.0"
+displayName="Elimination Tutorial"
+[[dependencies.elimination_addon]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.elimination_addon]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.10,)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.elimination_addon]]
+modId="fpsmatch"
+mandatory=true
+versionRange="[1,)"
+ordering="AFTER"
+side="BOTH"

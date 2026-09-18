@@ -1,0 +1,13 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven { url = 'https://maven.neoforged.net/releases' }
+        maven { url = 'https://maven.minecraftforge.net' }
+    }
+}
+rootProject.name = 'elimination-addon'
+includeBuild('../..') {
+    dependencySubstitution {
+        substitute module('net.ptcrys:fpsmatch') using project(':')
+    }
+}

@@ -1,0 +1,487 @@
+.main {
+  background: var(--fps-page);
+  color: var(--fps-ink);
+}
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: min(650px, calc(100svh - 96px));
+  box-sizing: border-box;
+  overflow: hidden;
+  align-items: center;
+  padding: 76px max(28px, calc((100% - 1180px) / 2));
+  background: #171a1d;
+  color: #f7f8f4;
+}
+
+.hero::before {
+  position: absolute;
+  z-index: -2;
+  right: 0;
+  bottom: 0;
+  width: 38%;
+  height: 100%;
+  background: var(--fps-accent);
+  clip-path: polygon(34% 0, 100% 0, 100% 100%, 0 100%);
+  content: '';
+}
+
+.heroGrid {
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 0 52%;
+  opacity: 0.22;
+  background-image: linear-gradient(rgb(255 255 255 / 18%) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 18%) 1px, transparent 1px);
+  background-size: 34px 34px;
+  clip-path: polygon(38% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.heroMark {
+  position: absolute;
+  z-index: -1;
+  right: max(34px, calc((100% - 1160px) / 2));
+  width: 360px;
+  height: 360px;
+  object-fit: contain;
+  opacity: 0.7;
+  filter: drop-shadow(0 20px 36px rgb(0 0 0 / 30%));
+}
+
+.heroContent {
+  width: min(720px, 70%);
+}
+
+.eyebrow,
+.sectionHeading p,
+.sectionLabel {
+  margin: 0 0 14px;
+  color: #efb62e;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.hero h1 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(3.2rem, 7vw, 5.4rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 0.95;
+}
+
+.summary {
+  max-width: 650px;
+  margin: 25px 0 0;
+  color: #d8dcdf;
+  font-size: 1.16rem;
+  line-height: 1.8;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 34px;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  min-height: 46px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 10px 18px;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.primaryAction {
+  cursor: pointer;
+  background: #f7f8f4;
+  color: #171a1d;
+}
+
+.primaryAction:hover,
+.primaryAction:focus-visible {
+  background: #efb62e;
+  color: #171a1d;
+}
+
+.secondaryAction {
+  border-color: #727b82;
+  color: #f7f8f4;
+}
+
+.secondaryAction:hover,
+.secondaryAction:focus-visible {
+  border-color: #f7f8f4;
+  color: #f7f8f4;
+}
+
+.statusRail {
+  position: absolute;
+  right: 18px;
+  bottom: 24px;
+  display: flex;
+  gap: 18px;
+  color: #fff;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.routes {
+  display: grid;
+  width: min(1180px, calc(100% - 56px));
+  margin: 0 auto;
+  padding: 66px 0 82px;
+  grid-template-columns: minmax(235px, 0.72fr) minmax(0, 1.6fr);
+  gap: 72px;
+}
+
+.sectionHeading h2 {
+  margin: 0;
+  color: var(--fps-ink);
+  font-size: 1.8rem;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+.sectionHeading > span {
+  display: block;
+  margin-top: 16px;
+  color: var(--fps-muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.routeList {
+  border-top: 2px solid var(--fps-ink);
+}
+
+.route {
+  display: grid;
+  min-height: 118px;
+  box-sizing: border-box;
+  align-items: center;
+  border-bottom: 1px solid var(--fps-rule);
+  color: var(--fps-ink);
+  grid-template-columns: 48px minmax(0, 1fr) max-content 30px;
+  gap: 18px;
+  text-decoration: none;
+}
+
+.route:hover,
+.route:focus-visible,
+.routeActive {
+  background: var(--fps-surface-strong);
+  color: var(--fps-ink);
+  text-decoration: none;
+}
+
+.routeIndex,
+.pickerOptionIndex {
+  color: var(--fps-accent);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.routeText,
+.pickerOptionBody {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.routeText strong {
+  font-size: 1.05rem;
+}
+
+.routeText span,
+.pickerOptionBody span {
+  color: var(--fps-muted);
+  line-height: 1.5;
+}
+
+.routeSignal {
+  color: var(--fps-muted);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.68rem;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.routeArrow {
+  color: var(--fps-accent-alt);
+  font-size: 1.35rem;
+  text-align: right;
+}
+
+.referenceBand {
+  background: #171a1d;
+  color: #fff;
+}
+
+.referenceInner {
+  display: grid;
+  width: min(1180px, calc(100% - 56px));
+  margin: 0 auto;
+  align-items: center;
+  gap: 2rem;
+  grid-template-columns: minmax(220px, 0.85fr) 1.4fr auto;
+  padding: 54px 0;
+}
+
+.referenceInner h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.8rem;
+  letter-spacing: 0;
+}
+
+.referenceInner > p {
+  margin: 0;
+  color: #c8ced0;
+  line-height: 1.7;
+}
+
+.sourceLink {
+  color: #efb62e;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sourceLink:hover,
+.sourceLink:focus-visible {
+  color: #fff;
+}
+
+.pickerBackdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  overflow-y: auto;
+  place-items: center;
+  padding: 24px;
+  background: rgb(15 18 20 / 78%);
+}
+
+.picker {
+  width: min(760px, 100%);
+  box-sizing: border-box;
+  border-top: 5px solid var(--fps-accent);
+  padding: 34px;
+  background: var(--fps-page);
+  color: var(--fps-ink);
+  box-shadow: 0 22px 60px rgb(0 0 0 / 36%);
+}
+
+.pickerHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pickerHeader .eyebrow {
+  margin-bottom: 0;
+  color: var(--fps-accent);
+}
+
+.pickerCode {
+  color: var(--fps-muted);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.7rem;
+}
+
+.picker h2 {
+  margin: 35px 0 10px;
+  color: var(--fps-ink);
+  font-size: 2.2rem;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+
+.pickerIntro {
+  max-width: 570px;
+  margin: 0;
+  color: var(--fps-muted);
+  line-height: 1.7;
+}
+
+.pickerOptions {
+  margin-top: 28px;
+  border-top: 2px solid var(--fps-ink);
+}
+
+.pickerOption {
+  display: grid;
+  min-height: 82px;
+  box-sizing: border-box;
+  align-items: center;
+  border-bottom: 1px solid var(--fps-rule);
+  color: var(--fps-ink);
+  grid-template-columns: 38px minmax(0, 1fr) 24px;
+  gap: 16px;
+  text-decoration: none;
+}
+
+.pickerOption:hover,
+.pickerOption:focus-visible {
+  background: var(--fps-surface-strong);
+  color: var(--fps-ink);
+  text-decoration: none;
+}
+
+.pickerOptionBody strong {
+  font-size: 1.08rem;
+}
+
+.pickerOptionBody span {
+  font-size: 0.9rem;
+}
+
+.pickerOptionArrow {
+  color: var(--fps-accent-alt);
+  font-size: 1.3rem;
+}
+
+.dismissPicker {
+  margin-top: 20px;
+  border: 0;
+  padding: 6px 0;
+  cursor: pointer;
+  background: transparent;
+  color: var(--fps-muted);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.dismissPicker:hover,
+.dismissPicker:focus-visible {
+  color: var(--fps-ink);
+}
+
+@media (max-width: 860px) {
+  .heroContent {
+    width: 76%;
+  }
+
+  .route {
+    grid-template-columns: 42px minmax(0, 1fr) 26px;
+  }
+
+  .routeSignal {
+    display: none;
+  }
+
+  .referenceInner {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero {
+    min-height: min(590px, calc(100svh - 76px));
+    align-items: flex-end;
+    padding: 54px 24px 70px;
+  }
+
+  .hero::before {
+    width: 66%;
+    height: 48%;
+    clip-path: polygon(34% 0, 100% 0, 100% 100%, 0 100%);
+  }
+
+  .heroGrid {
+    inset: auto 0 0 35%;
+    height: 48%;
+  }
+
+  .heroMark {
+    top: 22px;
+    right: 16px;
+    width: 210px;
+    height: 210px;
+    opacity: 0.46;
+  }
+
+  .heroContent {
+    width: 100%;
+  }
+
+  .summary {
+    font-size: 1rem;
+  }
+
+  .statusRail {
+    right: 24px;
+    bottom: 18px;
+    left: 24px;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.6rem;
+  }
+
+  .routes {
+    width: calc(100% - 40px);
+    padding: 44px 0 58px;
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .route {
+    min-height: 116px;
+  }
+
+  .referenceInner {
+    width: calc(100% - 40px);
+    padding: 42px 0;
+  }
+
+  .picker {
+    padding: 26px 22px;
+  }
+
+  .picker h2 {
+    margin-top: 28px;
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .primaryAction,
+  .secondaryAction {
+    width: 100%;
+  }
+
+  .statusRail span:nth-child(2) {
+    display: none;
+  }
+
+  .pickerHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+}

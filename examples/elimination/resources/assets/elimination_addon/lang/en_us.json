@@ -1,0 +1,16 @@
+{
+  "message.elimination.started": "Match started",
+  "message.elimination.spawns": "Both teams need spawn points.",
+  "message.elimination.players": "Both teams need online players.",
+  "message.elimination.win": "%s wins",
+  "message.elimination.draw": "Draw",
+  "message.elimination.round": "Round %s",
+  "message.elimination.round_win": "%s wins the round",
+  "message.elimination.result": "Match ended: red %s, blue %s",
+  "hud.elimination.score": "%s | Red %s : Blue %s | %s",
+  "phase.elimination.waiting": "Waiting",
+  "phase.elimination.active_round": "Active",
+  "phase.elimination.round_end_waiting": "Round over",
+  "phase.elimination.paused": "Paused",
+  "phase.elimination.idle": "Idle"
+}

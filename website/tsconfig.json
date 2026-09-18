@@ -1,0 +1,10 @@
+// This file provides IDE type information and powers `pnpm typecheck`.
+{
+  "extends": "@docusaurus/tsconfig",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "strict": true
+  },
+  "exclude": [".docusaurus", "build"]
+}

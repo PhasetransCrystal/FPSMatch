@@ -1,0 +1,16 @@
+{
+  "message.elimination.started": "比赛开始",
+  "message.elimination.spawns": "两队都需要配置出生点。",
+  "message.elimination.players": "红蓝两队都需要在线玩家。",
+  "message.elimination.win": "%s 获胜",
+  "message.elimination.draw": "平局",
+  "message.elimination.round": "第 %s 回合",
+  "message.elimination.round_win": "%s 赢得本轮",
+  "message.elimination.result": "比赛结束：红队 %s，蓝队 %s",
+  "hud.elimination.score": "%s | 红 %s : 蓝 %s | %s",
+  "phase.elimination.waiting": "准备",
+  "phase.elimination.active_round": "进行中",
+  "phase.elimination.round_end_waiting": "回合结算",
+  "phase.elimination.paused": "暂停",
+  "phase.elimination.idle": "未开始"
+}
