@@ -21,7 +21,8 @@ description: 不编写 Java，通过游戏内界面、工具和命令制作 FPSM
 5. [修改地图设置](mapper/settings.md)：设置展示名称、加入规则和自动开始行为。
 6. [配置起始装备](mapper/kits.md)：分别定义每个队伍开局得到的物品。
 7. [配置商店](mapper/shop.md)：初始化商店、编辑商品和购买区域。
-8. [管理房间与比赛](mapper/room-management.md)：通过地图详情页管理玩家和比赛状态。
+8. [配置商店监听模块](mapper/shop-listener-modules.md)：设置退货、护甲升级和动态换物联动。
+9. [管理房间与比赛](mapper/room-management.md)：通过地图详情页管理玩家和比赛状态。
 
 地图工具与命令操作的是同一份服务端数据。可以用图形界面完成大部分配置，再用命令处理少量精确操作；无需在两套流程之间重复配置。
 
@@ -34,6 +35,7 @@ description: 不编写 Java，通过游戏内界面、工具和命令制作 FPSM
 | 修改布尔、数字、文本和资源位置 | [地图设置](mapper/settings.md) |
 | 添加、浏览或删除出生点 | [队伍与出生点](mapper/teams-and-spawns.md) |
 | 配置枪械、价格、分组和购买区域 | [商店](mapper/shop.md) |
+| 配置退货、护甲和换物联动 | [商店监听模块](mapper/shop-listener-modules.md) |
 | 复用另一张地图的配置 | [导入配置](mapper/importing.md) |
 | 添加地图图标、背景和翻译 | [展示资源](mapper/resources.md) |
 | 查找完整命令路径 | [命令参考](mapper/commands.md) |

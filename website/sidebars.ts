@@ -28,6 +28,7 @@ const sidebars: SidebarsConfig = {
             "mapper/settings",
             "mapper/kits",
             "mapper/shop",
+            "mapper/shop-listener-modules",
             "mapper/room-management"
           ]
         },
@@ -217,7 +218,20 @@ const sidebars: SidebarsConfig = {
           "collapsed": true,
           "items": [
             "developer/api-reference",
-            "developer/reliability"
+            "developer/reliability",
+            "developer/utilities",
+            {
+              "type": "category",
+              "label": "工具类专题",
+              "collapsed": true,
+              "items": [
+                "developer/utilities/identifiers-and-codecs",
+                "developer/utilities/gameplay",
+                "developer/utilities/files-spawns",
+                "developer/utilities/rendering",
+                "developer/utilities/edit-tools"
+              ]
+            }
           ]
         }
       ]

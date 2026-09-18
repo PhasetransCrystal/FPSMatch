@@ -47,6 +47,17 @@ description: 从框架提供的实际功能查找专题，并区分扩展入口�
 | `compat.kubejs` | 脚本绑定 | [KubeJS](integration/kubejs.md) |
 | `bukkit` | 混合端插件桥接与事件 | [Bukkit](integration/bukkit.md) |
 
+## 公共工具
+
+| 源码模块 | 主要入口 | 文档 |
+| --- | --- | --- |
+| `util` | `FPSMUtil`、`FPSMFormatUtil`、`FPSMCodec`、`MapId`、`ItemKey` | [工具类总览](utilities.md) |
+| `util.hash` | `FileHashUtil`、`HashAlgorithm` | [出生点与文件哈希](utilities/files-spawns.md) |
+| `core.persistence.PersistenceUtils` | 文件名清理、缓存目录和目录创建 | [标识、Codec 与格式化](utilities/identifiers-and-codecs.md) |
+| `common.item.tool`、`common.item.tool.handler` | `FPSMToolItem`、`EditToolItem`、点击上下文与动作 | [地图编辑工具](utilities/edit-tools.md) |
+
+客户端工具（`RenderUtil`、`PreviewColorUtil`）见[客户端渲染](utilities/rendering.md)。
+
 ## 阅读内部实现时
 
 [当前源码目录](https://github.com/PhasetransCrystal/FPSMatch/tree/master/src/main/java/net/ptcrys/fpsmatch)还包含用于支撑这些功能的注册、渲染与适配代码。它们不一定是独立的扩展系统：

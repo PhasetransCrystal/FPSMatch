@@ -120,4 +120,15 @@ syncToClient       sendPacketToAllPlayer
 | `DownloadBuilder`、`Downloader`、`HashDownloadHolder` | [文件下载](network/downloads.md) |
 | `GunAnimationController`、`ClientFakeItemManager` | [TaCZ 客户端适配](integration/tacz-client.md) |
 
+## 工具类
+
+| 类型 | 用途 | 专题 |
+| --- | --- | --- |
+| `FPSMCodec`、`MapId`、`ItemKey` | JSON 编解码、地图标识和物品堆叠键 | [标识、Codec 与格式化](utilities/identifiers-and-codecs.md) |
+| `FPSMFormatUtil`、`PersistenceUtils` | 文本格式化、本地化与缓存路径 | [标识、Codec 与格式化](utilities/identifiers-and-codecs.md) |
+| `FPSMUtil` | 枪械分类、弹药、库存、掉落和击杀归因 | [武器、库存与击杀](utilities/gameplay.md) |
+| `SpawnPointSafety`、`FileHashUtil`、`HashAlgorithm` | 出生点物理检查和文件摘要 | [出生点与文件哈希](utilities/files-spawns.md) |
+| `RenderUtil`、`PreviewColorUtil` | 客户端颜色、动画、贴图与预览色 | [客户端渲染](utilities/rendering.md) |
+| `FPSMToolItem`、`EditToolItem`、`WorldToolItem` | 地图编辑工具的点击和选择协议 | [地图编辑工具](utilities/edit-tools.md) |
+
 源码包的完整阅读入口见[模块索引](module-index.md)。
