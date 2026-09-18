@@ -11,8 +11,9 @@ const config: Config = {
 
   future: {v4: true},
 
-  url: 'https://phasetranscrystal.github.io',
-  baseUrl: process.env.DOCUSAURUS_BASE_URL || `/FPSMatch/${branchPath}/`,
+  url: 'https://fpsmatch.ptcrys.net',
+  baseUrl: process.env.DOCUSAURUS_BASE_URL || '/',
+
   organizationName: 'PhasetransCrystal',
   projectName: 'FPSMatch',
   trailingSlash: true,

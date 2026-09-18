@@ -1,55 +1,88 @@
 name: Build Wiki
 on:
   push:
-    branches: ["master"]
-    paths: ["README.md", "README_ZH-CN.md", "docs/**", "website/**", ".github/workflows/deploy-docs.yml"]
-  pull_request:
-    paths: ["README.md", "README_ZH-CN.md", "docs/**", "website/**", ".github/workflows/deploy-docs.yml"]
+    branches:
+      - "master"
+    paths:
+      - "README.md"
+      - "README_ZH-CN.md"
+      - "docs/**"
+      - "website/**"
+      - ".github/workflows/deploy-docs.yml"
   workflow_dispatch:
+
 permissions:
-  contents: read
+  actions: read
+  contents: write
+
+# All branch docs are written into one gh-pages branch, so serialize publishes.
+concurrency:
+  group: docs-pages
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: website
+    outputs:
+      branch_path: ${{ steps.branch.outputs.branch_path }}
+      base_url: ${{ steps.branch.outputs.base_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Resolve branch path
+        id: branch
+        shell: bash
+        run: |
+          branch_path="${GITHUB_REF_NAME//\//-}"
+          echo "branch_path=${branch_path}" >> "$GITHUB_OUTPUT"
+          echo "base_url=/${branch_path}/" >> "$GITHUB_OUTPUT"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 10
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
           cache-dependency-path: website/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run typecheck
-      - run: pnpm run build
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Docusaurus
         env:
-          DOCUSAURUS_BASE_URL: /${{ github.event.repository.name }}/${{ github.ref_name }}/
-      - uses: actions/upload-artifact@v4
+          DOCUSAURUS_BASE_URL: ${{ steps.branch.outputs.base_url }}
+        run: pnpm run build
+
+      - name: Upload branch docs artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: wiki-${{ github.ref_name }}
+          name: docs-${{ steps.branch.outputs.branch_path }}
           path: website/build
 
   publish:
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    needs: build
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    needs: build
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Download branch docs artifact
+        uses: actions/download-artifact@v4
         with:
-          name: wiki-${{ github.ref_name }}
+          name: docs-${{ needs.build.outputs.branch_path }}
           path: branch-build
-      - name: Prepare gh-pages checkout
+
+      - name: Checkout Pages branch
         shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir pages
@@ -62,19 +95,27 @@ jobs:
             git checkout --orphan gh-pages
             git rm -rf . >/dev/null 2>&1 || true
           fi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
       - name: Update branch directory
         shell: bash
         run: |
           set -euo pipefail
-          branch_path="${GITHUB_REF_NAME//\//-}"
+          branch_path="${{ needs.build.outputs.branch_path }}"
           rm -rf "pages/${branch_path}"
           mkdir -p "pages/${branch_path}"
           cp -R branch-build/. "pages/${branch_path}/"
+          rm -f "pages/${branch_path}/CNAME"
+          if [ -f website/static/CNAME ]; then
+            cp website/static/CNAME pages/CNAME
+          fi
           touch pages/.nojekyll
           cat > pages/index.html <<'HTML'
           <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./master/"><title>FPSMatch Wiki</title></head><body><a href="./master/">Open the FPSMatch Wiki</a></body></html>
           HTML
-      - name: Commit and push gh-pages
+
+      - name: Commit and push Pages branch
         shell: bash
         run: |
           set -euo pipefail
@@ -82,6 +123,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Deploy Wiki for ${GITHUB_REF_NAME}"
+          if git diff --cached --quiet; then
+            echo "No Pages changes to publish."
+            exit 0
+          fi
+          git commit -m "Deploy docs for ${GITHUB_REF_NAME}"
           git push origin gh-pages
