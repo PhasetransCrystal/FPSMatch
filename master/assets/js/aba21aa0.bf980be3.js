@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkfpsmatch_wiki=self.webpackChunkfpsmatch_wiki||[]).push([["3747"],{7093(s){s.exports=JSON.parse('{"name":"docusaurus-plugin-content-docs","id":"default"}')}}]);

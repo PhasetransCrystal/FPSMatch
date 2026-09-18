@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkfpsmatch_wiki=self.webpackChunkfpsmatch_wiki||[]).push([["1668"],{8810(e,s,r){r.r(s),r.d(s,{default:()=>n});var a=r(1987);r(1763);var c=r(3526),t=r(9013),u=r(2474),i=r(6345),h=r(3780);function n(e){return(0,a.jsx)(t.e3,{className:(0,c.A)(u.G.wrapper.docsPages),children:(0,a.jsx)(h.A,{children:(0,i.v)(e.route.routes)})})}}}]);

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkfpsmatch_wiki=self.webpackChunkfpsmatch_wiki||[]).push([["1880"],{8347(e,s,c){c.d(s,{createInfoServices:()=>a.v});var a=c(4455);c(9044)}}]);

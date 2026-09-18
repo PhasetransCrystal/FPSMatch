@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkfpsmatch_wiki=self.webpackChunkfpsmatch_wiki||[]).push([["4557"],{2652(e,c,s){s.d(c,{createArchitectureServices:()=>i.S});var i=s(5374);s(9044)}}]);
