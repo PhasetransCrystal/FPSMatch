@@ -132,6 +132,8 @@ run/
 wiki/
 wiki-publish/
 .wiki/
+!docs/
+!docs/**/*.md
 
 # Local porting and decompilation workspace
 /porting/
