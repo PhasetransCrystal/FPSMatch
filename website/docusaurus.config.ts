@@ -9,7 +9,7 @@ const config: Config = {
   tagline: 'Minecraft 团队竞技 FPS 框架文档',
   favicon: 'img/icon.png',
 
-  future: {v4: true},
+  future: {v4: true, experimental_vcs: 'git-ad-hoc'},
 
   url: 'https://fpsmatch.ptcrys.net',
   baseUrl: process.env.DOCUSAURUS_BASE_URL || '/',

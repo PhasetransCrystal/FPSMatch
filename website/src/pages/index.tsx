@@ -86,7 +86,6 @@ export default function Home(): JSX.Element {
       <main className={styles.main}>
         <header className={styles.hero}>
           <div className={styles.heroGrid} aria-hidden="true" />
-          <img className={styles.heroMark} src="img/icon.png" alt="" aria-hidden="true" />
           <div className={styles.heroContent}>
             <p className={styles.eyebrow}>FPSM / FIELD MANUAL / 1.3.0-SNAPSHOT</p>
             <h1>FPSMatch</h1>

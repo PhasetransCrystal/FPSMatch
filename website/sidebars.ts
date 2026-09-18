@@ -28,6 +28,7 @@ const sidebars: SidebarsConfig = {
             "mapper/settings",
             "mapper/kits",
             "mapper/shop",
+            "mapper/shop-listener-modules",
             "mapper/room-management"
           ]
         },

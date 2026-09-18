@@ -98,7 +98,24 @@ description: 按地图、队伍、设置和能力分类查找 FPSMatch 制图命
 /fpsm map modify <game_type> <map_name> team teams <team_name> capability shop modify set <shop_type> <slot> ...
 ```
 
-末尾可以使用 `cost <value>`、`item [item]`、`group_id <value>`、`dummy_ammo_amount <amount>`，或 `listener_module add|remove <name>`。槽位命令编号从 1 开始。
+末尾可以使用：
+
+```text
+cost <value>
+item [item]
+group_id <value>
+dummy_ammo_amount <amount>
+listener_module add <name>
+listener_module remove <name>
+```
+
+槽位命令编号从 1 开始。`group_id` 的命令参数接受 0 及以上的值；要恢复为不分组的 `-1`，使用图形编辑器。监听模块的添加补全只显示已注册且尚未挂载的名称，移除补全只显示当前槽位已有的名称。模块触发方向、内置模块和护甲示例见[商店监听模块](shop-listener-modules.md)。
+
+创建动态换物模块使用独立命令，默认商品放副手、改变后商品放主手：
+
+```text
+/fpsm listener_module add change_item_module <changed_cost> <default_cost>
+```
 
 ## 比赛管理
 
