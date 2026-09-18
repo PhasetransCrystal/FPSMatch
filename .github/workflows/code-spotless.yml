@@ -2,7 +2,13 @@ name: Spotless Code Format Check
 
 on:
   pull_request:
+    paths:
+      - "gradle/**"
+      - "src/**"
   push:
+    paths:
+      - "gradle/**"
+      - "src/**"
   workflow_dispatch:
 
 concurrency:
