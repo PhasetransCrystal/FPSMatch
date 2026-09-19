@@ -5,10 +5,12 @@ on:
     paths:
       - "gradle/**"
       - "src/**"
+      - "*.gradle"
   push:
     paths:
       - "gradle/**"
       - "src/**"
+      - "*.gradle"
   workflow_dispatch:
 
 concurrency:

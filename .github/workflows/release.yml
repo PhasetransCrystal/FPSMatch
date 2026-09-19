@@ -3,14 +3,14 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      release_summary:
-        description: "发布摘要（支持 Markdown）"
-        required: false
-        type: string
-      related_items:
-        description: "关联的 PR/Issue 编号或 commit SHA，使用空格或逗号分隔"
-        required: false
-        type: string
+      notes:
+        description: '本次重点,置顶输出;留空则不显示该段'
+      breaking:
+        description: '破坏性变更 / 不兼容改动;留空则不显示该段'
+      known_issues:
+        description: '已知问题与规避方式;留空则不显示该段'
+      extra:
+        description: '自动日志之外的补充条目;留空则不显示该段'
 
 concurrency:
   group: release
@@ -21,8 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      issues: read
-      pull-requests: read
     timeout-minutes: 30
     env:
       RELEASE_BUILD: 'true'
@@ -56,45 +54,53 @@ jobs:
           test -n "$version"
           echo "value=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Build release preface
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_SUMMARY: ${{ inputs.release_summary }}
-          RELATED_ITEMS: ${{ inputs.related_items }}
+      - name: Resolve previous release tag
+        id: previous-tag
         run: |
-          set -euo pipefail
-          set -f
-          : > release-preface.md
+          tag="v${{ steps.version.outputs.value }}"
+          previous=$(git tag --list 'v[0-9]*' --sort=-v:refname | awk -v skip="$tag" '/^v[0-9.]+$/ && $0 != skip { print; exit }')
+          echo "value=$previous" >> "$GITHUB_OUTPUT"
 
-          if [[ -n "$RELEASE_SUMMARY" ]]; then
-            printf '## 发布摘要 / Release Summary\n\n%s\n' "$RELEASE_SUMMARY" >> release-preface.md
-          fi
-
-          normalized_items=${RELATED_ITEMS//,/ }
-          if [[ -n "${normalized_items//[[:space:]]/}" ]]; then
-            printf '\n## 关联项 / Related Items\n\n' >> release-preface.md
-            for item in $normalized_items; do
-              if [[ "$item" =~ ^#?([0-9]+)$ ]]; then
-                number=${BASH_REMATCH[1]}
-                gh api "repos/$GITHUB_REPOSITORY/issues/$number" \
-                  --jq '"- " + (if has("pull_request") then "PR" else "Issue" end) + " [#" + (.number | tostring) + " " + .title + "](" + .html_url + ")"' \
-                  >> release-preface.md
-              elif [[ "$item" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
-                gh api "repos/$GITHUB_REPOSITORY/commits/$item" \
-                  --jq '"- Commit [" + .sha[0:7] + "](" + .html_url + "): " + (.commit.message | split("\n")[0])' \
-                  >> release-preface.md
-              else
-                echo "Unsupported related item: $item" >&2
-                exit 1
-              fi
-            done
-          fi
+      - name: Move release tag to current commit
+        run: |
+          tag="v${{ steps.version.outputs.value }}"
+          git tag -f "$tag"
+          git push -f origin "refs/tags/$tag"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.value }}
           name: v${{ steps.version.outputs.value }}
-          body_path: release-preface.md
+          body: |
+            ${{ inputs.notes && '### 本次重点 / Highlights' || '' }}
+            ${{ inputs.notes || '' }}
+
+            ${{ inputs.breaking && '### 破坏性变更 / Breaking Changes' || '' }}
+            ${{ inputs.breaking || '' }}
+
+            ${{ inputs.known_issues && '### 已知问题 / Known Issues' || '' }}
+            ${{ inputs.known_issues || '' }}
+
+            ${{ inputs.extra && '### 补充更新 / Additional Changes' || '' }}
+            ${{ inputs.extra || '' }}
+
+            ### 安装 / Installation
+
+            - Minecraft 1.20.1 + Forge 47.4.10+
+            - 客户端需 Modern UI `3.12.0.1` 与 Kotlin for Forge,TaCZ 等为可选联动
+            - 将本页附件 `fpsmatch-${{ steps.version.outputs.value }}.jar` 放入 `.minecraft/mods/`
+
+            ### 链接 / Links
+
+            - 文档 / Docs: https://fpsmatch.ptcrys.net/master/
+            - Maven: `net.ptcrys:fpsmatch:${{ steps.version.outputs.value }}` · https://maven.ptcrys.net/releases
+
+            ### 反馈 / Feedback
+
+            - [Issues](https://github.com/PhasetransCrystal/FPSMatch/issues)
+            - [README](https://github.com/PhasetransCrystal/FPSMatch#readme)
+            - QQ 群：771884981
           generate_release_notes: true
+          previous_tag: ${{ steps.previous-tag.outputs.value }}
           files: build/libs/*.jar
