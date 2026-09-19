@@ -1,4 +1,4 @@
-name: Build and Snapshot Publish
+name: Build
 
 on:
   pull_request:
@@ -12,7 +12,7 @@ on:
       - main
 
 concurrency:
-  group: build-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -51,49 +51,3 @@ jobs:
             */build/libs/
           if-no-files-found: error
           retention-days: 7
-
-  snapshot:
-    if: ${{ github.event_name == 'push' }}
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    timeout-minutes: 30
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Publish snapshot to Maven
-        run: |
-          chmod +x gradlew
-          ./gradlew publish --stacktrace
-        env:
-          ORG_GRADLE_PROJECT_ptcrysUsername: ${{ secrets.PTCRYS_USERNAME }}
-          ORG_GRADLE_PROJECT_ptcrysPassword: ${{ secrets.PTCRYS_PASSWORD }}
-
-      - name: Resolve GitHub snapshot version
-        id: snapshot-version
-        run: |
-          base_version=$(./gradlew -q properties | awk '/^version:/ { print $2; exit }')
-          test -n "$base_version"
-          [[ "$base_version" == *-SNAPSHOT ]]
-          snapshot_version="${base_version%-SNAPSHOT}-$(date -u +'%Y%m%d.%H%M%S')-${GITHUB_RUN_ATTEMPT}"
-          echo "value=$snapshot_version" >> "$GITHUB_OUTPUT"
-
-      - name: Create GitHub snapshot pre-release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.snapshot-version.outputs.value }}
-          name: v${{ steps.snapshot-version.outputs.value }}
-          prerelease: true
-          generate_release_notes: true
-          files: build/libs/*.jar
