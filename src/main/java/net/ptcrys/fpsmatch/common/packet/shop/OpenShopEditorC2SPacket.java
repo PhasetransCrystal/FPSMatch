@@ -16,6 +16,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkHooks;
 
@@ -78,15 +79,26 @@ public record OpenShopEditorC2SPacket(String gameType, String mapName, String te
                             if (!(type instanceof INamedType named)) continue;
                             List<ShopSlot> slots = shop.getDefaultShopSlotListByType(named.name());
                             buf.writeUtf(named.name());
-                            buf.writeInt(slots.size());
+                            // The client layout is based on the registered type, not on a possibly
+                            // incomplete persisted list.
+                            buf.writeInt(named.slotCount());
                         }
                         for (Object type : enums) {
                             if (!(type instanceof INamedType named)) continue;
                             List<ShopSlot> slots = shop.getDefaultShopSlotListByType(named.name());
-                            for (ShopSlot slot : slots) {
-                                buf.writeItem(slot.process());
+                            for (int index = 0; index < named.slotCount(); index++) {
+                                ShopSlot slot = slots != null && index < slots.size() ? slots.get(index) : null;
+                                ItemStack item = ItemStack.EMPTY;
+                                if (slot != null) {
+                                    try {
+                                        item = slot.process();
+                                    } catch (RuntimeException ignored) {
+                                        // Keep the editor packet valid for a damaged slot.
+                                    }
+                                }
+                                buf.writeItem(item);
                                 try {
-                                    String json = new Gson().toJson(FPSMCodec.encodeToJson(ShopSlot.CODEC, slot));
+                                    String json = slot == null ? "" : new Gson().toJson(FPSMCodec.encodeToJson(ShopSlot.CODEC, slot));
                                     buf.writeUtf(json);
                                 } catch (Exception e) {
                                     buf.writeUtf("");

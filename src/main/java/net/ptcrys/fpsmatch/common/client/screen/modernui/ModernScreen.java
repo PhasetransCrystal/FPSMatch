@@ -88,6 +88,7 @@ public abstract class ModernScreen extends Screen implements MuiScreen {
 
     private volatile float unitScale = 1;
     private volatile int viewportWidth, viewportHeight;
+    private volatile int windowWidth, windowHeight;
     private final Map<String, net.minecraft.resources.ResourceLocation> avatars = new HashMap<>();
     private final Map<String, String> itemTextures = new HashMap<>();
     private final Set<String> decoratedItems = new HashSet<>();
@@ -99,8 +100,9 @@ public abstract class ModernScreen extends Screen implements MuiScreen {
         decoratedItems.clear();
         viewportWidth = Math.max(1, designWidth());
         viewportHeight = Math.max(1, designHeight());
-        unitScale = Math.min(Minecraft.getInstance().getWindow().getWidth() / (float) viewportWidth,
-                Minecraft.getInstance().getWindow().getHeight() / (float) viewportHeight);
+        windowWidth = Math.max(1, Minecraft.getInstance().getWindow().getWidth());
+        windowHeight = Math.max(1, Minecraft.getInstance().getWindow().getHeight());
+        unitScale = Math.min(windowWidth / (float) viewportWidth, windowHeight / (float) viewportHeight);
         pending = List.copyOf(content());
         if (attached) Core.getUiHandler().post(fragment::update);
     }
@@ -122,6 +124,7 @@ public abstract class ModernScreen extends Screen implements MuiScreen {
 
     @Override
     public void render(GuiGraphics graphics, int x, int y, float partial) {
+        syncViewport();
         renderBackground(graphics);
         graphics.flush();
         UIManager.getInstance().render(graphics, x, y, partial);
@@ -165,6 +168,21 @@ public abstract class ModernScreen extends Screen implements MuiScreen {
             graphics.pose().popPose();
             graphics.disableScissor();
         }
+    }
+
+    /**
+     * Fullscreen and GUI-scale changes can resize the Minecraft window without recreating the
+     * Modern UI fragment. Rebuild the pending layout as soon as the logical or physical viewport
+     * changes so a map screen cannot keep the compact layout from the previous window size.
+     */
+    private void syncViewport() {
+        Minecraft minecraft = Minecraft.getInstance();
+        int currentViewportWidth = Math.max(1, designWidth());
+        int currentViewportHeight = Math.max(1, designHeight());
+        int currentWindowWidth = Math.max(1, minecraft.getWindow().getWidth());
+        int currentWindowHeight = Math.max(1, minecraft.getWindow().getHeight());
+        if (currentViewportWidth == viewportWidth && currentViewportHeight == viewportHeight && currentWindowWidth == windowWidth && currentWindowHeight == windowHeight) return;
+        refresh();
     }
 
     @Override

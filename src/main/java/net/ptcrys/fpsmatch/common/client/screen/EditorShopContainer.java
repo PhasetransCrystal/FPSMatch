@@ -84,10 +84,28 @@ public class EditorShopContainer extends AbstractContainerMenu {
             int slotCount = types.get(type).slotCount();
             for (int col = 0; col < slotCount; col++) {
                 int slotIndex = types.get(type).startIndex() + col;
-                ShopSlot shopSlot = (shopSlots != null && col < shopSlots.size()) ? shopSlots.get(col) : null;
-                ItemStack slotItem = shopSlot == null ? ItemStack.EMPTY : shopSlot.process();
-                if (shopSlot != null) {
+                ShopSlot shopSlot = shopSlots != null && col < shopSlots.size() ? shopSlots.get(col) : null;
+                if (shopSlot == null) {
+                    // Keep the editor usable even when an old or partially written shop has a missing slot.
+                    shopSlot = new ShopSlot(ItemStack.EMPTY, 0);
+                    if (shopSlots != null) {
+                        while (shopSlots.size() <= col) shopSlots.add(null);
+                        shopSlots.set(col, shopSlot);
+                    }
+                }
+                this.allShopSlots.set(slotIndex, shopSlot);
+                ItemStack slotItem;
+                try {
+                    slotItem = shopSlot.process();
+                } catch (RuntimeException invalidItem) {
+                    shopSlot = new ShopSlot(
+                            ItemStack.EMPTY,
+                            shopSlot.getDefaultCost(),
+                            shopSlot.getMaxBuyCount(),
+                            shopSlot.getGroupId());
+                    if (shopSlots != null && col < shopSlots.size()) shopSlots.set(col, shopSlot);
                     this.allShopSlots.set(slotIndex, shopSlot);
+                    slotItem = ItemStack.EMPTY;
                 }
                 SlotItemHandler customSlot = new SlotItemHandler(
                         itemStackHandler,
@@ -140,9 +158,12 @@ public class EditorShopContainer extends AbstractContainerMenu {
                         shopSlot = FPSMCodec.decodeFromJson(ShopSlot.CODEC, new Gson().fromJson(json, JsonElement.class));
                     } catch (Exception ignored) {}
                 }
-                if (shopSlot != null) {
-                    this.allShopSlots.set(slotIndex, shopSlot);
+                if (shopSlot == null) {
+                    // The server may contain listener/item data unknown to this client. The server still
+                    // owns the real slot; this placeholder only keeps the slot selectable in the editor.
+                    shopSlot = new ShopSlot(slotItem.copy(), 0);
                 }
+                this.allShopSlots.set(slotIndex, shopSlot);
                 SlotItemHandler customSlot = new SlotItemHandler(
                         itemStackHandler,
                         slotIndex,
@@ -346,7 +367,13 @@ public class EditorShopContainer extends AbstractContainerMenu {
                         try {
                             json = new Gson().toJson(FPSMCodec.encodeToJson(ShopSlot.CODEC, shopSlot));
                         } catch (Exception e) {
-                            json = "";
+                            // Keep the client menu open when server-only data cannot use the shared codec.
+                            ShopSlot fallback = new ShopSlot(
+                                    ItemStack.EMPTY,
+                                    shopSlot.getDefaultCost(),
+                                    shopSlot.getMaxBuyCount(),
+                                    shopSlot.getGroupId());
+                            json = new Gson().toJson(FPSMCodec.encodeToJson(ShopSlot.CODEC, fallback));
                         }
                         buf.writeUtf(json);
                         buf.writeUtf(gameType);
