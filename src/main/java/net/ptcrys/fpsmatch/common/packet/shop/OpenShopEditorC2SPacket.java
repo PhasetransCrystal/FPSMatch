@@ -69,9 +69,9 @@ public record OpenShopEditorC2SPacket(String gameType, String mapName, String te
                             (windowId, inv, p) -> new EditorShopContainer(windowId, inv, shop, gameType, mapName, teamName),
                             Component.translatable("gui.fpsm.shop_editor.title")),
                     buf -> {
-                        buf.writeUtf(gameType);
-                        buf.writeUtf(mapName);
-                        buf.writeUtf(teamName);
+                        buf.writeUtf(gameType, ID_MAX_LENGTH);
+                        buf.writeUtf(mapName, ID_MAX_LENGTH);
+                        buf.writeUtf(teamName, ID_MAX_LENGTH);
 
                         // 序列化商店数据到客户端
                         buf.writeInt(enums.size());

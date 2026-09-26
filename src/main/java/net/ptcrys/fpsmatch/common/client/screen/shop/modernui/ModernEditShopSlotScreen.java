@@ -20,7 +20,9 @@ public final class ModernEditShopSlotScreen extends ModernMenuScreen<EditShopSlo
     private ItemStack originalItem;
     private String status = "";
     private boolean saving, returning;
-    private int ticks, lateResultTicks;
+    private int ticks;
+    private long saveRequest;
+    private static final java.util.concurrent.atomic.AtomicLong REQUESTS = new java.util.concurrent.atomic.AtomicLong();
     private Draft discardDraft;
     private ItemStack discardItem;
     private final List<String> listeners = new ArrayList<>();
@@ -51,8 +53,8 @@ public final class ModernEditShopSlotScreen extends ModernMenuScreen<EditShopSlo
         return saving;
     }
 
-    public boolean isSaveResultRelevant() {
-        return saving || lateResultTicks > 0;
+    public boolean isSaveResultRelevant(long requestId) {
+        return saving && requestId == saveRequest;
     }
 
     public boolean isReturnPending() {
@@ -66,9 +68,8 @@ public final class ModernEditShopSlotScreen extends ModernMenuScreen<EditShopSlo
     }
 
     public void applySaveResult(MapRoomToastS2CPacket result) {
-        if (!isSaveResultRelevant()) return;
+        if (!isSaveResultRelevant(result.requestId())) return;
         saving = false;
-        lateResultTicks = 0;
         status = result.message().getString();
         if (!result.error()) {
             baseline();
@@ -81,10 +82,9 @@ public final class ModernEditShopSlotScreen extends ModernMenuScreen<EditShopSlo
     public void tick() {
         if ((saving || returning) && ++ticks >= 200) {
             status = tr(saving ? "gui.fpsm.shop_editor.save.timeout" : "gui.fpsm.shop_editor.return.timeout");
-            if (saving) lateResultTicks = 40;
             saving = false;
             returning = false;
-        } else if (lateResultTicks > 0) lateResultTicks--;
+        }
         if (discardDraft != null && (!discardDraft.equals(draft()) || !ItemStack.matches(discardItem, menu.slots.get(0).getItem()))) discardDraft = null;
         super.tick();
     }
@@ -208,10 +208,10 @@ public final class ModernEditShopSlotScreen extends ModernMenuScreen<EditShopSlo
         menu.setGroupId(Integer.parseInt(group));
         saving = true;
         ticks = 0;
-        lateResultTicks = 0;
+        saveRequest = REQUESTS.incrementAndGet();
         discardDraft = null;
         status = tr("gui.fpsm.shop_editor.state.saving");
-        FPSMatch.sendToServer(new SaveShopSlotConfigurationC2SPacket(menu.containerId, menu.getAmmo(), menu.getPrice(), menu.getGroupId(), listeners));
+        FPSMatch.sendToServer(new SaveShopSlotConfigurationC2SPacket(menu.containerId, saveRequest, menu.getAmmo(), menu.getPrice(), menu.getGroupId(), listeners));
     }
 
     private void openEditor() {

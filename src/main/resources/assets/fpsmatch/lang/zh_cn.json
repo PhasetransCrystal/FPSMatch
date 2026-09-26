@@ -704,6 +704,7 @@
   "gui.fpsm.shop_editor.modules.remove": "移除",
   "gui.fpsm.shop_editor.modules.empty": "此 Slot 尚未添加监听模块",
   "gui.fpsm.shop_editor.save.invalid_module": "监听模块无效或已被服务器移除，请重新打开编辑器",
+  "gui.fpsm.shop_editor.save.failed": "服务器保存槽位失败，输入仍保留",
   "gui.fpsm.shop_editor.batch.title": "批量配置组 ID",
   "gui.fpsm.shop_editor.batch.done": "返回单选",
   "gui.fpsm.shop_editor.batch.select_category": "全选当前分类",

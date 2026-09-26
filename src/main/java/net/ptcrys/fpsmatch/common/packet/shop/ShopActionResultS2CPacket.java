@@ -17,6 +17,8 @@ public record ShopActionResultS2CPacket(
                                         ShopAction action,
                                         ShopActionResult result) {
 
+    private static final int MAX_TYPE_LENGTH = 128;
+
     public ShopActionResultS2CPacket {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(action, "action");
@@ -25,7 +27,7 @@ public record ShopActionResultS2CPacket(
 
     public static void encode(ShopActionResultS2CPacket packet, FriendlyByteBuf buffer) {
         buffer.writeLong(packet.requestId);
-        buffer.writeUtf(packet.type);
+        buffer.writeUtf(packet.type, MAX_TYPE_LENGTH);
         buffer.writeInt(packet.index);
         buffer.writeEnum(packet.action);
         buffer.writeEnum(packet.result.code());
@@ -34,7 +36,7 @@ public record ShopActionResultS2CPacket(
     public static ShopActionResultS2CPacket decode(FriendlyByteBuf buffer) {
         return new ShopActionResultS2CPacket(
                 buffer.readLong(),
-                buffer.readUtf(),
+                buffer.readUtf(MAX_TYPE_LENGTH),
                 buffer.readInt(),
                 buffer.readEnum(ShopAction.class),
                 new ShopActionResult(buffer.readEnum(ShopActionResult.Code.class)));
