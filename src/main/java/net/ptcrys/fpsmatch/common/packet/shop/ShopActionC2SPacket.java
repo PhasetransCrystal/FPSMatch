@@ -11,14 +11,12 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 public class ShopActionC2SPacket {
 
-    private static final Map<UUID, Object> PLAYER_LOCKS = new ConcurrentHashMap<>();
+    private static final int MAX_IDENTIFIER_LENGTH = 128;
+
     public final long requestId;
     public final String name;
     public final INamedType type;
@@ -35,8 +33,8 @@ public class ShopActionC2SPacket {
 
     public static void encode(ShopActionC2SPacket packet, FriendlyByteBuf buf) {
         buf.writeLong(packet.requestId);
-        buf.writeUtf(packet.name);
-        buf.writeUtf(packet.type.name());
+        buf.writeUtf(packet.name, MAX_IDENTIFIER_LENGTH);
+        buf.writeUtf(packet.type.name(), MAX_IDENTIFIER_LENGTH);
         buf.writeInt(packet.index);
         buf.writeVarInt(packet.action);
     }
@@ -44,8 +42,8 @@ public class ShopActionC2SPacket {
     public static ShopActionC2SPacket decode(FriendlyByteBuf buf) {
         return new ShopActionC2SPacket(
                 buf.readLong(),
-                buf.readUtf(),
-                new UnknownShopType(buf.readUtf()),
+                buf.readUtf(MAX_IDENTIFIER_LENGTH),
+                new UnknownShopType(buf.readUtf(MAX_IDENTIFIER_LENGTH)),
                 buf.readInt(),
                 buf.readVarInt());
     }
@@ -64,11 +62,7 @@ public class ShopActionC2SPacket {
             if (serverPlayer == null) {
                 return;
             }
-            Object playerLock = PLAYER_LOCKS.computeIfAbsent(
-                    serverPlayer.getUUID(), ignored -> new Object());
-            synchronized (playerLock) {
-                handleAuthorized(serverPlayer);
-            }
+            handleAuthorized(serverPlayer);
         });
         ctx.get().setPacketHandled(true);
     }
@@ -77,12 +71,6 @@ public class ShopActionC2SPacket {
         ShopAction decodedAction = action >= 0 && action < ShopAction.values().length ? ShopAction.values()[action] : null;
         ShopActionResult result;
         try {
-            ShopActionResultS2CPacket replay = ShopActionReplayLedger.find(
-                    serverPlayer.getUUID(), requestId);
-            if (replay != null) {
-                FPSMatch.sendToPlayer(serverPlayer, replay);
-                return;
-            }
             result = ShopActionResult.failure(ShopActionResult.Code.INVALID_REQUEST);
             if (requestId >= 0 && index >= 0 && type != null && type.name() != null && !type.name().isBlank() && decodedAction != null) {
                 BaseMap map = FPSMCore.getInstance().getMapByPlayer(serverPlayer).orElse(null);
@@ -114,7 +102,6 @@ public class ShopActionC2SPacket {
                 index,
                 decodedAction == null ? ShopAction.BUY : decodedAction,
                 result);
-        FPSMatch.sendToPlayer(serverPlayer, ShopActionReplayLedger.record(
-                serverPlayer.getUUID(), response));
+        FPSMatch.sendToPlayer(serverPlayer, response);
     }
 }

@@ -12,7 +12,7 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.List;
 import java.util.function.Supplier;
 
-public record SaveShopSlotConfigurationC2SPacket(int containerId, int ammo, int price, int group, List<String> modules) {
+public record SaveShopSlotConfigurationC2SPacket(int containerId, long requestId, int ammo, int price, int group, List<String> modules) {
 
     public SaveShopSlotConfigurationC2SPacket {
         modules = List.copyOf(modules);
@@ -20,6 +20,7 @@ public record SaveShopSlotConfigurationC2SPacket(int containerId, int ammo, int 
 
     public static void encode(SaveShopSlotConfigurationC2SPacket packet, FriendlyByteBuf buf) {
         buf.writeVarInt(packet.containerId);
+        buf.writeLong(packet.requestId);
         buf.writeInt(packet.ammo);
         buf.writeInt(packet.price);
         buf.writeInt(packet.group);
@@ -27,7 +28,7 @@ public record SaveShopSlotConfigurationC2SPacket(int containerId, int ammo, int 
     }
 
     public static SaveShopSlotConfigurationC2SPacket decode(FriendlyByteBuf buf) {
-        return new SaveShopSlotConfigurationC2SPacket(buf.readVarInt(), buf.readInt(), buf.readInt(), buf.readInt(),
+        return new SaveShopSlotConfigurationC2SPacket(buf.readVarInt(), buf.readLong(), buf.readInt(), buf.readInt(), buf.readInt(),
                 buf.readCollection(FriendlyByteBuf.limitValue(java.util.ArrayList::new, ShopEditorValues.MAX_MODULES),
                         in -> in.readUtf(ShopEditorValues.MAX_MODULE_NAME)));
     }
@@ -36,8 +37,14 @@ public record SaveShopSlotConfigurationC2SPacket(int containerId, int ammo, int 
         context.get().enqueueWork(() -> {
             var player = context.get().getSender();
             if (player == null) return;
-            var result = player.containerMenu instanceof EditShopSlotMenu menu && menu.containerId == containerId ? menu.trySaveData(player, ammo, price, group, modules) : EditShopSlotMenu.SaveResult.INVALID_MENU;
-            FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(Component.translatable(result.translationKey()), !result.success()));
+            EditShopSlotMenu.SaveResult result;
+            try {
+                result = player.containerMenu instanceof EditShopSlotMenu menu && menu.containerId == containerId ? menu.trySaveData(player, ammo, price, group, modules) : EditShopSlotMenu.SaveResult.INVALID_MENU;
+            } catch (RuntimeException failure) {
+                FPSMatch.LOGGER.error("Shop editor save request {} failed", requestId, failure);
+                result = EditShopSlotMenu.SaveResult.SAVE_FAILED;
+            }
+            FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(Component.translatable(result.translationKey()), !result.success(), requestId));
         });
         context.get().setPacketHandled(true);
     }

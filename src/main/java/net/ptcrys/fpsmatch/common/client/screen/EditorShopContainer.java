@@ -152,17 +152,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
                 int slotIndex = types.get(type).startIndex() + col;
                 ItemStack slotItem = buf.readItem();
                 String json = buf.readUtf();
-                ShopSlot shopSlot = null;
-                if (!json.isEmpty()) {
-                    try {
-                        shopSlot = FPSMCodec.decodeFromJson(ShopSlot.CODEC, new Gson().fromJson(json, JsonElement.class));
-                    } catch (Exception ignored) {}
-                }
-                if (shopSlot == null) {
-                    // The server may contain listener/item data unknown to this client. The server still
-                    // owns the real slot; this placeholder only keeps the slot selectable in the editor.
-                    shopSlot = new ShopSlot(slotItem.copy(), 0);
-                }
+                ShopSlot shopSlot = decodeClientSlot(json, slotItem);
                 this.allShopSlots.set(slotIndex, shopSlot);
                 SlotItemHandler customSlot = new SlotItemHandler(
                         itemStackHandler,
@@ -175,6 +165,18 @@ public class EditorShopContainer extends AbstractContainerMenu {
                 }
             }
         }
+    }
+
+    private static ShopSlot decodeClientSlot(String json, ItemStack slotItem) {
+        if (json != null && !json.isEmpty()) {
+            try {
+                ShopSlot decoded = FPSMCodec.decodeFromJson(ShopSlot.CODEC, new Gson().fromJson(json, JsonElement.class));
+                if (decoded != null) return decoded;
+            } catch (RuntimeException ignored) {
+                // A client may not know a server-side item or listener. Keep the menu usable.
+            }
+        }
+        return new ShopSlot(slotItem == null ? ItemStack.EMPTY : slotItem.copy(), 0);
     }
 
     public Map<String, TypeInfo> getTypes() {

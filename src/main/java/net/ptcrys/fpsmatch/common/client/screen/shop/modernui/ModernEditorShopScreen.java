@@ -57,6 +57,9 @@ public final class ModernEditorShopScreen extends ModernMenuScreen<EditorShopCon
         if (!menu.getTypes().containsKey(category)) category = menu.getTypes().entrySet().stream()
                 .filter(e -> selected >= e.getValue().startIndex() && selected < e.getValue().startIndex() + e.getValue().slotCount())
                 .map(Map.Entry::getKey).findFirst().orElseGet(() -> menu.getTypes().keySet().stream().findFirst().orElse(""));
+        if (selected < 0 || selected >= menu.getAllSlots().size() || menu.getAllSlots().get(selected) == null) {
+            selected = menu.getTypes().getOrDefault(category, new EditorShopContainer.TypeInfo(category, 0, -1)).startIndex();
+        }
         if (batchMode) return batchContent();
         for (var entry : menu.getTypes().entrySet()) {
             String type = entry.getKey();
@@ -186,7 +189,7 @@ public final class ModernEditorShopScreen extends ModernMenuScreen<EditorShopCon
     }
 
     public void applyGroupResult(ShopGroupsResultS2CPacket packet) {
-        if (packet.containerId() != menu.containerId || packet.requestId() != groupRequest) return;
+        if (!savingGroups || packet.containerId() != menu.containerId || packet.requestId() != groupRequest) return;
         savingGroups = false;
         if (packet.result().success()) {
             menu.applyGroups(packet.indices(), packet.groupId());

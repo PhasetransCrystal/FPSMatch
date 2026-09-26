@@ -305,6 +305,11 @@ public class FPSMClientGlobalData {
         playersMoney.remove(uuid);
     }
 
+    /** Clears the active shop snapshot while a local player changes teams. */
+    public void clearShopData() {
+        clientShopData.clear();
+    }
+
     public void reset() {
         this.currentMap = NONE_VALUE;
         this.currentGameType = NONE_VALUE;

@@ -704,6 +704,7 @@
   "gui.fpsm.shop_editor.modules.remove": "Remove",
   "gui.fpsm.shop_editor.modules.empty": "This slot has no listener modules",
   "gui.fpsm.shop_editor.save.invalid_module": "Invalid or unavailable listener module; reopen the editor",
+  "gui.fpsm.shop_editor.save.failed": "The server could not save this slot; input was retained",
   "gui.fpsm.shop_editor.batch.title": "Batch Group IDs",
   "gui.fpsm.shop_editor.batch.done": "Single Selection",
   "gui.fpsm.shop_editor.batch.select_category": "Select Category",

@@ -122,7 +122,14 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     public void onJoin(FPSMTeamEvent.JoinEvent event) {
         if (isInitialized() && team.equals(event.getTeam())) {
             if (event.getPlayer() instanceof ServerPlayer serverPlayer) {
-                shop.syncShopData(serverPlayer);
+                // A team join is also the first full shop snapshot for this
+                // client. Sending only slot packets leaves the client's
+                // wallet at its reset/default value until some later economy
+                // event happens, which makes the shop UI appear out of sync
+                // immediately after joining or reconnecting. Send the slot
+                // and money snapshots together while the newly-created
+                // ShopData is still authoritative.
+                shop.sync(serverPlayer);
             }
         }
     }

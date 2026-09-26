@@ -73,6 +73,8 @@ public final class GunSpecUtils {
         IGun iGun = IGun.getIGunOrNull(stack);
         if (iGun == null) return null;
         ClientGunIndex gunIndex = TimelessAPI.getClientGunIndex(iGun.getGunId(stack)).orElse(null);
-        return gunIndex != null ? gunIndex.getDefaultDisplay().getHUDTexture() : null;
+        if (gunIndex == null) return null;
+        var defaultDisplay = gunIndex.getDefaultDisplay();
+        return defaultDisplay != null ? defaultDisplay.getHUDTexture() : null;
     }
 }

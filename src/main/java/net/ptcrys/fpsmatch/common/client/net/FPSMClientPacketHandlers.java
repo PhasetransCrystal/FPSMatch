@@ -157,7 +157,15 @@ public final class FPSMClientPacketHandlers {
     }
 
     public static void handleShopDataSlot(ShopDataSlotS2CPacket packet) {
-        var currentSlot = FPSMClient.getGlobalData().getSlotData(packet.type.name(), packet.index);
+        var global = FPSMClient.getGlobalData();
+        // Slot packets are sent on the same channel for every team, but the
+        // client keeps one active shop cache. Ignore a delayed snapshot from
+        // the team the player has already left; otherwise buying once can
+        // make the CT screen visibly revert to the T shop (or vice versa).
+        if (!FPSMClientGlobalData.NONE_VALUE.equals(global.getCurrentTeam()) && !packet.shopName.isEmpty() && !global.isCurrentTeam(packet.shopName)) {
+            return;
+        }
+        var currentSlot = global.getSlotData(packet.type.name(), packet.index);
         if (currentSlot != null) {
             currentSlot.setItemStack(packet.itemStack);
             currentSlot.setCost(packet.cost);
@@ -200,7 +208,15 @@ public final class FPSMClientPacketHandlers {
 
     public static void handleTeamPlayerLeave(TeamPlayerLeaveS2CPacket packet) {
         Minecraft mc = Minecraft.getInstance();
-        FPSMClient.getGlobalData().removePlayer(packet.player());
+        FPSMClientGlobalData global = FPSMClient.getGlobalData();
+        global.removePlayer(packet.player());
+
+        if (mc.player != null && packet.player().equals(mc.player.getUUID())) {
+            // Clear the local team immediately. A late stats packet from the
+            // old team must not be allowed to restore the previous shop.
+            global.setCurrentTeam(FPSMClientGlobalData.NONE_VALUE);
+            global.clearShopData();
+        }
 
         // Leaving a team ends any active spectator view. The target entity can
         // still exist on the client, so merely clearing team data leaves the
@@ -215,8 +231,14 @@ public final class FPSMClientPacketHandlers {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
         FPSMClientGlobalData global = FPSMClient.getGlobalData();
-        if (packet.getUuid().equals(mc.player.getUUID()) && !FPSMClient.getGlobalData().isCurrentTeam(packet.getTeamName())) {
-            global.setCurrentTeam(packet.getTeamName());
+        if (packet.getUuid().equals(mc.player.getUUID())) {
+            // Team stats are broadcast to every client. During a team switch,
+            // an old-team packet can arrive after the new-team packet. The
+            // local scoreboard assignment is the authoritative team identity;
+            // use it to reject that stale packet before changing shop state.
+            String scoreboardTeam = localScoreboardTeamName(mc);
+            if (scoreboardTeam != null && !scoreboardTeam.equals(packet.getTeamName())) return;
+            if (!global.isCurrentTeam(packet.getTeamName())) global.setCurrentTeam(packet.getTeamName());
         }
 
         Optional<PlayerData> opt = FPSMClient.getGlobalData().getPlayerData(packet.getTeamName(), packet.getUuid());
@@ -234,6 +256,13 @@ public final class FPSMClientPacketHandlers {
         data.setHeadshotKills(packet.getHeadshotKills());
         data.setHealthPercent(packet.getHealthPercent());
         FPSMClient.getGlobalData().updatePlayerTeamData(packet.getTeamName(), packet.getUuid(), data);
+    }
+
+    private static String localScoreboardTeamName(Minecraft minecraft) {
+        if (minecraft.player == null || minecraft.player.getTeam() == null) return null;
+        String scoreboardName = minecraft.player.getTeam().getName();
+        int separator = scoreboardName.lastIndexOf('_');
+        return separator < 0 ? null : scoreboardName.substring(separator + 1);
     }
 
     public static void handleMapSelectionSnapshot(MapSelectionSnapshotS2CPacket packet) {
@@ -281,13 +310,14 @@ public final class FPSMClientPacketHandlers {
         boolean isMapSettingToast = toastKey.equals("gui.fpsm.map_select.action.no_permission") || toastKey.equals("gui.fpsm.map_select.action.map_not_found") || toastKey.equals("gui.fpsm.map_select.action.setting.invalid") || toastKey.equals("gui.fpsm.map_select.action.setting.not_found");
         boolean isRegionToast = toastKey.startsWith("gui.fpsm.map_regions.action.") || toastKey.equals("gui.fpsm.map_select.action.no_permission") || toastKey.equals("gui.fpsm.map_select.action.map_not_found");
         boolean isMapImportToast = toastKey.startsWith("gui.fpsm.map_import.") || toastKey.equals("gui.fpsm.map_select.action.no_permission") || toastKey.equals("gui.fpsm.map_select.action.map_not_found");
-        if (isShopSaveToast && minecraft.screen instanceof ModernEditShopSlotScreen screen && screen.isSaveResultRelevant()) {
+        if (isShopSaveToast && minecraft.screen instanceof ModernEditShopSlotScreen screen && screen.isSaveResultRelevant(packet.requestId())) {
             screen.applySaveResult(packet);
             if (minecraft.player != null) {
                 minecraft.player.displayClientMessage(packet.message(), packet.error());
             }
             return;
         }
+        if (isShopSaveToast && minecraft.screen instanceof ModernEditShopSlotScreen) return;
         if (isShopOpenToast && minecraft.screen instanceof ModernEditorShopScreen screen && screen.isSlotOpenPending()) {
             screen.applySlotOpenFailure(packet.message());
             if (minecraft.player != null) {

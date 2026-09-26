@@ -52,7 +52,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         this(
                 id,
                 playerInventory,
-                FPSMCodec.decodeFromJson(ShopSlot.CODEC, new Gson().fromJson(buf.readUtf(), JsonElement.class)),
+                decodeClientSlot(buf.readUtf()),
                 buf.readUtf(ID_MAX_LENGTH),
                 buf.readUtf(ID_MAX_LENGTH),
                 buf.readUtf(ID_MAX_LENGTH),
@@ -63,6 +63,18 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
                 in -> in.readUtf(ShopEditorValues.MAX_MODULE_NAME));
         availableListeners = buf.readCollection(FriendlyByteBuf.limitValue(java.util.ArrayList::new, ShopEditorValues.MAX_CATALOG),
                 in -> in.readUtf(ShopEditorValues.MAX_MODULE_NAME));
+    }
+
+    private static ShopSlot decodeClientSlot(String json) {
+        if (json != null && !json.isEmpty()) {
+            try {
+                ShopSlot decoded = FPSMCodec.decodeFromJson(ShopSlot.CODEC, new Gson().fromJson(json, JsonElement.class));
+                if (decoded != null) return decoded;
+            } catch (RuntimeException ignored) {
+                // Server-only item or listener data must not prevent the editor from opening.
+            }
+        }
+        return new ShopSlot(ItemStack.EMPTY, 0);
     }
 
     public EditShopSlotMenu(int id, Inventory playerInventory, ItemStackHandler handler, ContainerData data, ShopSlot shopSlot, String gameType, String mapName, String teamName, String shopType, int slotNum) {
@@ -239,7 +251,8 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         STALE_SLOT("gui.fpsm.shop_editor.save.stale_slot"),
         INVALID_ITEM("gui.fpsm.shop_editor.save.invalid_item"),
         INVALID_VALUE("gui.fpsm.shop_editor.save.invalid_value"),
-        INVALID_MODULE("gui.fpsm.shop_editor.save.invalid_module");
+        INVALID_MODULE("gui.fpsm.shop_editor.save.invalid_module"),
+        SAVE_FAILED("gui.fpsm.shop_editor.save.failed");
 
         private final String translationKey;
 
