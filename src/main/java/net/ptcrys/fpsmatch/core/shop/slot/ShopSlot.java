@@ -52,6 +52,7 @@ public class ShopSlot {
     public Supplier<ItemStack> itemSupplier;
     // 返回检查器，用于检查物品栈是否可以返回
     public final Predicate<ItemStack> returningChecker;
+    private final boolean defaultReturningChecker;
     // 默认价格
     public int defaultCost;
     // 当前价格
@@ -223,6 +224,7 @@ public class ShopSlot {
         this.defaultCost = defaultCost;
         this.cost = defaultCost;
         this.returningChecker = getDefaultChecker();
+        this.defaultReturningChecker = true;
     }
 
     /**
@@ -266,6 +268,7 @@ public class ShopSlot {
         this.maxBuyCount = maxBuyCount;
         this.groupId = groupId;
         this.returningChecker = checker;
+        this.defaultReturningChecker = false;
     }
 
     /**
@@ -440,7 +443,9 @@ public class ShopSlot {
         if (GunCompatManager.isGun(itemStack)) {
             FPSMUtil.fixGunItem(itemStack, GunCompatManager.findProvider(itemStack));
         }
-        ShopSlot slot = new ShopSlot(itemStack::copy, this.defaultCost, this.maxBuyCount, this.groupId, this.returningChecker);
+        ShopSlot slot = defaultReturningChecker
+                ? new ShopSlot(itemStack, this.defaultCost, this.maxBuyCount, this.groupId)
+                : new ShopSlot(itemStack::copy, this.defaultCost, this.maxBuyCount, this.groupId, this.returningChecker);
         slot.setIndex(this.index);
         slot.listener.addAll(this.listener);
         return slot;
