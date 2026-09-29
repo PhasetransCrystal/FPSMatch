@@ -274,8 +274,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         ShopMoneyS2CPacket packet = new ShopMoneyS2CPacket(player.getUUID(), shopData.getMoney());
         FPSMCore.getInstance().getMapByPlayer(player)
                 .flatMap(map -> map.getMapTeams().getTeamByPlayer(player))
-                .ifPresentOrElse(team -> team.getOnline().forEach(teammate ->
-                                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> teammate), packet)),
+                .ifPresentOrElse(team -> team.getOnline().forEach(teammate -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> teammate), packet)),
                         () -> this.syncShopMoneyData(player));
     }
 
