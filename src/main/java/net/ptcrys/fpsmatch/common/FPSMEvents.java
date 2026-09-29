@@ -4,7 +4,6 @@ import net.ptcrys.fpsmatch.FPSMatch;
 import net.ptcrys.fpsmatch.common.event.register.RegisterListenerModuleEvent;
 import net.ptcrys.fpsmatch.common.item.MapCreatorTool;
 import net.ptcrys.fpsmatch.common.item.SpawnPointTool;
-import net.ptcrys.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
 import net.ptcrys.fpsmatch.common.shop.functional.BulletproofArmorWithHelmetListenerModule;
 import net.ptcrys.fpsmatch.common.shop.functional.BulletproofArmorWithoutHelmetListenerModule;
 import net.ptcrys.fpsmatch.common.shop.functional.ChangeShopItemModule;
@@ -15,10 +14,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class FPSMEvents {
@@ -50,13 +47,6 @@ public class FPSMEvents {
 
         MapCreatorTool.clearHeldPreview(player);
         SpawnPointTool.clearHeldPreview(player);
-    }
-
-    @SubscribeEvent
-    public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchStatsResetS2CPacket());
-        }
     }
 
     @SubscribeEvent
