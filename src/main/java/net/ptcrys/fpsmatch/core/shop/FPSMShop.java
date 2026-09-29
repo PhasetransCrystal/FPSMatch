@@ -149,6 +149,14 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         return name;
     }
 
+    /** Keeps shop state while binding legacy persisted names to their owning team. */
+    public FPSMShop<T> withName(String name) {
+        if (Objects.equals(this.name, name)) return this;
+        FPSMShop<T> renamed = new FPSMShop<>(enumClass, name, defaultShopData, startMoney, areas);
+        renamed.playersData.putAll(playersData);
+        return renamed;
+    }
+
     /**
      * 构造函数，用于创建一个新的 FPSMShop 实例（自定义默认商店数据和初始金钱）。
      *
@@ -258,6 +266,16 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      */
     public void syncShopMoneyData(@NotNull ServerPlayer player) {
         this.syncShopMoneyData(player.getUUID());
+    }
+
+    private void syncShopMoneyDataToTeam(ServerPlayer player) {
+        ShopData<T> shopData = playersData.get(player.getUUID());
+        if (shopData == null) return;
+        ShopMoneyS2CPacket packet = new ShopMoneyS2CPacket(player.getUUID(), shopData.getMoney());
+        FPSMCore.getInstance().getMapByPlayer(player)
+                .flatMap(map -> map.getMapTeams().getTeamByPlayer(player))
+                .ifPresentOrElse(team -> team.getOnline().forEach(teammate -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> teammate), packet)),
+                        () -> this.syncShopMoneyData(player));
     }
 
     /**
@@ -644,7 +662,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
                 .handleButton(serverPlayer, resolvedType, index, action);
         if (result.accepted()) {
             this.syncShopData(serverPlayer);
-            this.syncShopMoneyData(serverPlayer);
+            this.syncShopMoneyDataToTeam(serverPlayer);
         }
         return result;
     }
