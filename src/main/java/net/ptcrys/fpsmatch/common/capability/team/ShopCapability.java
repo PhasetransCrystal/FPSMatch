@@ -247,7 +247,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         if (isInitialized()) {
             this.shop.clearPlayerShopData();
         }
-        this.shop = shop;
+        this.shop = shop == null ? null : shop.withName(team.name);
     }
 
     public boolean importConfigurationFrom(FPSMShop<?> source) {
@@ -350,7 +350,8 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     @Override
     public FPSMShop<?> write(FPSMShop<?> value) {
         if (isInitialized()) {
-            this.shop = value;
+            // Older maps persisted the map name here; clients route snapshots by team name.
+            this.shop = value == null ? null : value.withName(team.name);
         }
         return this.shop;
     }
