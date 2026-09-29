@@ -61,6 +61,8 @@ public class ShopSlot {
     private int groupId = -1;
     // 已购买数量
     private int boughtCount = 0;
+    // 上一回合带入的物品占用购买上限，但不能退款。
+    private int carriedCount = 0;
     // 最大购买数量
     private int maxBuyCount = 1;
     // 是否锁定
@@ -112,6 +114,10 @@ public class ShopSlot {
         return boughtCount;
     }
 
+    public int getCountAgainstLimit() {
+        return boughtCount + carriedCount;
+    }
+
     /**
      * 获取最大购买数量
      * 
@@ -158,6 +164,11 @@ public class ShopSlot {
         this.boughtCount = Math.min(this.getMaxBuyCount(), boughtCount);
     }
 
+    public void lockPickedUp(int count) {
+        carriedCount = Math.min(Math.max(0, maxBuyCount - boughtCount), carriedCount + Math.max(0, count));
+        locked = true;
+    }
+
     /**
      * 设置为非锁定状态
      */
@@ -166,10 +177,20 @@ public class ShopSlot {
     }
 
     public void unlock(int count) {
-        this.boughtCount -= Math.min(this.boughtCount, Math.max(0, count));
-        if (boughtCount < maxBuyCount) {
+        int remaining = Math.max(0, count);
+        int boughtRemoved = Math.min(boughtCount, remaining);
+        boughtCount -= boughtRemoved;
+        remaining -= boughtRemoved;
+        carriedCount -= Math.min(carriedCount, remaining);
+        if (getCountAgainstLimit() < maxBuyCount) {
             this.unlock();
         }
+    }
+
+    public void reconcileCarriedItems(int count) {
+        carriedCount = Math.min(maxBuyCount, Math.max(0, count));
+        boughtCount = 0;
+        locked = carriedCount >= maxBuyCount;
     }
 
     /**
@@ -278,7 +299,7 @@ public class ShopSlot {
      * @return 是否可以购买
      */
     public boolean canBuy(int money) {
-        return ShopSlotPurchaseRules.canBuy(money, cost, boughtCount, maxBuyCount, locked);
+        return ShopSlotPurchaseRules.canBuy(money, cost, getCountAgainstLimit(), maxBuyCount, locked);
     }
 
     /**
@@ -312,6 +333,7 @@ public class ShopSlot {
     public void reset() {
         cost = defaultCost;
         boughtCount = 0;
+        carriedCount = 0;
         locked = false;
         this.listener.forEach((listenerModule -> listenerModule.onReset(this)));
     }
