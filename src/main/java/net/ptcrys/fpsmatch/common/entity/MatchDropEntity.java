@@ -297,7 +297,7 @@ public class MatchDropEntity extends Entity {
                         Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(copy);
                         if (pair != null) {
                             ShopSlot slot = pair.getSecond();
-                            slot.lock(copy.getCount());
+                            slot.lockPickedUp(copy.getCount());
                             shop.syncShopData((ServerPlayer) pEntity, pair.getFirst().name(), slot);
                         }
                     });

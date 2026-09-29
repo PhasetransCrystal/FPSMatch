@@ -17,8 +17,8 @@ public class CheckCostEvent {
         this.aCost += cost;
     }
 
-    public boolean success() {
-        return this.aCost >= cost;
+    public boolean success(int availableMoney, int maxMoney) {
+        return availableMoney == -1 || Math.min(maxMoney, (long) availableMoney + aCost) >= cost;
     }
 
     public Player player() {

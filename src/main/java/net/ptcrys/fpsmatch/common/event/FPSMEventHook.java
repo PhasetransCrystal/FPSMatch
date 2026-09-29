@@ -1,6 +1,7 @@
 package net.ptcrys.fpsmatch.common.event;
 
 import net.ptcrys.fpsmatch.FPSMatch;
+import net.ptcrys.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
 import net.ptcrys.fpsmatch.config.FPSMConfig;
 import net.ptcrys.fpsmatch.core.FPSMCore;
 import net.ptcrys.fpsmatch.core.map.BaseMap;
@@ -69,6 +70,7 @@ public class FPSMEventHook {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            FPSMatch.sendToPlayer(player, new FPSMatchStatsResetS2CPacket());
             Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayerWithSpec(player);
             opt.ifPresentOrElse(map -> {
                 FPSMapEvent.PlayerEvent.LoggedInEvent loggedInEvent = new FPSMapEvent.PlayerEvent.LoggedInEvent(map, player);

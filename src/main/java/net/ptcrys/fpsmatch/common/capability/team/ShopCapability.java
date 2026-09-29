@@ -149,7 +149,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
             Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(event.getStack());
             if (pair != null) {
                 ShopSlot slot = pair.getSecond();
-                slot.lock(event.getStack().getCount());
+                slot.lockPickedUp(event.getStack().getCount());
                 shop.syncShopData(player, pair.getFirst().name(), slot);
             }
         });
@@ -163,7 +163,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         ItemStack itemStack = event.getEntity().getItem();
 
         ShopCapability.getShopByPlayer((ServerPlayer) event.getPlayer()).ifPresent(shop -> {
-            ShopData<?> shopData = shop.getPlayerShopData(event.getEntity().getUUID());
+            ShopData<?> shopData = shop.getPlayerShopData(event.getPlayer().getUUID());
             Pair<? extends INamedType, ShopSlot> pair = shopData.checkItemStackIsInData(itemStack);
             if (pair != null) {
                 ShopSlot slot = pair.getSecond();

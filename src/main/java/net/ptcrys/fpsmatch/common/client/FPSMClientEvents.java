@@ -3,6 +3,7 @@ package net.ptcrys.fpsmatch.common.client;
 import net.ptcrys.fpsmatch.FPSMatch;
 import net.ptcrys.fpsmatch.common.client.data.RenderableArea;
 import net.ptcrys.fpsmatch.common.client.data.RenderablePoint;
+import net.ptcrys.fpsmatch.common.client.net.FPSMClientPacketHandlers;
 import net.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
 import net.ptcrys.fpsmatch.common.client.spec.SpectateMode;
 import net.ptcrys.fpsmatch.common.client.spec.SpectateState;
@@ -21,6 +22,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.event.TickEvent;
@@ -153,6 +155,7 @@ public class FPSMClientEvents {
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
+        if (event.phase == TickEvent.Phase.END) FPSMClientPacketHandlers.flushPendingTeamPlayerStats();
         if (event.phase == TickEvent.Phase.END && SpectateState.isRestricted() && (player == null || !player.isSpectator())) {
             // Also cover sessions entered directly by a team switch, without a killcam.
             SpectateState.set(SpectateMode.FREE);
@@ -162,6 +165,11 @@ public class FPSMClientEvents {
         if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get())) {
             mc.getSoundManager().stop();
         }
+    }
+
+    @SubscribeEvent
+    public static void onClientLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        FPSMClientPacketHandlers.clearPendingTeamPlayerStats();
     }
 
     @SubscribeEvent

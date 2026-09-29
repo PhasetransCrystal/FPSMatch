@@ -1,12 +1,10 @@
 package net.ptcrys.fpsmatch.core.shop;
 
-import net.ptcrys.fpsmatch.compat.gun.GunCompatManager;
 import net.ptcrys.fpsmatch.core.shop.event.CheckCostEvent;
 import net.ptcrys.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import net.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
 
 import net.minecraft.core.NonNullList;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
@@ -19,7 +17,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 用于管理玩家商店数据的类。
@@ -219,7 +216,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param currentSlot 当前槽位
      */
     protected ShopActionResult handleBuy(ServerPlayer player, ShopSlot currentSlot) {
-        if (currentSlot.isLocked() || currentSlot.getBoughtCount() >= currentSlot.getMaxBuyCount()) {
+        if (currentSlot.isLocked() || currentSlot.getCountAgainstLimit() >= currentSlot.getMaxBuyCount()) {
             return ShopActionResult.failure(ShopActionResult.Code.LOCKED_OR_MAX_COUNT);
         }
         boolean check = this.broadcastCostCheckEvent(player, currentSlot);
@@ -268,27 +265,14 @@ public class ShopData<T extends Enum<T> & INamedType> {
      */
     public void lockShopSlots(ServerPlayer player) {
         List<NonNullList<ItemStack>> items = ImmutableList.of(player.getInventory().items, player.getInventory().armor, player.getInventory().offhand);
-
-        Map<ShopSlot, Boolean> checkFlag = new HashMap<>();
-        data.forEach(((itemType, shopSlots) -> items.forEach(list -> list.forEach(itemStack -> {
-            for (ShopSlot shopSlot : shopSlots) {
-                if (itemStack.isEmpty()) continue;
-                if (shopSlot.returningChecker.test(itemStack)) {
-                    if (itemStack.getCount() >= shopSlot.getMaxBuyCount()) {
-                        shopSlot.lock();
-                    } else {
-                        shopSlot.unlock(itemStack.getCount());
-                    }
-                    checkFlag.put(shopSlot, false);
-                } else if (checkFlag.getOrDefault(shopSlot, true)) {
-                    shopSlot.unlock();
-                    checkFlag.put(shopSlot, true);
-                }
-            }
-        }))));
-        checkFlag.forEach(((shopSlot, aBoolean) -> {
-            if (aBoolean && shopSlot.getBoughtCount() > 0) {
-                shopSlot.reset();
+        data.values().forEach(shopSlots -> shopSlots.forEach(shopSlot -> {
+            int count = items.stream().flatMap(Collection::stream)
+                    .filter(itemStack -> !itemStack.isEmpty() && shopSlot.returningChecker.test(itemStack))
+                    .mapToInt(ItemStack::getCount).sum();
+            if (count == 0) {
+                if (shopSlot.getCountAgainstLimit() > 0) shopSlot.reset();
+            } else {
+                shopSlot.reconcileCarriedItems(count);
             }
         }));
     }
@@ -303,11 +287,11 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @return 如果检查通过，返回 true；否则返回 false
      */
     protected boolean broadcastCostCheckEvent(ServerPlayer player, ShopSlot currentSlot) {
-        List<ShopSlot> groupSlot = currentSlot.haveGroup() ? new ArrayList<>() : this.grouped.get(currentSlot.getGroupId()).stream().filter((slot) -> slot != currentSlot).toList();
+        List<ShopSlot> groupSlot = currentSlot.haveGroup() ? this.grouped.get(currentSlot.getGroupId()).stream().filter((slot) -> slot != currentSlot).toList() : new ArrayList<>();
         CheckCostEvent event = new CheckCostEvent(player, currentSlot.getCost());
         groupSlot.forEach(slot -> slot.handleCheckCostEvent(event));
 
-        return event.success();
+        return event.success(this.money, this.maxMoney);
     }
 
     /**
@@ -337,24 +321,15 @@ public class ShopData<T extends Enum<T> & INamedType> {
      */
     @Nullable
     public Pair<T, ShopSlot> checkItemStackIsInData(ItemStack itemStack) {
-        AtomicReference<Pair<T, ShopSlot>> flag = new AtomicReference<>();
-        if (GunCompatManager.isGun(itemStack)) {
-            ResourceLocation gunId = GunCompatManager.findProvider(itemStack).getGunId(itemStack);
-            data.forEach(((itemType, shopSlots) -> shopSlots.forEach(shopSlot -> {
-                ItemStack itemStack1 = shopSlot.process();
-                if (GunCompatManager.isGun(itemStack1) && gunId.equals(GunCompatManager.findProvider(itemStack1).getGunId(itemStack1)) && !itemStack1.isEmpty()) {
-                    flag.set(new Pair<>(itemType, shopSlot));
+        if (itemStack.isEmpty()) return null;
+        for (Map.Entry<T, ImmutableList<ShopSlot>> entry : data.entrySet()) {
+            for (ShopSlot slot : entry.getValue()) {
+                if (!slot.process().isEmpty() && slot.returningChecker.test(itemStack)) {
+                    return new Pair<>(entry.getKey(), slot);
                 }
-            })));
-        } else {
-            data.forEach(((itemType, shopSlots) -> shopSlots.forEach(shopSlot -> {
-                ItemStack itemStack1 = shopSlot.process();
-                if (itemStack.getDisplayName().getString().equals(itemStack1.getDisplayName().getString()) && !itemStack1.isEmpty()) {
-                    flag.set(new Pair<>(itemType, shopSlot));
-                }
-            })));
+            }
         }
-        return flag.get();
+        return null;
     }
 
     public int getMaxMoney() {

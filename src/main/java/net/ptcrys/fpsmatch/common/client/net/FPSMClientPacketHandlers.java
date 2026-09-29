@@ -52,9 +52,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.contents.TranslatableContents;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public final class FPSMClientPacketHandlers {
+
+    private static final List<TeamPlayerStatsS2CPacket> pendingTeamPlayerStats = new ArrayList<>();
 
     private FPSMClientPacketHandlers() {}
 
@@ -130,6 +134,7 @@ public final class FPSMClientPacketHandlers {
     }
 
     public static void handleStatsReset(FPSMatchStatsResetS2CPacket packet) {
+        clearPendingTeamPlayerStats();
         resetCameraToPlayer(Minecraft.getInstance());
         FPSMClient.reset();
     }
@@ -229,7 +234,27 @@ public final class FPSMClientPacketHandlers {
 
     public static void handleTeamPlayerStats(TeamPlayerStatsS2CPacket packet) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) return;
+        if (mc.player == null) {
+            pendingTeamPlayerStats.add(packet);
+            return;
+        }
+        flushPendingTeamPlayerStats();
+        applyTeamPlayerStats(packet, mc);
+    }
+
+    public static void flushPendingTeamPlayerStats() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || pendingTeamPlayerStats.isEmpty()) return;
+        List<TeamPlayerStatsS2CPacket> pending = List.copyOf(pendingTeamPlayerStats);
+        pendingTeamPlayerStats.clear();
+        pending.forEach(packet -> applyTeamPlayerStats(packet, mc));
+    }
+
+    public static void clearPendingTeamPlayerStats() {
+        pendingTeamPlayerStats.clear();
+    }
+
+    private static void applyTeamPlayerStats(TeamPlayerStatsS2CPacket packet, Minecraft mc) {
         FPSMClientGlobalData global = FPSMClient.getGlobalData();
         if (packet.getUuid().equals(mc.player.getUUID())) {
             // Team stats are broadcast to every client. During a team switch,

@@ -52,6 +52,7 @@ public class ShopSlot {
     public Supplier<ItemStack> itemSupplier;
     // 返回检查器，用于检查物品栈是否可以返回
     public final Predicate<ItemStack> returningChecker;
+    private final boolean defaultReturningChecker;
     // 默认价格
     public int defaultCost;
     // 当前价格
@@ -60,6 +61,8 @@ public class ShopSlot {
     private int groupId = -1;
     // 已购买数量
     private int boughtCount = 0;
+    // 上一回合带入的物品占用购买上限，但不能退款。
+    private int carriedCount = 0;
     // 最大购买数量
     private int maxBuyCount = 1;
     // 是否锁定
@@ -111,6 +114,10 @@ public class ShopSlot {
         return boughtCount;
     }
 
+    public int getCountAgainstLimit() {
+        return boughtCount + carriedCount;
+    }
+
     /**
      * 获取最大购买数量
      * 
@@ -157,6 +164,11 @@ public class ShopSlot {
         this.boughtCount = Math.min(this.getMaxBuyCount(), boughtCount);
     }
 
+    public void lockPickedUp(int count) {
+        carriedCount = Math.min(Math.max(0, maxBuyCount - boughtCount), carriedCount + Math.max(0, count));
+        locked = true;
+    }
+
     /**
      * 设置为非锁定状态
      */
@@ -165,10 +177,20 @@ public class ShopSlot {
     }
 
     public void unlock(int count) {
-        this.boughtCount -= Math.min(this.boughtCount, Math.max(0, count));
-        if (boughtCount < maxBuyCount) {
+        int remaining = Math.max(0, count);
+        int boughtRemoved = Math.min(boughtCount, remaining);
+        boughtCount -= boughtRemoved;
+        remaining -= boughtRemoved;
+        carriedCount -= Math.min(carriedCount, remaining);
+        if (getCountAgainstLimit() < maxBuyCount) {
             this.unlock();
         }
+    }
+
+    public void reconcileCarriedItems(int count) {
+        carriedCount = Math.min(maxBuyCount, Math.max(0, count));
+        boughtCount = 0;
+        locked = carriedCount >= maxBuyCount;
     }
 
     /**
@@ -223,6 +245,7 @@ public class ShopSlot {
         this.defaultCost = defaultCost;
         this.cost = defaultCost;
         this.returningChecker = getDefaultChecker();
+        this.defaultReturningChecker = true;
     }
 
     /**
@@ -266,6 +289,7 @@ public class ShopSlot {
         this.maxBuyCount = maxBuyCount;
         this.groupId = groupId;
         this.returningChecker = checker;
+        this.defaultReturningChecker = false;
     }
 
     /**
@@ -275,7 +299,7 @@ public class ShopSlot {
      * @return 是否可以购买
      */
     public boolean canBuy(int money) {
-        return ShopSlotPurchaseRules.canBuy(money, cost, boughtCount, maxBuyCount, locked);
+        return ShopSlotPurchaseRules.canBuy(money, cost, getCountAgainstLimit(), maxBuyCount, locked);
     }
 
     /**
@@ -309,6 +333,7 @@ public class ShopSlot {
     public void reset() {
         cost = defaultCost;
         boughtCount = 0;
+        carriedCount = 0;
         locked = false;
         this.listener.forEach((listenerModule -> listenerModule.onReset(this)));
     }
@@ -440,7 +465,9 @@ public class ShopSlot {
         if (GunCompatManager.isGun(itemStack)) {
             FPSMUtil.fixGunItem(itemStack, GunCompatManager.findProvider(itemStack));
         }
-        ShopSlot slot = new ShopSlot(itemStack::copy, this.defaultCost, this.maxBuyCount, this.groupId, this.returningChecker);
+        ShopSlot slot = defaultReturningChecker
+                ? new ShopSlot(itemStack, this.defaultCost, this.maxBuyCount, this.groupId)
+                : new ShopSlot(itemStack::copy, this.defaultCost, this.maxBuyCount, this.groupId, this.returningChecker);
         slot.setIndex(this.index);
         slot.listener.addAll(this.listener);
         return slot;
