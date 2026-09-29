@@ -465,9 +465,7 @@ public class ShopSlot {
         if (GunCompatManager.isGun(itemStack)) {
             FPSMUtil.fixGunItem(itemStack, GunCompatManager.findProvider(itemStack));
         }
-        ShopSlot slot = defaultReturningChecker
-                ? new ShopSlot(itemStack, this.defaultCost, this.maxBuyCount, this.groupId)
-                : new ShopSlot(itemStack::copy, this.defaultCost, this.maxBuyCount, this.groupId, this.returningChecker);
+        ShopSlot slot = defaultReturningChecker ? new ShopSlot(itemStack, this.defaultCost, this.maxBuyCount, this.groupId) : new ShopSlot(itemStack::copy, this.defaultCost, this.maxBuyCount, this.groupId, this.returningChecker);
         slot.setIndex(this.index);
         slot.listener.addAll(this.listener);
         return slot;
