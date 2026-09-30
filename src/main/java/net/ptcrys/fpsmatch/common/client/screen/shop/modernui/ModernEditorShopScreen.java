@@ -4,6 +4,7 @@ import net.ptcrys.fpsmatch.FPSMatch;
 import net.ptcrys.fpsmatch.common.client.screen.EditorShopContainer;
 import net.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorNavigation;
 import net.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorValues;
+import net.ptcrys.fpsmatch.common.packet.shop.OpenShopSlotC2SPacket;
 import net.ptcrys.fpsmatch.common.packet.shop.SetShopGroupsC2SPacket;
 import net.ptcrys.fpsmatch.common.packet.shop.ShopGroupsResultS2CPacket;
 
@@ -209,7 +210,7 @@ public final class ModernEditorShopScreen extends ModernMenuScreen<EditorShopCon
         ticks = 0;
         status = tr("gui.fpsm.shop_editor.state.opening");
         ShopEditorNavigation.rememberSelection(menu.getGameType(), menu.getMapName(), menu.getTeamName(), index);
-        clickSlot(index, 0);
+        FPSMatch.sendToServer(new OpenShopSlotC2SPacket(menu.containerId, index));
     }
 
     @Override

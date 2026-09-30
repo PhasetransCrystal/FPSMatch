@@ -284,21 +284,49 @@ public class EditorShopContainer extends AbstractContainerMenu {
 
     @Override
     public void clicked(int slotIndex, int button, @NotNull ClickType clickType, @NotNull Player player) {
-        if (player instanceof ServerPlayer serverPlayer && (!MapRoomQueryService.isMapOperator(serverPlayer) || resolveCurrentShop().isEmpty())) {
-            FPSMatch.sendToPlayer(serverPlayer, new MapRoomToastS2CPacket(
-                    Component.translatable("gui.fpsm.shop_editor.open.no_permission"), true));
-            return;
-        }
         boolean isCustomContainer = slotIndex >= 0 && slotIndex < this.totalIndex;
         if (isCustomContainer) {
-            ShopSlot targetShopSlot = getShopSlot(slotIndex);
-            SlotRef slotRef = getShopSlotRef(slotIndex);
-            if (targetShopSlot != null && slotRef != null) {
-                this.openSecondMenu(player, targetShopSlot, slotRef);
-            }
+            if (player instanceof ServerPlayer serverPlayer) tryOpenSlot(serverPlayer, slotIndex);
             return;
         }
         super.clicked(slotIndex, button, clickType, player);
+    }
+
+    public void tryOpenSlot(ServerPlayer player, int slotIndex) {
+        if (player.containerMenu != this) {
+            rejectOpen(player, "gui.fpsm.shop_editor.open.invalid_menu");
+            return;
+        }
+        if (!MapRoomQueryService.isMapOperator(player)) {
+            rejectOpen(player, "gui.fpsm.shop_editor.open.no_permission");
+            return;
+        }
+        var shop = resolveCurrentShop();
+        if (shop.isEmpty()) {
+            rejectOpen(player, "gui.fpsm.shop_editor.open.shop_unavailable");
+            return;
+        }
+        ShopSlot targetShopSlot = getShopSlot(slotIndex);
+        SlotRef slotRef = getShopSlotRef(slotIndex);
+        if (targetShopSlot == null || slotRef == null) {
+            rejectOpen(player, "gui.fpsm.shop_editor.open.invalid_slot");
+            return;
+        }
+        try {
+            List<ShopSlot> current = shop.get().getDefaultShopSlotListByType(slotRef.type());
+            if (current == null || slotRef.slotNum() >= current.size() || current.get(slotRef.slotNum()) != targetShopSlot) {
+                rejectOpen(player, "gui.fpsm.shop_editor.open.invalid_slot");
+                return;
+            }
+            openSecondMenu(player, targetShopSlot, slotRef);
+        } catch (RuntimeException e) {
+            FPSMatch.LOGGER.error("Failed to open shop editor slot {} for {}", slotIndex, player.getGameProfile().getName(), e);
+            rejectOpen(player, "gui.fpsm.shop_editor.open.failed");
+        }
+    }
+
+    private static void rejectOpen(ServerPlayer player, String translationKey) {
+        FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(Component.translatable(translationKey), true));
     }
 
     @Override
