@@ -224,6 +224,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(SaveShopSlotConfigurationC2SPacket.class);
         PACKET_REGISTER.registerPacket(SetShopGroupsC2SPacket.class);
         PACKET_REGISTER.registerPacket(ShopGroupsResultS2CPacket.class);
+        PACKET_REGISTER.registerPacket(OpenShopSlotC2SPacket.class);
         event.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> FPSMClientPacketRegistrar::registerAll));
     }
 
