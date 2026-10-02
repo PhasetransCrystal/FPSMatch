@@ -1,21 +1,18 @@
 package net.ptcrys.fpsmatch.common.client.screen.shop.modernui;
 
 import net.ptcrys.fpsmatch.FPSMatch;
-import net.ptcrys.fpsmatch.common.client.screen.modernui.ModernScreen;
-import net.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorNavigation;
 import net.ptcrys.fpsmatch.common.packet.mapselect.EditableShopInfo;
 import net.ptcrys.fpsmatch.common.packet.shop.*;
+import net.ptcrys.fpsmatch.common.shop.editor.ShopEditorSnapshot;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
 import java.util.*;
 
-public final class ModernShopConfigToolScreen extends ModernScreen {
+public final class ModernShopConfigToolScreen extends ModernShopScreen {
 
     private OpenShopConfigToolScreenS2CPacket data;
-    private boolean opening;
-    private int ticks;
-    private String status = "";
 
     public ModernShopConfigToolScreen(OpenShopConfigToolScreenS2CPacket data) {
         super(Component.translatable("gui.fpsm.shop_config.title"), null);
@@ -27,63 +24,42 @@ public final class ModernShopConfigToolScreen extends ModernScreen {
         refresh();
     }
 
-    public boolean isEditorOpenPending() {
-        return opening;
-    }
-
-    public void applyEditorOpenFailure(Component message) {
-        opening = false;
-        status = message.getString();
-        refresh();
-    }
-
-    @Override
-    public void tick() {
-        if (opening && ++ticks >= 200) applyEditorOpenFailure(Component.translatable("gui.fpsm.shop_editor.open.timeout"));
-    }
-
     @Override
     protected List<Node> content() {
         List<Node> nodes = new ArrayList<>();
-        nodes.add(title("title", getTitle().getString()).at(8, 8, width - 16, 26));
+        var frame = ShopEditorLayoutModel.frame(layoutWidth(), layoutHeight());
+        int w = frame.body().width();
+        boolean narrow = layoutWidth() < 400;
+        nodes.add(header(getTitle().getString(), data.selectedType() + " / " + data.selectedMap(),
+                iconButton("close", "x", tr("gui.back"), true, this::onClose)));
         List<Node> body = new ArrayList<>();
         List<Node> types = new ArrayList<>();
-        data.maps().stream().map(OpenShopConfigToolScreenS2CPacket.MapEntry::gameType).distinct().forEach(type -> types.add(button(type, (type.equals(data.selectedType()) ? "● " : "") + type, !opening, () -> select(type, data.maps().stream().filter(m -> type.equals(m.gameType())).map(OpenShopConfigToolScreenS2CPacket.MapEntry::mapName).findFirst().orElse("")))));
-        nodes.add(select("types", data.selectedType(), types.stream().map(n -> text(n.key(), n.key())).toList(),
+        data.maps().stream().map(OpenShopConfigToolScreenS2CPacket.MapEntry::gameType).distinct().forEach(type -> types.add(text(type, type)));
+        List<Node> filters = new ArrayList<>();
+        filters.add(select("types", data.selectedType(), types.stream().map(n -> text(n.key(), n.key())).toList(),
                 type -> select(type, data.maps().stream().filter(m -> type.equals(m.gameType())).map(OpenShopConfigToolScreenS2CPacket.MapEntry::mapName).findFirst().orElse("")))
-                .at(8, 42, Math.max(1, (width - 22) / 2), 24));
+                .at(0, 0, narrow ? w : (w - 8) / 2, 24));
         List<Node> maps = new ArrayList<>();
         data.maps().stream().filter(m -> m.gameType().equals(data.selectedType())).forEach(map -> maps.add(button(map.mapName(),
-                (map.mapName().equals(data.selectedMap()) ? "● " : "") + map.mapName(), !opening, () -> select(map.gameType(), map.mapName()))));
-        nodes.add(select("maps", data.selectedMap(), maps.stream().map(n -> text(n.key(), n.key())).toList(), map -> select(data.selectedType(), map))
-                .at(14 + (width - 22) / 2, 42, Math.max(1, (width - 22) / 2), 24));
+                map.mapName(), true, () -> select(map.gameType(), map.mapName()))));
+        filters.add(select("maps", data.selectedMap(), maps.stream().map(n -> text(n.key(), n.key())).toList(), map -> select(data.selectedType(), map))
+                .at(narrow ? 0 : (w - 8) / 2 + 8, narrow ? 30 : 0, narrow ? w : (w - 8) / 2, 24));
+        body.add(canvas("filters", filters).size(-1, narrow ? 60 : 30));
         for (EditableShopInfo shop : data.shops()) body.add(button(shop.gameType() + ":" + shop.mapName() + ":" + shop.teamName(),
-                shop.displayName() + " / " + shop.teamName(), !opening, () -> {
-                    if (opening) return;
-                    opening = true;
-                    ticks = 0;
-                    status = tr("gui.fpsm.shop_editor.state.opening");
-                    ShopEditorNavigation.beginConfigTool(shop.gameType(), shop.mapName(), shop.teamName());
-                    FPSMatch.sendToServer(new OpenShopEditorC2SPacket(shop.gameType(), shop.mapName(), shop.teamName()));
-                }));
+                shop.displayName() + " / " + shop.teamName(), true, () -> Minecraft.getInstance().setScreen(new ModernEditorShopScreen(
+                        new ShopEditorSnapshot.Target(shop.gameType(), shop.mapName(), shop.teamName()), this)))
+                .size(-1, 30));
         if (data.shops().isEmpty()) body.add(text("empty", tr("gui.fpsm.shop_config.empty")));
-        nodes.add(scroll("body", body).surface().at(8, 74, width - 16, Math.max(1, height - 130)));
-        nodes.add(text("status", status).at(8, height - 52, width - 16, 18));
-        nodes.add(row("actions", button("refresh", tr("gui.fpsm.map_select.refresh"), !opening, () -> FPSMatch.sendToServer(
+        nodes.add(place(scroll("body", body), frame.body()));
+        nodes.add(footer("", iconButton("reload", "rotate-cw", tr("gui.fpsm.map_select.refresh"), true, () -> FPSMatch.sendToServer(
                 new ShopConfigToolActionC2SPacket(ShopConfigToolActionC2SPacket.Action.REFRESH, data.selectedType(), data.selectedMap()))),
-                button("close", tr("gui.back"), !opening, this::onClose)).at(8, height - 32, width - 16, 24));
+                button("refresh", tr("gui.fpsm.map_select.refresh"), true, () -> FPSMatch.sendToServer(
+                        new ShopConfigToolActionC2SPacket(ShopConfigToolActionC2SPacket.Action.REFRESH, data.selectedType(), data.selectedMap()))),
+                button("close", tr("gui.back"), true, this::onClose)));
         return List.of(canvas("shop.config", nodes).fill());
     }
 
     private void select(String type, String map) {
-        if (!opening && !type.isBlank() && !map.isBlank()) FPSMatch.sendToServer(new ShopConfigToolActionC2SPacket(ShopConfigToolActionC2SPacket.Action.SELECT, type, map));
-    }
-
-    @Override
-    public void onClose() {
-        if (!opening) {
-            ShopEditorNavigation.clear();
-            super.onClose();
-        }
+        if (!type.isBlank() && !map.isBlank()) FPSMatch.sendToServer(new ShopConfigToolActionC2SPacket(ShopConfigToolActionC2SPacket.Action.SELECT, type, map));
     }
 }

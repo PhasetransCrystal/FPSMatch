@@ -52,7 +52,7 @@ public class ShopSlot {
     public Supplier<ItemStack> itemSupplier;
     // 返回检查器，用于检查物品栈是否可以返回
     public final Predicate<ItemStack> returningChecker;
-    private final boolean defaultReturningChecker;
+    private final boolean usesDefaultReturningChecker;
     // 默认价格
     public int defaultCost;
     // 当前价格
@@ -245,7 +245,7 @@ public class ShopSlot {
         this.defaultCost = defaultCost;
         this.cost = defaultCost;
         this.returningChecker = getDefaultChecker();
-        this.defaultReturningChecker = true;
+        this.usesDefaultReturningChecker = true;
     }
 
     /**
@@ -288,8 +288,8 @@ public class ShopSlot {
         this.cost = defaultCost;
         this.maxBuyCount = maxBuyCount;
         this.groupId = groupId;
-        this.returningChecker = checker;
-        this.defaultReturningChecker = false;
+        this.usesDefaultReturningChecker = checker == null;
+        this.returningChecker = checker == null ? getDefaultChecker() : checker;
     }
 
     /**
@@ -363,6 +363,13 @@ public class ShopSlot {
     public void addListener(ListenerModule listener) {
         this.listener.add(listener);
         this.listener.sort(Comparator.comparingInt(ListenerModule::getPriority).reversed());
+    }
+
+    public void replaceListener(ListenerModule replacement) {
+        for (int i = 0; i < listener.size(); i++) {
+            if (listener.get(i).getName().equals(replacement.getName())) listener.set(i, replacement);
+        }
+        listener.sort(Comparator.comparingInt(ListenerModule::getPriority).reversed());
     }
 
     public List<String> getListenerNames() {
@@ -465,7 +472,7 @@ public class ShopSlot {
         if (GunCompatManager.isGun(itemStack)) {
             FPSMUtil.fixGunItem(itemStack, GunCompatManager.findProvider(itemStack));
         }
-        ShopSlot slot = defaultReturningChecker ? new ShopSlot(itemStack, this.defaultCost, this.maxBuyCount, this.groupId) : new ShopSlot(itemStack::copy, this.defaultCost, this.maxBuyCount, this.groupId, this.returningChecker);
+        ShopSlot slot = new ShopSlot(itemStack::copy, this.defaultCost, this.maxBuyCount, this.groupId, usesDefaultReturningChecker ? null : this.returningChecker);
         slot.setIndex(this.index);
         slot.listener.addAll(this.listener);
         return slot;

@@ -1,51 +1,32 @@
 package net.ptcrys.fpsmatch.common.packet.shop;
 
-import net.ptcrys.fpsmatch.FPSMatch;
-import net.ptcrys.fpsmatch.common.client.screen.EditShopSlotMenu;
-import net.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorValues;
-import net.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
+import net.ptcrys.fpsmatch.common.shop.editor.ShopEditorService;
+import net.ptcrys.fpsmatch.common.shop.editor.ShopEditorSnapshot;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.List;
 import java.util.function.Supplier;
 
-public record SaveShopSlotConfigurationC2SPacket(int containerId, long requestId, int ammo, int price, int group, List<String> modules) {
-
-    public SaveShopSlotConfigurationC2SPacket {
-        modules = List.copyOf(modules);
-    }
+public record SaveShopSlotConfigurationC2SPacket(long requestId, ShopEditorSnapshot.Target target, String revision,
+                                                 String type, int index, ShopEditorSnapshot.Slot draft) {
 
     public static void encode(SaveShopSlotConfigurationC2SPacket packet, FriendlyByteBuf buf) {
-        buf.writeVarInt(packet.containerId);
         buf.writeLong(packet.requestId);
-        buf.writeInt(packet.ammo);
-        buf.writeInt(packet.price);
-        buf.writeInt(packet.group);
-        buf.writeCollection(packet.modules, (out, name) -> out.writeUtf(name, ShopEditorValues.MAX_MODULE_NAME));
+        packet.target.write(buf);
+        buf.writeUtf(packet.revision, 64);
+        buf.writeUtf(packet.type, 128);
+        buf.writeInt(packet.index);
+        packet.draft.write(buf);
     }
 
     public static SaveShopSlotConfigurationC2SPacket decode(FriendlyByteBuf buf) {
-        return new SaveShopSlotConfigurationC2SPacket(buf.readVarInt(), buf.readLong(), buf.readInt(), buf.readInt(), buf.readInt(),
-                buf.readCollection(FriendlyByteBuf.limitValue(java.util.ArrayList::new, ShopEditorValues.MAX_MODULES),
-                        in -> in.readUtf(ShopEditorValues.MAX_MODULE_NAME)));
+        return new SaveShopSlotConfigurationC2SPacket(buf.readLong(), ShopEditorSnapshot.Target.read(buf), buf.readUtf(64),
+                buf.readUtf(128), buf.readInt(), ShopEditorSnapshot.Slot.read(buf));
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        context.get().enqueueWork(() -> {
-            var player = context.get().getSender();
-            if (player == null) return;
-            EditShopSlotMenu.SaveResult result;
-            try {
-                result = player.containerMenu instanceof EditShopSlotMenu menu && menu.containerId == containerId ? menu.trySaveData(player, ammo, price, group, modules) : EditShopSlotMenu.SaveResult.INVALID_MENU;
-            } catch (RuntimeException failure) {
-                FPSMatch.LOGGER.error("Shop editor save request {} failed", requestId, failure);
-                result = EditShopSlotMenu.SaveResult.SAVE_FAILED;
-            }
-            FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(Component.translatable(result.translationKey()), !result.success(), requestId));
-        });
-        context.get().setPacketHandled(true);
+    public void handle(Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> ShopEditorService.saveSlot(ctx.get().getSender(), requestId, target, revision, type, index, draft));
+        ctx.get().setPacketHandled(true);
     }
 }

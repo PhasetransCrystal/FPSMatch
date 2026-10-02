@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 监听模块管理器，用于注册和管理监听模块。
@@ -23,6 +24,7 @@ public class LMManager {
      * 存储所有注册的监听模块。
      */
     protected final Map<String, ListenerModule> registry = new HashMap<>();
+    private final Set<String> builtInNames;
 
     /**
      * 构造函数，初始化监听模块管理器。
@@ -31,6 +33,11 @@ public class LMManager {
      */
     public LMManager() {
         MinecraftForge.EVENT_BUS.post(new RegisterListenerModuleEvent(this));
+        builtInNames = Set.copyOf(registry.keySet());
+    }
+
+    public boolean isBuiltIn(String name) {
+        return builtInNames.contains(name);
     }
 
     /**

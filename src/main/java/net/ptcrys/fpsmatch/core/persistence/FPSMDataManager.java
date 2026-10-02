@@ -9,9 +9,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -70,6 +73,43 @@ public class FPSMDataManager {
         entry.holder.getWriter(data, fileName, overwrite).accept(file);
     }
 
+    /** Writes editor-managed definitions without swallowing disk failures. */
+    @SuppressWarnings("unchecked")
+    public <T> void saveDataAtomic(T data, String fileName) {
+        DataEntry<T> entry = getEntry((Class<T>) data.getClass());
+        Path folder = getSaveFolder(entry).toPath();
+        Path temporary = null;
+        try {
+            Files.createDirectories(folder);
+            Path destination = folder.resolve(PersistenceUtils.fixFileName(fileName) + "." + entry.holder.getFileType());
+            temporary = Files.createTempFile(folder, "definition-", ".tmp");
+            Files.writeString(temporary, GSON.toJson(entry.holder.encodeToJson(data)));
+            try {
+                Files.move(temporary, destination, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException unsupported) {
+                Files.move(temporary, destination, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException failure) {
+            throw new DataPersistenceException("Failed to save definition: " + fileName, failure);
+        } finally {
+            if (temporary != null) {
+                try {
+                    Files.deleteIfExists(temporary);
+                } catch (IOException ignored) {}
+            }
+        }
+    }
+
+    public <T> void deleteData(Class<T> type, String fileName) {
+        DataEntry<T> entry = getEntry(type);
+        Path destination = getSaveFolder(entry).toPath().resolve(PersistenceUtils.fixFileName(fileName) + "." + entry.holder.getFileType());
+        try {
+            Files.deleteIfExists(destination);
+        } catch (IOException failure) {
+            throw new DataPersistenceException("Failed to delete definition: " + fileName, failure);
+        }
+    }
+
     // 异步保存数据
     public <T> CompletableFuture<Void> saveDataAsync(T data, String fileName, boolean overwrite) {
         return CompletableFuture.runAsync(() -> saveData(data, fileName, overwrite), ASYNC_EXECUTOR);
@@ -105,7 +145,7 @@ public class FPSMDataManager {
     }
 
     public void readAllData() {
-        registry.values().forEach(entry -> {
+        registry.values().stream().sorted(java.util.Comparator.comparingInt((DataEntry<?> entry) -> entry.holder.getLoadPriority()).reversed()).forEach(entry -> {
             entry.holder.getReader().accept(getSaveFolder(entry));
         });
     }

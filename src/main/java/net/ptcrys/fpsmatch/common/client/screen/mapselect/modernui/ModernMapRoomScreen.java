@@ -5,10 +5,10 @@ import net.ptcrys.fpsmatch.common.client.FPSMClient;
 import net.ptcrys.fpsmatch.common.client.screen.FPSMTeamActionScreen;
 import net.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapDetailChildScreen;
 import net.ptcrys.fpsmatch.common.client.screen.modernui.ModernScreen;
-import net.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorNavigation;
+import net.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernEditorShopScreen;
 import net.ptcrys.fpsmatch.common.client.screen.team.TeamActionModel;
 import net.ptcrys.fpsmatch.common.packet.mapselect.*;
-import net.ptcrys.fpsmatch.common.packet.shop.OpenShopEditorC2SPacket;
+import net.ptcrys.fpsmatch.common.shop.editor.ShopEditorSnapshot;
 import net.ptcrys.fpsmatch.core.data.AreaData;
 
 import net.minecraft.client.Minecraft;
@@ -587,12 +587,8 @@ public final class ModernMapRoomScreen extends ModernScreen implements FPSMMapDe
                 text("name", shop.displayName()).at(8, compact ? 15 : 10, Math.max(1, rowWidth - editWidth - 24), 20),
                 button("edit", tr("gui.fpsm.map_shop.edit"), operator() && idle(), () -> {
                     if (!operator() || !idle()) return;
-                    begin("editor");
-                    ShopEditorNavigation.beginMapRoom(() -> {
-                        pending = "";
-                        return this;
-                    }, shop.gameType(), shop.mapName(), shop.teamName());
-                    FPSMatch.sendToServer(new OpenShopEditorC2SPacket(shop.gameType(), shop.mapName(), shop.teamName()));
+                    Minecraft.getInstance().setScreen(new ModernEditorShopScreen(
+                            new ShopEditorSnapshot.Target(shop.gameType(), shop.mapName(), shop.teamName()), this));
                 }).hint(tr("gui.fpsm.map_shop.edit.hint")).at(rowWidth - editWidth - 8, compact ? 12 : 7, editWidth, 26)))
                 .surface().size(-1, compact ? 50 : 40));
         if (nodes.isEmpty()) nodes.add(text("empty", tr("gui.fpsm.map_shop.unsupported")));

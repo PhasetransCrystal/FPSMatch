@@ -5,7 +5,6 @@ import net.ptcrys.fpsmatch.common.client.data.FPSMClientGlobalData;
 import net.ptcrys.fpsmatch.common.client.event.FPSMClientResetEvent;
 import net.ptcrys.fpsmatch.common.client.key.*;
 import net.ptcrys.fpsmatch.common.client.renderer.*;
-import net.ptcrys.fpsmatch.common.client.screen.VanillaGuiRegister;
 import net.ptcrys.fpsmatch.common.client.screen.hud.FlashBombHud;
 import net.ptcrys.fpsmatch.common.entity.EntityRegister;
 import net.ptcrys.fpsmatch.util.RenderUtil;
@@ -51,7 +50,6 @@ public class FPSMClient {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         // 注册原版GUI
-        VanillaGuiRegister.register();
     }
 
     @SubscribeEvent

@@ -2,6 +2,10 @@ test {
     useJUnitPlatform()
 }
 
+// Unit tests exercise the same named Minecraft/Forge classes as the mod sources.
+sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
+sourceSets.test.runtimeClasspath += sourceSets.main.compileClasspath
+
 legacyForge {
     // Forge userdev environment used by ModDevGradle.
     version = "${minecraft_version}-${forge_version}"
