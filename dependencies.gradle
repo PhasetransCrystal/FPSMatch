@@ -9,6 +9,9 @@ def withoutMinecraftLibraries = { dependency ->
 
 // Dependencies
 dependencies {
+    implementation(jarJar("com.mysql:mysql-connector-j:9.4.0")) {
+        transitive = false
+    }
     withoutMinecraftLibraries(additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Core:${modernui_core_version}")))
     withoutMinecraftLibraries(additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Markflow:${modernui_core_version}")))
     modImplementation "icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}"
@@ -40,6 +43,7 @@ dependencies {
     modCompileOnly "dev.architectury:architectury-forge:${architectury_version}"
 
     testImplementation("org.junit.jupiter:junit-jupiter:6.0.1")
+    testImplementation("com.h2database:h2:2.3.232")
     testImplementation("com.google.guava:guava:33.5.0-jre")
     testImplementation("it.unimi.dsi:fastutil:8.5.18")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

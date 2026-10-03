@@ -1,6 +1,11 @@
 package net.ptcrys.fpsmatch.core.persistence;
 
+import net.ptcrys.fpsmatch.FPSMatch;
 import net.ptcrys.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
+import net.ptcrys.fpsmatch.core.persistence.storage.DocumentStore;
+import net.ptcrys.fpsmatch.core.persistence.storage.ExecutorShutdown;
+import net.ptcrys.fpsmatch.core.persistence.storage.FileDocumentStore;
+import net.ptcrys.fpsmatch.core.persistence.storage.JdbcDocumentStore;
 
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.loading.FMLLoader;
@@ -23,7 +28,7 @@ import java.util.concurrent.Executors;
 
 public class FPSMDataManager {
 
-    private static final ExecutorService ASYNC_EXECUTOR = Executors.newFixedThreadPool(2, runnable -> {
+    private final ExecutorService asyncExecutor = Executors.newFixedThreadPool(2, runnable -> {
         Thread thread = new Thread(runnable, "FPSMatch Data IO");
         thread.setDaemon(true);
         return thread;
@@ -34,6 +39,10 @@ public class FPSMDataManager {
     private final Map<Class<?>, DataEntry<?>> registry = new ConcurrentHashMap<>();
     private final Path levelDataPath;
     private final Path globalDataPath;
+    private final DocumentStore documentStore;
+    private final boolean databaseDefinitions;
+    private Boolean asyncDrained;
+    private volatile boolean deferStorageClose;
 
     // 数据条目：存储文件夹名和SaveHolder
     private static class DataEntry<T> {
@@ -54,6 +63,19 @@ public class FPSMDataManager {
         PersistenceUtils.ensureDirectoryExists(levelDataPath);
         PersistenceUtils.ensureDirectoryExists(globalDataPath);
 
+        String jdbcUrl = System.getProperty("fpsmatch.storage.jdbc.url", "");
+        if (jdbcUrl.startsWith("jdbc:mysql:")) {
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+            } catch (ClassNotFoundException failure) {
+                throw new DataPersistenceException("MySQL JDBC driver is unavailable", failure);
+            }
+        }
+        this.documentStore = jdbcUrl.isBlank() ? new FileDocumentStore(levelDataPath.resolve("documents.json")) : new JdbcDocumentStore(() -> java.sql.DriverManager.getConnection(jdbcUrl,
+                System.getProperty("fpsmatch.storage.jdbc.user", ""),
+                System.getProperty("fpsmatch.storage.jdbc.password", "")));
+        this.databaseDefinitions = !jdbcUrl.isBlank() && Boolean.getBoolean("fpsmatch.storage.jdbc.definitions");
+
         MinecraftForge.EVENT_BUS.post(new RegisterFPSMSaveDataEvent(this));
     }
 
@@ -69,6 +91,17 @@ public class FPSMDataManager {
     public <T> void saveData(T data, String fileName, boolean overwrite) {
         if (!registry.containsKey(data.getClass())) return;
         DataEntry<T> entry = getEntry((Class<T>) data.getClass());
+        if (databaseDefinitions) {
+            documentStore.transact(transaction -> {
+                String namespace = namespace(entry);
+                String key = PersistenceUtils.fixFileName(fileName);
+                T merged = overwrite ? data : transaction.get(namespace, key)
+                        .map(entry.holder::decodeFromJson).map(old -> entry.holder.mergeHandler(old, data)).orElse(data);
+                transaction.put(namespace, key, entry.holder.encodeToJson(merged));
+                return null;
+            });
+            return;
+        }
         File file = getSaveFolder(data);
         entry.holder.getWriter(data, fileName, overwrite).accept(file);
     }
@@ -77,6 +110,10 @@ public class FPSMDataManager {
     @SuppressWarnings("unchecked")
     public <T> void saveDataAtomic(T data, String fileName) {
         DataEntry<T> entry = getEntry((Class<T>) data.getClass());
+        if (databaseDefinitions) {
+            saveData(data, fileName, true);
+            return;
+        }
         Path folder = getSaveFolder(entry).toPath();
         Path temporary = null;
         try {
@@ -102,6 +139,13 @@ public class FPSMDataManager {
 
     public <T> void deleteData(Class<T> type, String fileName) {
         DataEntry<T> entry = getEntry(type);
+        if (databaseDefinitions) {
+            documentStore.transact(transaction -> {
+                transaction.delete(namespace(entry), PersistenceUtils.fixFileName(fileName));
+                return null;
+            });
+            return;
+        }
         Path destination = getSaveFolder(entry).toPath().resolve(PersistenceUtils.fixFileName(fileName) + "." + entry.holder.getFileType());
         try {
             Files.deleteIfExists(destination);
@@ -112,13 +156,17 @@ public class FPSMDataManager {
 
     // 异步保存数据
     public <T> CompletableFuture<Void> saveDataAsync(T data, String fileName, boolean overwrite) {
-        return CompletableFuture.runAsync(() -> saveData(data, fileName, overwrite), ASYNC_EXECUTOR);
+        return CompletableFuture.runAsync(() -> saveData(data, fileName, overwrite), asyncExecutor);
     }
 
     // 同步读取数据
     public <T> T readSpecificData(Class<T> clazz, String fileName) {
         DataEntry<T> entry = getEntry(clazz);
-        Path dirPath = entry.holder.isGlobal() ? globalDataPath : levelDataPath;
+        if (databaseDefinitions) {
+            return documentStore.transact(transaction -> transaction.get(namespace(entry), PersistenceUtils.fixFileName(fileName))
+                    .map(entry.holder::decodeFromJson).orElseThrow(() -> new DataPersistenceException("Missing data: " + fileName)));
+        }
+        Path dirPath = getSaveFolder(entry).toPath();
         Path filePath = dirPath.resolve(PersistenceUtils.fixFileName(fileName) + "." + entry.holder.getFileType());
         try {
             String content = Files.readString(filePath);
@@ -131,7 +179,7 @@ public class FPSMDataManager {
 
     // 异步读取数据
     public <T> CompletableFuture<T> readSpecificDataAsync(Class<T> clazz, String fileName) {
-        return CompletableFuture.supplyAsync(() -> readSpecificData(clazz, fileName), ASYNC_EXECUTOR);
+        return CompletableFuture.supplyAsync(() -> readSpecificData(clazz, fileName), asyncExecutor);
     }
 
     // 获取数据条目
@@ -146,7 +194,12 @@ public class FPSMDataManager {
 
     public void readAllData() {
         registry.values().stream().sorted(java.util.Comparator.comparingInt((DataEntry<?> entry) -> entry.holder.getLoadPriority()).reversed()).forEach(entry -> {
-            entry.holder.getReader().accept(getSaveFolder(entry));
+            PersistenceUtils.ensureDirectoryExists(getSaveFolder(entry).toPath());
+            if (databaseDefinitions) {
+                readDocuments(entry);
+            } else {
+                entry.holder.getReader().accept(getSaveFolder(entry));
+            }
         });
     }
 
@@ -163,6 +216,38 @@ public class FPSMDataManager {
 
     public Path getLevelDataPath() {
         return levelDataPath;
+    }
+
+    public DocumentStore getDocumentStore() {
+        return documentStore;
+    }
+
+    private String namespace(DataEntry<?> entry) {
+        return "definitions/" + (entry.holder.isGlobal() ? "global" : levelDataPath.getFileName()) + "/" + entry.folderName;
+    }
+
+    private <T> void readDocuments(DataEntry<T> entry) {
+        Map<String, JsonElement> documents = documentStore.transact(transaction -> transaction.list(namespace(entry)));
+        documents.values().forEach(json -> entry.holder.readHandler().accept(entry.holder.decodeFromJson(json)));
+    }
+
+    public void close() {
+        if (drainAsyncOperations() && asyncExecutor.isTerminated() && !deferStorageClose) {
+            documentStore.close();
+        } else {
+            FPSMatch.LOGGER.error("Persistence worker is still running; skipping storage close to avoid interrupting a transaction");
+        }
+    }
+
+    public synchronized boolean drainAsyncOperations() {
+        if (asyncDrained == null) {
+            asyncDrained = ExecutorShutdown.drain(asyncExecutor, 30000, 5000, message -> FPSMatch.LOGGER.error("Persistence shutdown: {}", message));
+        }
+        return asyncDrained;
+    }
+
+    public void deferStorageClose() {
+        deferStorageClose = true;
     }
 
     private File getSaveFolder(DataEntry<?> entry) {

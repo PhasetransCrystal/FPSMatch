@@ -16,6 +16,10 @@ public class RegisterFPSMSaveDataEvent extends Event {
         this.dataManager = dataManager;
     }
 
+    public FPSMDataManager getDataManager() {
+        return dataManager;
+    }
+
     /**
      * 使用数据管理器注册存档数据。
      *

@@ -207,7 +207,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
                 ShopData<T> shopData = this.getPlayerShopData(uuid);
                 for (T type : enumConstants) {
                     List<ShopSlot> slots = shopData.getShopSlotsByType(type);
-                    slots.forEach((shopSlot -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(name, type, shopSlot))));
+                    slots.forEach((shopSlot -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(name, type, shopSlot).revision(shopData.getRevision()))));
                 }
             });
         }
@@ -297,7 +297,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         List<T> enumConstants = getEnums();
         for (T type : enumConstants) {
             List<ShopSlot> slots = shopData.getShopSlotsByType(type);
-            slots.forEach((shopSlot -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(name, type, shopSlot))));
+            slots.forEach((shopSlot -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(name, type, shopSlot).revision(shopData.getRevision()))));
         }
     }
 
@@ -309,7 +309,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      * @param slot   商店槽位
      */
     public void syncShopData(ServerPlayer player, String type, ShopSlot slot) {
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(name, valueOf(type), slot));
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(name, valueOf(type), slot).revision(getPlayerShopData(player).getRevision()));
     }
 
     /**
@@ -321,7 +321,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      */
     public void syncShopData(ServerPlayer player, T type, int index) {
         ShopSlot shopSlot = this.getPlayerShopData(player.getUUID()).getShopSlotsByType(type).get(index);
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(name, type, shopSlot));
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(name, type, shopSlot).revision(getPlayerShopData(player).getRevision()));
     }
 
     public void sync() {

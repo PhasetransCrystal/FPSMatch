@@ -22,6 +22,12 @@ public class ShopActionC2SPacket {
     public final INamedType type;
     public final int index;
     public final int action;
+    public long revision;
+
+    public ShopActionC2SPacket revision(long revision) {
+        this.revision = revision;
+        return this;
+    }
 
     public ShopActionC2SPacket(long requestId, String mapName, INamedType type, int index, ShopAction action) {
         this.requestId = requestId;
@@ -37,6 +43,7 @@ public class ShopActionC2SPacket {
         buf.writeUtf(packet.type.name(), MAX_IDENTIFIER_LENGTH);
         buf.writeInt(packet.index);
         buf.writeVarInt(packet.action);
+        buf.writeLong(packet.revision);
     }
 
     public static ShopActionC2SPacket decode(FriendlyByteBuf buf) {
@@ -45,7 +52,7 @@ public class ShopActionC2SPacket {
                 buf.readUtf(MAX_IDENTIFIER_LENGTH),
                 new UnknownShopType(buf.readUtf(MAX_IDENTIFIER_LENGTH)),
                 buf.readInt(),
-                buf.readVarInt());
+                buf.readVarInt()).revision(buf.readLong());
     }
 
     private ShopActionC2SPacket(long requestId, String mapName, INamedType type, int index, int action) {
@@ -78,8 +85,11 @@ public class ShopActionC2SPacket {
                 ShopCapability cap = team == null ? null : team.getCapabilityMap().get(ShopCapability.class).orElse(null);
                 if (map == null || cap == null || cap.getShop() == null) {
                     result = ShopActionResult.failure(ShopActionResult.Code.SHOP_UNAVAILABLE);
-                } else if (!map.canUseShop(cap, serverPlayer)) {
+                } else if (!name.equals(map.getMapName()) || !map.canUseShop(cap, serverPlayer)) {
                     result = ShopActionResult.failure(ShopActionResult.Code.NOT_ALLOWED);
+                } else if (revision != cap.getShop().getPlayerShopData(serverPlayer).getRevision()) {
+                    result = ShopActionResult.failure(ShopActionResult.Code.INVALID_REQUEST);
+                    cap.getShop().syncShopData(serverPlayer);
                 } else {
                     result = cap.getShop().handleButton(
                             serverPlayer, type, index, decodedAction);

@@ -25,6 +25,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 同时支持广播事件以处理槽位变更和成本检查。
  */
 public class ShopData<T extends Enum<T> & INamedType> {
+    private static final java.util.concurrent.atomic.AtomicLong NEXT_REVISION = new java.util.concurrent.atomic.AtomicLong();
+    private long revision;
+
+    public long getRevision() { return revision; }
 
     private int maxMoney = 16000;
 
@@ -60,6 +64,8 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param shopData 商店数据
      */
     public <E extends ImmutableList<ShopSlot>> void setDoneData(Map<T, E> shopData) {
+        checkData(shopData, shopData.size());
+        revision = NEXT_REVISION.incrementAndGet();
         // 赋值给 data 字段
         data.clear();
         data.putAll(shopData);

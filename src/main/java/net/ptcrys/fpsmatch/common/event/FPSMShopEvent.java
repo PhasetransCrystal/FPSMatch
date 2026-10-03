@@ -36,7 +36,7 @@ public class FPSMShopEvent extends Event {
     public static class DataInit<T extends Enum<T> & INamedType> extends FPSMShopEvent {
 
         private int money;
-        private final ImmutableMap<T, ImmutableList<ShopSlot>> data;
+        private ImmutableMap<T, ImmutableList<ShopSlot>> data;
 
         public DataInit(FPSMShop<T> shop, UUID uuid, ImmutableMap<T, ImmutableList<ShopSlot>> data, int money) {
             super(shop, uuid);
@@ -60,6 +60,16 @@ public class FPSMShopEvent extends Event {
 
         public ImmutableMap<T, ImmutableList<ShopSlot>> getData() {
             return data;
+        }
+
+        public void setData(java.util.Map<T, ? extends java.util.List<ShopSlot>> replacement) {
+            if (!replacement.keySet().equals(data.keySet())) throw new IllegalArgumentException("Shop categories cannot change");
+            ImmutableMap.Builder<T, ImmutableList<ShopSlot>> builder = ImmutableMap.builder();
+            replacement.forEach((type, slots) -> {
+                if (slots.size() != type.slotCount()) throw new IllegalArgumentException("Incorrect slot count");
+                builder.put(type, ImmutableList.copyOf(slots));
+            });
+            data = builder.build();
         }
     }
 }

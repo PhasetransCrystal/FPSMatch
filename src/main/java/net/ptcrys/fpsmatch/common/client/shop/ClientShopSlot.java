@@ -14,6 +14,11 @@ public class ClientShopSlot {
     private int boughtCount = 0;
     private boolean locked = false;
     private int groupId = -1;
+    private long revision;
+
+    public long revision() { return revision; }
+
+    public void setRevision(long revision) { this.revision = revision; }
 
     public static ClientShopSlot empty() {
         return new ClientShopSlot(ItemStack.EMPTY, 0);

@@ -134,7 +134,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
 
         player.getInventory().clearContent();
         teamKits.forEach(itemStack -> {
-            ItemStack copy = itemStack.copy();
+            ItemStack copy = FPSMUtil.preparePlayerItem(player, itemStack.copy());
             if (copy.getItem() instanceof ArmorItem armorItem) {
                 MinecraftForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, copy));
                 player.setItemSlot(armorItem.getEquipmentSlot(), copy);

@@ -20,6 +20,12 @@ public class ShopDataSlotS2CPacket {
     public final int boughtCount;
     public final int cost;
     public final boolean locked;
+    public long revision;
+
+    public ShopDataSlotS2CPacket revision(long revision) {
+        this.revision = revision;
+        return this;
+    }
 
     public ShopDataSlotS2CPacket(String shopName, INamedType type, int index, ItemStack itemStack, int cost, int boughtCount, boolean locked) {
         this.shopName = shopName;
@@ -57,6 +63,7 @@ public class ShopDataSlotS2CPacket {
         buf.writeInt(packet.cost);
         buf.writeInt(packet.boughtCount);
         buf.writeBoolean(packet.locked);
+        buf.writeLong(packet.revision);
     }
 
     public static ShopDataSlotS2CPacket decode(FriendlyByteBuf buf) {
@@ -67,7 +74,7 @@ public class ShopDataSlotS2CPacket {
                 buf.readItem(),
                 buf.readInt(),
                 buf.readInt(),
-                buf.readBoolean());
+                buf.readBoolean()).revision(buf.readLong());
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {

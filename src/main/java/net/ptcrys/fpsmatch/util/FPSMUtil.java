@@ -466,7 +466,17 @@ public class FPSMUtil {
     /**
      * 将物品添加到玩家库存
      */
+    public static ItemStack preparePlayerItem(ServerPlayer player, ItemStack itemStack) {
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.ptcrys.fpsmatch.common.event.PreparePlayerItemEvent(player, itemStack));
+        return itemStack;
+    }
+
     public static boolean addItemToPlayerInventory(ServerPlayer player, ItemStack itemStack) {
+        preparePlayerItem(player, itemStack);
+        return addPreparedItemToPlayerInventory(player, itemStack);
+    }
+
+    public static boolean addPreparedItemToPlayerInventory(ServerPlayer player, ItemStack itemStack) {
         if (itemStack.getItem() instanceof ArmorItem armorItem) {
             player.setItemSlot(armorItem.getEquipmentSlot(), itemStack);
             return true;

@@ -20,6 +20,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -242,7 +243,15 @@ public class FPSMCore {
     }
 
     public void shutdown() {
-        FPSMCore.getInstance().fpsmDataManager.saveAllData();
+        shutdown(fpsmDataManager.drainAsyncOperations());
+    }
+
+    private void shutdown(boolean persistenceDrained) {
+        if (persistenceDrained) {
+            fpsmDataManager.saveAllData();
+        } else {
+            FPSMatch.LOGGER.error("Final save skipped: an earlier asynchronous save has not terminated; writing a newer snapshot now would risk a later stale overwrite");
+        }
 
         for (List<BaseMap> list : GAMES.values()) {
             for (BaseMap map : list) {
@@ -253,7 +262,17 @@ public class FPSMCore {
 
     @SubscribeEvent
     public static void onServerStoppingEvent(ServerStoppingEvent event) {
-        FPSMCore.getInstance().shutdown();
+        boolean persistenceDrained = FPSMCore.getInstance().fpsmDataManager.drainAsyncOperations();
+        try {
+            FPSMCore.getInstance().shutdown(persistenceDrained);
+        } finally {
+            FPSMCore.getInstance().fpsmDataManager.close();
+        }
+    }
+
+    @SubscribeEvent
+    public static void onServerStoppedEvent(ServerStoppedEvent event) {
+        INSTANCE = null;
     }
 
     @SubscribeEvent

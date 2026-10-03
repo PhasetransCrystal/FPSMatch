@@ -386,13 +386,13 @@ public class ShopSlot {
      * @return 购买后剩余金钱
      */
     public int buy(ServerPlayer player, int money) {
-        ItemStack itemStack = process();
+        ItemStack itemStack = FPSMUtil.preparePlayerItem(player, process());
         ItemStack obtainedItem = itemStack.copy();
         DropType type = DropType.getItemDropType(itemStack);
 
         checkAndHandleExistingItems(player, type);
 
-        boolean delivered = FPSMUtil.addItemToPlayerInventory(player, itemStack);
+        boolean delivered = FPSMUtil.addPreparedItemToPlayerInventory(player, itemStack);
         if (!delivered) {
             FPSMUtil.playerDropMatchItem(player, itemStack);
         }

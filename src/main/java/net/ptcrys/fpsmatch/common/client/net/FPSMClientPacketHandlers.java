@@ -173,6 +173,7 @@ public final class FPSMClientPacketHandlers {
             currentSlot.setItemStack(packet.itemStack);
             currentSlot.setCost(packet.cost);
             currentSlot.setBoughtCount(packet.boughtCount);
+            currentSlot.setRevision(packet.revision);
             currentSlot.setLock(packet.locked);
         } else {
             FPSMatch.LOGGER.error("Failed to update slot data for {} at index {}", packet.type.name(), packet.index);
