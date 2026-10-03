@@ -11,8 +11,6 @@ import net.ptcrys.fpsmatch.common.client.screen.MatchConfigToolScreen;
 import net.ptcrys.fpsmatch.common.client.screen.SpawnPointToolScreen;
 import net.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
 import net.ptcrys.fpsmatch.common.client.screen.mapselect.modernui.*;
-import net.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernEditShopSlotScreen;
-import net.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernEditorShopScreen;
 import net.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernShopConfigToolScreen;
 import net.ptcrys.fpsmatch.common.client.shop.ShopActionResultListener;
 import net.ptcrys.fpsmatch.common.packet.AddAreaDataS2CPacket;
@@ -330,40 +328,9 @@ public final class FPSMClientPacketHandlers {
     public static void handleMapRoomToast(MapRoomToastS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
         String toastKey = packet.message().getContents() instanceof TranslatableContents contents ? contents.getKey() : "";
-        boolean isShopSaveToast = toastKey.startsWith("gui.fpsm.shop_editor.save.");
-        boolean isShopOpenToast = toastKey.startsWith("gui.fpsm.shop_editor.open.");
         boolean isMapSettingToast = toastKey.equals("gui.fpsm.map_select.action.no_permission") || toastKey.equals("gui.fpsm.map_select.action.map_not_found") || toastKey.equals("gui.fpsm.map_select.action.setting.invalid") || toastKey.equals("gui.fpsm.map_select.action.setting.not_found");
         boolean isRegionToast = toastKey.startsWith("gui.fpsm.map_regions.action.") || toastKey.equals("gui.fpsm.map_select.action.no_permission") || toastKey.equals("gui.fpsm.map_select.action.map_not_found");
         boolean isMapImportToast = toastKey.startsWith("gui.fpsm.map_import.") || toastKey.equals("gui.fpsm.map_select.action.no_permission") || toastKey.equals("gui.fpsm.map_select.action.map_not_found");
-        if (isShopSaveToast && minecraft.screen instanceof ModernEditShopSlotScreen screen && screen.isSaveResultRelevant(packet.requestId())) {
-            screen.applySaveResult(packet);
-            if (minecraft.player != null) {
-                minecraft.player.displayClientMessage(packet.message(), packet.error());
-            }
-            return;
-        }
-        if (isShopSaveToast && minecraft.screen instanceof ModernEditShopSlotScreen) return;
-        if (isShopOpenToast && minecraft.screen instanceof ModernEditorShopScreen screen && screen.isSlotOpenPending()) {
-            screen.applySlotOpenFailure(packet.message());
-            if (minecraft.player != null) {
-                minecraft.player.displayClientMessage(packet.message(), packet.error());
-            }
-            return;
-        }
-        if (isShopOpenToast && minecraft.screen instanceof ModernShopConfigToolScreen screen && screen.isEditorOpenPending()) {
-            screen.applyEditorOpenFailure(packet.message());
-            if (minecraft.player != null) {
-                minecraft.player.displayClientMessage(packet.message(), packet.error());
-            }
-            return;
-        }
-        if (isShopOpenToast && minecraft.screen instanceof ModernEditShopSlotScreen screen && screen.isReturnPending()) {
-            screen.applyReturnFailure(packet.message());
-            if (minecraft.player != null) {
-                minecraft.player.displayClientMessage(packet.message(), packet.error());
-            }
-            return;
-        }
         if (minecraft.screen instanceof ModernMapRoomScreen room) room.applyToast(packet);
         FPSMClient.getGlobalData().setMapRoomToast(packet);
         if (minecraft.screen instanceof ModernMapSelectionScreen screen) {

@@ -25,7 +25,26 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
  * 支持在购买时替换物品和价格，并在退回时恢复默认设置。
  */
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemStack changedItem, int changedCost) implements ListenerModule {
+public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemStack changedItem, int changedCost, String moduleName) implements ListenerModule {
+
+    public ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemStack changedItem, int changedCost) {
+        this(defaultItem, defaultCost, changedItem, changedCost, "");
+    }
+
+    public ChangeShopItemModule {
+        defaultItem = defaultItem.copy();
+        changedItem = changedItem.copy();
+    }
+
+    @Override
+    public ItemStack defaultItem() {
+        return defaultItem.copy();
+    }
+
+    @Override
+    public ItemStack changedItem() {
+        return changedItem.copy();
+    }
 
     /**
      * 该模块的编解码器，用于序列化和反序列化。
@@ -34,7 +53,8 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
             ItemStack.CODEC.fieldOf("defaultItem").forGetter(ChangeShopItemModule::defaultItem),
             Codec.INT.fieldOf("defaultCost").forGetter(ChangeShopItemModule::defaultCost),
             ItemStack.CODEC.fieldOf("changedItem").forGetter(ChangeShopItemModule::changedItem),
-            Codec.INT.fieldOf("changedCost").forGetter(ChangeShopItemModule::changedCost)).apply(instance, ChangeShopItemModule::new));
+            Codec.INT.fieldOf("changedCost").forGetter(ChangeShopItemModule::changedCost),
+            Codec.STRING.optionalFieldOf("moduleName", "").forGetter(ChangeShopItemModule::moduleName)).apply(instance, ChangeShopItemModule::new));
 
     /**
      * 注册该模块到监听模块管理器。
@@ -82,6 +102,7 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
      */
     @Override
     public String getName() {
+        if (!moduleName.isEmpty()) return moduleName;
         String name;
         IGunProvider provider = GunCompatManager.findProvider(this.changedItem);
         if (provider.isGun(this.changedItem)) {
@@ -105,6 +126,7 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
     @SubscribeEvent
     public static void onDataRegister(RegisterFPSMSaveDataEvent event) {
         event.registerData(ChangeShopItemModule.class, "ListenerModule", new SaveHolder.Builder<>(ChangeShopItemModule.CODEC)
+                .withLoadPriority(100)
                 .withLoadHandler(ChangeShopItemModule::read)
                 .withSaveHandler((manager) -> FPSMCore.getInstance().getListenerModuleManager().getRegistry().forEach((name, module) -> {
                     if (module instanceof ChangeShopItemModule cSIM) {

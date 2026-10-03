@@ -34,9 +34,14 @@ public final class FPSMClientPacketRegistrar {
         ClientPacketRegistry.register(RemoveDebugDataByPrefixS2CPacket.class, FPSMClientPacketHandlers::handleRemoveDebugDataByPrefix);
         ClientPacketRegistry.register(ShopDataSlotS2CPacket.class, FPSMClientPacketHandlers::handleShopDataSlot);
         ClientPacketRegistry.register(ShopActionResultS2CPacket.class, FPSMClientPacketHandlers::handleShopActionResult);
-        ClientPacketRegistry.register(ShopGroupsResultS2CPacket.class, packet -> {
+        ClientPacketRegistry.register(ShopEditorResultS2CPacket.class, packet -> {
             var minecraft = net.minecraft.client.Minecraft.getInstance();
-            if (minecraft.screen instanceof net.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernEditorShopScreen screen && screen.getMenu().containerId == packet.containerId()) screen.applyGroupResult(packet);
+            if (minecraft.screen instanceof net.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernEditorShopScreen screen) screen.applyResult(packet);
+            else if (minecraft.screen instanceof net.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernEditShopSlotScreen screen) screen.applyResult(packet);
+        });
+        ClientPacketRegistry.register(ListenerModuleResultS2CPacket.class, packet -> {
+            var minecraft = net.minecraft.client.Minecraft.getInstance();
+            if (minecraft.screen instanceof net.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernListenerModuleScreen screen) screen.applyResult(packet);
         });
         ClientPacketRegistry.register(ShopMoneyS2CPacket.class, FPSMClientPacketHandlers::handleShopMoney);
         ClientPacketRegistry.register(MapImportSourcesS2CPacket.class, FPSMClientPacketHandlers::handleMapImportSources);

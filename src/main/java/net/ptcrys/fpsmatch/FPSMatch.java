@@ -4,7 +4,6 @@ import net.ptcrys.fpsmatch.bukkit.FPSMBukkit;
 import net.ptcrys.fpsmatch.common.capability.FPSMCapabilityRegister;
 import net.ptcrys.fpsmatch.common.client.net.FPSMClientNetwork;
 import net.ptcrys.fpsmatch.common.client.net.FPSMClientPacketRegistrar;
-import net.ptcrys.fpsmatch.common.client.screen.VanillaGuiRegister;
 import net.ptcrys.fpsmatch.common.command.FPSMCommand;
 import net.ptcrys.fpsmatch.common.drop.ThrowableRegistry;
 import net.ptcrys.fpsmatch.common.effect.FPSMEffectRegister;
@@ -73,7 +72,7 @@ public class FPSMatch {
 
     public static final String MODID = "fpsmatch";
     public static final Logger LOGGER = LoggerFactory.getLogger("FPSMatch");
-    private static final String PROTOCOL_VERSION = "1.4.2";
+    private static final String PROTOCOL_VERSION = "1.5.0";
     private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(ResourceLocation.tryBuild("fpsmatch", "main"), PROTOCOL_VERSION);
     public static final SimpleChannel INSTANCE = PACKET_REGISTER.getChannel();
     public static final String DEBUG_SYS_PROP = "fpsm.debug";
@@ -90,7 +89,6 @@ public class FPSMatch {
         modEventBus.addListener(this::onRegisterPackets);
         modEventBus.addListener(this::onEnqueue);
         MinecraftForge.EVENT_BUS.register(this);
-        VanillaGuiRegister.CONTAINERS.register(modEventBus);
         FPSMItemRegister.ITEMS.register(modEventBus);
         FPSMItemRegister.TABS.register(modEventBus);
         FPSMSoundRegister.SOUNDS.register(modEventBus);
@@ -176,7 +174,6 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(FPSMusicPlayS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMSoundPlayC2SPacket.class);
         PACKET_REGISTER.registerPacket(FPSMusicStopS2CPacket.class);
-        PACKET_REGISTER.registerPacket(SaveSlotDataC2SPacket.class);
         PACKET_REGISTER.registerPacket(EditToolClickC2SPacket.class);
         PACKET_REGISTER.registerPacket(PullGameInfoC2SPacket.class);
         PACKET_REGISTER.registerPacket(FPSMatchRespawnS2CPacket.class);
@@ -223,8 +220,9 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(ShopActionResultS2CPacket.class);
         PACKET_REGISTER.registerPacket(SaveShopSlotConfigurationC2SPacket.class);
         PACKET_REGISTER.registerPacket(SetShopGroupsC2SPacket.class);
-        PACKET_REGISTER.registerPacket(ShopGroupsResultS2CPacket.class);
-        PACKET_REGISTER.registerPacket(OpenShopSlotC2SPacket.class);
+        PACKET_REGISTER.registerPacket(ShopEditorResultS2CPacket.class);
+        PACKET_REGISTER.registerPacket(ListenerModuleActionC2SPacket.class);
+        PACKET_REGISTER.registerPacket(ListenerModuleResultS2CPacket.class);
         event.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> FPSMClientPacketRegistrar::registerAll));
     }
 

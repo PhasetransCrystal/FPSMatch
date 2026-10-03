@@ -1,16 +1,15 @@
-package net.ptcrys.fpsmatch.common.client.screen.shop;
+package net.ptcrys.fpsmatch.common.shop.editor;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-/** Shared limits for editor drafts and untrusted network requests. */
 public final class ShopEditorValues {
 
-    public static final int MAX_SELECTION = 512;
-    public static final int MAX_MODULES = 64;
+    public static final int MAX_SELECTION = ShopEditorSnapshot.MAX_SLOTS;
+    public static final int MAX_MODULES = ShopEditorSnapshot.MAX_MODULES;
     public static final int MAX_MODULE_NAME = 256;
-    public static final int MAX_CATALOG = 1024;
+    public static final int MAX_CATALOG = ShopEditorSnapshot.MAX_CATALOG;
 
     private ShopEditorValues() {}
 

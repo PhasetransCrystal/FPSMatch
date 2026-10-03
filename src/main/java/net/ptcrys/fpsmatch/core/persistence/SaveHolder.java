@@ -19,6 +19,7 @@ public class SaveHolder<T> implements ISavePort<T> {
     private Class<T> clazz;
 
     private final int version;
+    private final int loadPriority;
     private final Supplier<T> initializer;
 
     public static class Builder<T> {
@@ -30,6 +31,7 @@ public class SaveHolder<T> implements ISavePort<T> {
         private BiFunction<T, T, T> mergeHandler = (old, newData) -> newData;
         private String fileType = "json";
         private int version = 1;
+        private int loadPriority;
         private Supplier<T> initializer;
 
         public Builder(Codec<T> codec) {
@@ -41,6 +43,11 @@ public class SaveHolder<T> implements ISavePort<T> {
 
         public Builder<T> withVersion(int version) {
             this.version = version;
+            return this;
+        }
+
+        public Builder<T> withLoadPriority(int priority) {
+            this.loadPriority = priority;
             return this;
         }
 
@@ -87,6 +94,7 @@ public class SaveHolder<T> implements ISavePort<T> {
         this.mergeHandler = builder.mergeHandler;
         this.fileType = builder.fileType;
         this.version = builder.version;
+        this.loadPriority = builder.loadPriority;
         this.initializer = builder.initializer;
     }
 
@@ -101,6 +109,10 @@ public class SaveHolder<T> implements ISavePort<T> {
     @Override
     public int getVersion() {
         return version;
+    }
+
+    public int getLoadPriority() {
+        return loadPriority;
     }
 
     @Override
