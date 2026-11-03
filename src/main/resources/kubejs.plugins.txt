@@ -1,1 +1,1 @@
-com.ptcrys.fpsmatch.compat.kubejs.FPSMatchKubeJSPlugin fpsmatch
+net.ptcrys.fpsmatch.compat.kubejs.FPSMatchKubeJSPlugin fpsmatch
