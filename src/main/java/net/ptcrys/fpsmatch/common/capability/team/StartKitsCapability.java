@@ -10,8 +10,14 @@ import net.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.ptcrys.fpsmatch.core.capability.team.TeamCapability;
 import net.ptcrys.fpsmatch.core.data.PlayerData;
 import net.ptcrys.fpsmatch.core.map.BaseMap;
+import net.ptcrys.fpsmatch.core.persistence.RuntimeItemStackCodec;
+import net.ptcrys.fpsmatch.core.shop.runtime.RuntimeItemException;
+import net.ptcrys.fpsmatch.core.shop.runtime.RuntimeKitTemplates;
 import net.ptcrys.fpsmatch.core.team.BaseTeam;
 import net.ptcrys.fpsmatch.core.team.ServerTeam;
+import net.ptcrys.fpsmatch.editor.api.EditorId;
+import net.ptcrys.fpsmatch.editor.api.Problem;
+import net.ptcrys.fpsmatch.editor.api.TextContent;
 import net.ptcrys.fpsmatch.util.FPSMUtil;
 
 import net.minecraft.commands.CommandBuildContext;
@@ -24,6 +30,7 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 
+import com.google.gson.JsonElement;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -33,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -41,9 +49,41 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class StartKitsCapability extends TeamCapability implements FPSMCapability.Savable<List<ItemStack>> {
 
     private final ArrayList<ItemStack> teamKits = new ArrayList<>();
+    private RuntimeKitTemplates runtimeKits;
+    private boolean managed;
+    private boolean destroyed;
 
     public StartKitsCapability(BaseTeam team) {
         super(team);
+    }
+
+    public void useRuntimeKits(RuntimeKitTemplates kits) {
+        if (destroyed) throw runtimeFailure("closed");
+        if (managed || !teamKits.isEmpty() || kits == null) throw invalidSlot();
+        kits.requireAvailable();
+        runtimeKits = kits;
+        managed = true;
+    }
+
+    public Optional<RuntimeKitTemplates> runtimeKits() {
+        if (managed && destroyed) throw runtimeFailure("closed");
+        RuntimeKitTemplates kits = runtimeKits;
+        if (kits != null) kits.requireAvailable();
+        return Optional.ofNullable(kits);
+    }
+
+    private void requireLegacy() {
+        if (managed) throw invalidSlot();
+    }
+
+    private static RuntimeItemException invalidSlot() {
+        return runtimeFailure("invalid_slot");
+    }
+
+    private static RuntimeItemException runtimeFailure(String reason) {
+        return new RuntimeItemException(new Problem(Problem.Severity.ERROR,
+                new EditorId("editor", "runtime_items/" + reason), "runtime_items",
+                new TextContent.Message("editor.runtime_items." + reason, List.of())));
     }
 
     /**
@@ -72,6 +112,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
      * 获取当前队伍的初始装备列表
      */
     public ArrayList<ItemStack> getTeamKits() {
+        requireLegacy();
         return new ArrayList<>(teamKits); // 返回副本，避免外部直接修改
     }
 
@@ -79,6 +120,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
      * 为当前队伍添加单个初始装备
      */
     public void addKit(ItemStack itemStack) {
+        requireLegacy();
         if (!itemStack.isEmpty()) {
             teamKits.add(itemStack.copy());
         }
@@ -88,6 +130,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
      * 为当前队伍添加多个初始装备
      */
     public void addKits(List<ItemStack> itemStacks) {
+        requireLegacy();
         itemStacks.forEach(this::addKit);
     }
 
@@ -95,6 +138,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
      * 设置当前队伍的初始装备列表
      */
     public void setTeamKits(ArrayList<ItemStack> itemStacks) {
+        requireLegacy();
         clearTeamKits();
         addKits(itemStacks);
     }
@@ -103,6 +147,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
      * 清空当前队伍的初始装备
      */
     public void clearTeamKits() {
+        requireLegacy();
         teamKits.clear();
     }
 
@@ -110,6 +155,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
      * 从当前队伍的初始装备中移除特定物品
      */
     public boolean removeItem(ItemStack itemStack) {
+        requireLegacy();
         AtomicBoolean flag = new AtomicBoolean(false);
         teamKits.removeIf(kit -> {
             if (kit.is(itemStack.getItem())) {
@@ -126,14 +172,31 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
      * 为指定玩家发放当前队伍的初始装备
      */
     public void givePlayerKits(@NotNull ServerPlayer player) {
+        if (managed && destroyed) throw runtimeFailure("closed");
         // 验证玩家是否属于当前队伍（避免跨队伍发放）
         if (!team.hasPlayer(player.getUUID())) {
             FPSMatch.LOGGER.info("givePlayerKits: player {} not in team {}", player.getDisplayName().getString(), team.name);
             return;
         }
 
+        RuntimeKitTemplates managed = runtimeKits;
+        if (managed != null) managed.requireAvailable();
         player.getInventory().clearContent();
-        teamKits.forEach(itemStack -> {
+        if (managed != null) {
+            for (int index = 0, count = managed.templates().size(); index < count; index++) {
+                if (managed.isEmpty(index)) continue;
+                ItemStack delivery = managed.createDelivery(index);
+                // preparePlayerItem posts an external event: ownership transfers at its entry.
+                ItemStack prepared = FPSMUtil.preparePlayerItem(player, delivery);
+                if (prepared.getItem() instanceof ArmorItem armorItem) {
+                    MinecraftForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, prepared));
+                    player.setItemSlot(armorItem.getEquipmentSlot(), prepared);
+                } else {
+                    MinecraftForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, prepared));
+                    player.getInventory().add(prepared);
+                }
+            }
+        } else teamKits.forEach(itemStack -> {
             ItemStack copy = FPSMUtil.preparePlayerItem(player, itemStack.copy());
             if (copy.getItem() instanceof ArmorItem armorItem) {
                 MinecraftForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, copy));
@@ -154,6 +217,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
      * 为当前队伍的所有在线玩家发放初始装备
      */
     public void giveAllPlayersKits() {
+        if (managed && destroyed) throw runtimeFailure("closed");
         BaseMap map = ((ServerTeam) team).getMap();
         if (map == null) return;
 
@@ -165,16 +229,19 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
 
     @Override
     public void destroy() {
-        clearTeamKits();
+        destroyed = true;
+        runtimeKits = null;
+        teamKits.clear();
     }
 
     @Override
     public Codec<List<ItemStack>> codec() {
-        return ItemStack.CODEC.listOf();
+        return RuntimeItemStackCodec.owned(RuntimeItemStackCodec.CODEC.listOf());
     }
 
     @Override
     public List<ItemStack> write(List<ItemStack> value) {
+        requireLegacy();
         teamKits.clear();
         for (ItemStack itemStack : value) {
             if (!itemStack.isEmpty()) {
@@ -186,7 +253,26 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
 
     @Override
     public @Nullable List<ItemStack> read() {
+        requireLegacy();
         return teamKits;
+    }
+
+    @Override
+    public JsonElement toJson() {
+        RuntimeKitTemplates kits = runtimeKits;
+        return kits == null ? FPSMCapability.Savable.super.toJson() : kits.toJson();
+    }
+
+    @Override
+    public JsonElement toJson(List<ItemStack> value) {
+        requireLegacy();
+        return FPSMCapability.Savable.super.toJson(value);
+    }
+
+    @Override
+    public void decode(JsonElement json) {
+        requireLegacy();
+        FPSMCapability.Savable.super.decode(json);
     }
 
     protected static class StartKitsCommand implements Factory.Command {
@@ -230,40 +316,66 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
                 return 0;
             }
 
-            ItemStack itemStack = player.getMainHandItem().copy();
-            if (itemStack.isEmpty()) {
-                context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.kits.add.empty"));
-                return 0;
-            }
+            Optional<StartKitsCapability> capability = FPSMCommand.getTeamCapability(context, StartKitsCapability.class);
+            if (capability.isEmpty() || rejectManagedAdd(context, capability.get())) return 0;
 
-            return FPSMCommand.getTeamCapability(context, StartKitsCapability.class).map(capability -> {
-                capability.addKit(itemStack);
-                FPSMCore.getInstance().getFPSMDataManager().saveAllData();
-                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success",
-                        itemStack.getDisplayName(), capability.team.name), true);
-                return 1;
-            }).orElse(0);
+            ItemStack itemStack = player.getMainHandItem().copy();
+            return addLegacyKit(context, capability.get(), itemStack, true);
         }
 
         /**
          * 处理添加初始装备（有物品参数）
          */
         private static int handleAddKitWithItem(CommandContext<CommandSourceStack> context, int count) {
+            Optional<StartKitsCapability> capability = FPSMCommand.getTeamCapability(context, StartKitsCapability.class);
+            if (capability.isEmpty()) {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", StartKitsCapability.class.getSimpleName()));
+                return 0;
+            }
+            if (rejectManagedAdd(context, capability.get())) return 0;
+
+            ItemStack itemStack;
             try {
-                ItemStack itemStack = ItemArgument.getItem(context, "item").createItemStack(count, false);
-                return FPSMCommand.getTeamCapability(context, StartKitsCapability.class).map(capability -> {
-                    capability.addKit(itemStack);
-                    FPSMCore.getInstance().getFPSMDataManager().saveAllData();
-                    context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success",
-                            itemStack.getDisplayName(), capability.team.name), true);
-                    return 1;
-                }).orElseGet(() -> {
-                    context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", StartKitsCapability.class.getSimpleName()));
-                    return 0;
-                });
+                itemStack = ItemArgument.getItem(context, "item").createItemStack(count, false);
             } catch (Exception e) {
                 context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.kits.add.failed"));
                 return 0;
+            }
+            return addLegacyKit(context, capability.get(), itemStack, false);
+        }
+
+        private static boolean rejectManagedAdd(CommandContext<CommandSourceStack> context, StartKitsCapability capability) {
+            if (!capability.managed) return false;
+            context.getSource().sendFailure(Component.translatable("editor.runtime_items.invalid_slot"));
+            return true;
+        }
+
+        private static int addLegacyKit(CommandContext<CommandSourceStack> context, StartKitsCapability capability,
+                                        ItemStack itemStack, boolean rejectEmpty) {
+            Throwable failure = null;
+            try {
+                if (rejectEmpty && itemStack.isEmpty()) {
+                    context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.kits.add.empty"));
+                    return 0;
+                }
+                capability.addKit(itemStack);
+                FPSMCore.getInstance().getFPSMDataManager().saveAllData();
+                Component message = Component.translatable("commands.fpsm.modify.kits.add.success",
+                        itemStack.getDisplayName().copy(), capability.team.name);
+                context.getSource().sendSuccess(() -> message, true);
+                return 1;
+            } catch (RuntimeException | Error thrown) {
+                failure = thrown;
+                throw thrown;
+            } finally {
+                if (itemStack != ItemStack.EMPTY) {
+                    try {
+                        itemStack.invalidateCaps();
+                    } catch (RuntimeException | Error cleanup) {
+                        if (failure == null) throw cleanup;
+                        if (failure != cleanup) failure.addSuppressed(cleanup);
+                    }
+                }
             }
         }
 
@@ -288,10 +400,19 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
          */
         private static int handleListKits(CommandContext<CommandSourceStack> context) {
             return FPSMCommand.getTeamCapability(context, StartKitsCapability.class).map(capability -> {
-                List<ItemStack> kits = capability.getTeamKits();
-                kits.forEach(itemStack -> context.getSource().sendSuccess(itemStack::getDisplayName, true));
+                Optional<RuntimeKitTemplates> managed = capability.runtimeKits();
+                int count;
+                if (managed.isPresent()) {
+                    List<Component> names = managed.get().displayNames();
+                    names.forEach(name -> context.getSource().sendSuccess(() -> name, true));
+                    count = names.size();
+                } else {
+                    List<ItemStack> kits = capability.getTeamKits();
+                    kits.forEach(itemStack -> context.getSource().sendSuccess(itemStack::getDisplayName, true));
+                    count = kits.size();
+                }
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.list.success",
-                        capability.getHolder().name, kits.size()), true);
+                        capability.getHolder().name, count), true);
                 return 1;
             }).orElseGet(() -> {
                 context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", StartKitsCapability.class.getSimpleName()));

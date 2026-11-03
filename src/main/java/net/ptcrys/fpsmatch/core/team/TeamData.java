@@ -1,17 +1,22 @@
 package net.ptcrys.fpsmatch.core.team;
 
-import net.ptcrys.fpsmatch.FPSMatch;
 import net.ptcrys.fpsmatch.common.capability.team.SpawnPointCapability;
 import net.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.ptcrys.fpsmatch.core.capability.team.TeamCapability;
+import net.ptcrys.fpsmatch.core.map.MapConstructionScope;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public record TeamData(String name, int limit, List<String> capabilities) {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TeamData.class);
 
     public static final Codec<TeamData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("name").forGetter(TeamData::name),
@@ -45,9 +50,17 @@ public record TeamData(String name, int limit, List<String> capabilities) {
     }
 
     public List<Class<? extends TeamCapability>> getCapabilities() {
+        if (MapConstructionScope.isConstructing()) {
+            HashSet<String> requested = new HashSet<>();
+            for (String capability : capabilities) {
+                if (!requested.add(capability)) {
+                    throw new IllegalStateException("Duplicate required team capability: " + capability);
+                }
+            }
+        }
         List<Class<? extends TeamCapability>> caps = new ArrayList<>();
         for (String cap : capabilities) {
-            FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(cap, TeamCapability.class).ifPresentOrElse(caps::add, () -> FPSMatch.LOGGER.error("Could not find team capability class: {}", cap));
+            FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(cap, TeamCapability.class).ifPresentOrElse(caps::add, () -> LOGGER.error("Could not find team capability class: {}", cap));
         }
         return caps;
     }

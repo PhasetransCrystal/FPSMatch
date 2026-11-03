@@ -42,7 +42,7 @@ public class LMManager {
 
     /**
      * 添加一个新的监听模块。
-     * 
+     *
      * @param listenerModule 要添加的监听模块
      */
     public void addListenerType(ListenerModule listenerModule) {
@@ -52,7 +52,7 @@ public class LMManager {
 
     /**
      * 获取指定名称的监听模块。
-     * 
+     *
      * @param name 监听模块的名称
      * @return 如果找到对应的监听模块，返回该模块；否则返回 null
      */
@@ -63,7 +63,7 @@ public class LMManager {
 
     /**
      * 获取所有注册的监听模块名称列表。
-     * 
+     *
      * @return 监听模块名称列表
      */
     public List<String> getListenerModules() {
@@ -72,7 +72,7 @@ public class LMManager {
 
     /**
      * 获取所有注册的监听模块。
-     * 
+     *
      * @return 监听模块的 Map（键为模块名称，值为模块实例）
      */
     public Map<String, ListenerModule> getRegistry() {

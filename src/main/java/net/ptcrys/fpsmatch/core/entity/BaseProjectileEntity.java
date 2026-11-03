@@ -274,7 +274,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
      * - 0: 初始状态（未碰撞）。
      * - 1: 碰撞后（未激活）。
      * - 2: 激活状态（如粘附到表面）。
-     * 
+     *
      * @return 投掷物的状态
      */
     public int getState() {
@@ -283,7 +283,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 设置投掷物的状态。
-     * 
+     *
      * @param state 新的状态值
      */
     protected void setState(int state) {
@@ -292,7 +292,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 检查投掷物是否已被激活。
-     * 
+     *
      * @return 如果投掷物已被激活，返回 true；否则返回 false
      */
     public boolean isActivated() {
@@ -301,7 +301,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 获取是否在地面碰撞时激活投掷物。
-     * 
+     *
      * @return 如果在地面碰撞时激活，返回 true；否则返回 false
      */
     public boolean isActivateOnGroundHit() {
@@ -310,7 +310,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 设置是否在地面碰撞时激活投掷物。
-     * 
+     *
      * @param activateOnGroundHit 是否在地面碰撞时激活
      */
     public void setActivateOnGroundHit(boolean activateOnGroundHit) {
@@ -319,7 +319,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 获取水平方向的减速系数。
-     * 
+     *
      * @return 水平方向的减速系数
      */
     public double getHorizontalReduction() {
@@ -328,7 +328,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 设置水平方向的减速系数。
-     * 
+     *
      * @param horizontalReduction 新的水平方向减速系数
      */
     public void setHorizontalReduction(double horizontalReduction) {
@@ -337,7 +337,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 获取垂直方向的减速系数。
-     * 
+     *
      * @return 垂直方向的减速系数
      */
     public double getVerticalReduction() {
@@ -346,7 +346,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 设置垂直方向的减速系数。
-     * 
+     *
      * @param verticalReduction 新的垂直方向减速系数
      */
     public void setVerticalReduction(double verticalReduction) {

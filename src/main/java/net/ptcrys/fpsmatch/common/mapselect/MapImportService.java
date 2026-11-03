@@ -7,6 +7,7 @@ import net.ptcrys.fpsmatch.common.packet.mapselect.MapImportSourceInfo;
 import net.ptcrys.fpsmatch.core.FPSMCore;
 import net.ptcrys.fpsmatch.core.data.Setting;
 import net.ptcrys.fpsmatch.core.map.BaseMap;
+import net.ptcrys.fpsmatch.core.persistence.RuntimeItemStackCodec;
 import net.ptcrys.fpsmatch.core.shop.FPSMShop;
 import net.ptcrys.fpsmatch.core.team.ServerTeam;
 import net.ptcrys.fpsmatch.util.FPSMCodec;
@@ -178,9 +179,8 @@ public final class MapImportService {
     }
 
     private static List<ItemStack> decodeKits(JsonElement json) {
-        return ItemStack.CODEC.listOf().decode(JsonOps.INSTANCE, json)
-                .getOrThrow(false, IllegalArgumentException::new).getFirst()
-                .stream().map(ItemStack::copy).toList();
+        return RuntimeItemStackCodec.owned(RuntimeItemStackCodec.CODEC.listOf()).decode(JsonOps.INSTANCE, json)
+                .getOrThrow(false, IllegalArgumentException::new).getFirst();
     }
 
     private static JsonElement capability(JsonObject team, Class<?> capability) {

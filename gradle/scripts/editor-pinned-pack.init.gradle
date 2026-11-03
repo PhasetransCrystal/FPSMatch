@@ -1,0 +1,41 @@
+// Explicit, headless verification of actual MC resources. Never applied by normal/release builds.
+gradle.afterProject { p ->
+    if (p.name != 'FPSMatch' || p.projectDir.name != 'FPSMatch') return
+    def raw = p.findProperty('pinnedPackEvidence')
+    if (raw == null) throw new GradleException('Supply -PpinnedPackEvidence with a fresh evidence directory')
+    def evidence = new File(raw.toString()).absoluteFile
+    def verification = p.sourceSets.create('pinnedPackVerification') {
+        java.setSrcDirs(['src/test/java'])
+        java.include 'net/ptcrys/fpsmatch/editor/core/examples/PinnedPackConsumer.java'
+        compileClasspath += p.sourceSets.main.compileClasspath + p.sourceSets.main.output
+        runtimeClasspath = output + compileClasspath
+    }
+    p.tasks.named(verification.compileJavaTaskName).configure {
+        options.release = 17
+        options.compilerArgs.addAll(['-Xlint:all', '-Werror', '-proc:none'])
+        doFirst {
+            options.compilerArgs.removeAll { it == '-Xlint:-deprecation' || it == '-Xlint:-removal' }
+        }
+    }
+    p.tasks.register('runPinnedPackConsumer', JavaExec) {
+        dependsOn p.tasks.named(verification.classesTaskName)
+        classpath = verification.runtimeClasspath
+        mainClass = 'net.ptcrys.fpsmatch.editor.core.examples.PinnedPackConsumer'
+        maxHeapSize = '64m'
+        workingDir evidence
+        doFirst {
+            def rawSnapshots = p.findProperty('pinnedPackSnapshots')
+            if (rawSnapshots == null) throw new GradleException('Supply three | separated absolute snapshots')
+            def snapshots = rawSnapshots.toString().split('\\|', -1)
+            if (snapshots.length != 3 || snapshots.any { !new File(it).isAbsolute() }) {
+                throw new GradleException('Supply exactly three absolute snapshots')
+            }
+            args new File(evidence, 'native-view').absolutePath, snapshots[0], snapshots[1], snapshots[2]
+            new File(evidence, 'native-runtime-classpath.txt').text = classpath.files.collect { it.absolutePath }.join('\n') + '\n'
+            new File(evidence, 'native-run-configuration.json').text = groovy.json.JsonOutput.prettyPrint(
+                    groovy.json.JsonOutput.toJson([mainClass: mainClass.get(), maxHeap: maxHeapSize,
+                        arguments: getArgs(), workingDirectory: workingDir.absolutePath,
+                        javaExecutable: javaLauncher.get().executablePath.asFile.absolutePath]))
+        }
+    }
+}

@@ -1,10 +1,13 @@
 package net.ptcrys.fpsmatch.core.capability;
 
+import net.ptcrys.fpsmatch.core.ShutdownCleanup;
 import net.ptcrys.fpsmatch.core.capability.map.MapCapability;
 import net.ptcrys.fpsmatch.core.capability.team.TeamCapability;
 import net.ptcrys.fpsmatch.core.map.BaseMap;
+import net.ptcrys.fpsmatch.core.map.MapConstructionScope;
 import net.ptcrys.fpsmatch.core.persistence.DataPersistenceException;
 import net.ptcrys.fpsmatch.core.team.BaseTeam;
+import net.ptcrys.fpsmatch.core.team.ServerTeam;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.common.MinecraftForge;
@@ -29,7 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unchecked")
-public class CapabilityMap<H, T extends FPSMCapability<H>> {
+public class CapabilityMap<H, T extends FPSMCapability<H>> implements AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CapabilityMap.class);
 
@@ -47,20 +50,26 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     public static CapabilityMap<BaseMap, MapCapability> ofMapCapability(BaseMap map) {
-        CapabilityMap<BaseMap, MapCapability> capMap = new CapabilityMap<>(map, MapCapability.class);
+        CapabilityMap<BaseMap, MapCapability> capMap = MapConstructionScope.acquire(
+                () -> new CapabilityMap<>(map, MapCapability.class), CapabilityMap::close);
         for (Class<? extends MapCapability> cap : FPSMCapabilityManager.getOriginalMapCapabilities()) {
-            capMap.add(cap);
+            if (!capMap.add(cap) && MapConstructionScope.isConstructing()) {
+                throw new IllegalStateException("Required original map capability could not be added: " + cap.getName());
+            }
         }
         return capMap;
     }
 
     public static CapabilityMap<BaseTeam, TeamCapability> ofTeamCapability(BaseTeam team) {
-        CapabilityMap<BaseTeam, TeamCapability> capMap = new CapabilityMap<>(team, TeamCapability.class);
+        CapabilityMap<BaseTeam, TeamCapability> capMap = MapConstructionScope.acquire(
+                () -> new CapabilityMap<>(team, TeamCapability.class), CapabilityMap::close);
 
         if (team.isClientSide()) return capMap;
 
         for (Class<? extends TeamCapability> cap : FPSMCapabilityManager.getOriginalTeamCapabilities()) {
-            capMap.add(cap);
+            if (!capMap.add(cap) && MapConstructionScope.isConstructing()) {
+                throw new IllegalStateException("Required original team capability could not be added: " + cap.getName());
+            }
         }
         return capMap;
     }
@@ -68,6 +77,9 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     private final Map<Class<? extends T>, T> capabilities = new ConcurrentHashMap<>();
     private final Map<Class<? extends T>, PendingAddition<T>> pendingAdditions = new ConcurrentHashMap<>();
     private final ReentrantLock lifecycleLock = new ReentrantLock();
+    private volatile boolean closed;
+    private boolean closing;
+    private Throwable closeFailure;
 
     private final H holder;
 
@@ -79,13 +91,74 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     public final void tick() {
-        for (T cap : capabilities.values()) {
-            try {
-                cap.tick();
-            } catch (Exception e) {
-                LOGGER.error("Error ticking capability {} on holder {}", cap.getClass().getSimpleName(), this.holder, e);
+        lifecycleLock.lock();
+        try {
+            if (closed) return;
+            for (T cap : capabilities.values()) {
+                try {
+                    cap.tick();
+                } catch (Exception e) {
+                    LOGGER.error("Error ticking capability {} on holder {}", cap.getClass().getSimpleName(), this.holder, e);
+                }
             }
+        } finally {
+            lifecycleLock.unlock();
         }
+    }
+
+    /** Terminates this container and attempts every published capability's cleanup. */
+    @Override
+    public final void close() {
+        if (lifecycleLock.isHeldByCurrentThread()) {
+            if (closing) return;
+            throw new IllegalStateException("Cannot close a capability map from its lifecycle callback");
+        }
+        // Unlike ordinary lifecycle operations, terminal cleanup must finish despite interruption.
+        lifecycleLock.lock();
+        try {
+            if (closed) {
+                rethrowCloseFailure();
+                return;
+            }
+            List<T> captured = new ArrayList<>(capabilities.values());
+            captured.sort(Comparator.comparing(capability -> capability.getClass().getName()));
+            List<Runnable> cleanup = new ArrayList<>();
+            for (T capability : captured) {
+                cleanup.add(() -> MinecraftForge.EVENT_BUS.unregister(capability));
+                cleanup.add(capability::destroy);
+            }
+            closed = true;
+            capabilities.clear();
+            closing = true;
+            try {
+                ShutdownCleanup.run(() -> {}, cleanup);
+            } catch (RuntimeException | Error failure) {
+                closeFailure = failure;
+                throw failure;
+            } finally {
+                closing = false;
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    public final boolean isClosed() {
+        return closed;
+    }
+
+    /** Whether the calling thread is already executing a lifecycle operation on this container. */
+    public final boolean isInLifecycleCallback() {
+        return lifecycleLock.isHeldByCurrentThread();
+    }
+
+    private void rethrowCloseFailure() {
+        if (closeFailure instanceof RuntimeException failure) throw failure;
+        if (closeFailure instanceof Error failure) throw failure;
+    }
+
+    private void requireOpen() {
+        if (closed) throw new IllegalStateException("Capability map is closed");
     }
 
     /**
@@ -97,6 +170,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     public final <C extends T> boolean add(Class<C> capabilityClass) {
         lockLifecycleInterruptibly();
         try {
+            requireOpen();
             if (capabilities.get(capabilityClass) != null) {
                 return FPSMCapabilityManager.getRawFactory(capabilityClass)
                         .map(FPSMCapability.Factory::isOriginal)
@@ -143,8 +217,14 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     public final boolean add(T capability) {
-        if (!FPSMCapabilityManager.isRegistered(capability.getClass())) return false;
-        return this.addDirectly(capability);
+        lockLifecycleInterruptibly();
+        try {
+            requireOpen();
+            if (!FPSMCapabilityManager.isRegistered(capability.getClass())) return false;
+            return this.addDirectly(capability);
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     /**
@@ -154,13 +234,19 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      * @return 添加成功的能力类型列表
      */
     public final <C extends T> List<Class<C>> addAll(Collection<Class<C>> capabilityClasses) {
-        List<Class<C>> added = new ArrayList<>();
-        for (Class<C> clazz : capabilityClasses) {
-            if (add(clazz)) {
-                added.add(clazz);
+        lockLifecycleInterruptibly();
+        try {
+            requireOpen();
+            List<Class<C>> added = new ArrayList<>();
+            for (Class<C> clazz : capabilityClasses) {
+                if (add(clazz)) {
+                    added.add(clazz);
+                }
             }
+            return added;
+        } finally {
+            lifecycleLock.unlock();
         }
-        return added;
     }
 
     /**
@@ -172,6 +258,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         Class<T> capabilityClass = (Class<T>) capability.getClass();
         lockLifecycleInterruptibly();
         try {
+            requireOpen();
             return addDirectlyWithLifecycleLock(capabilityClass, capability);
         } finally {
             lifecycleLock.unlock();
@@ -208,6 +295,9 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
                                          Class<? extends T> capabilityClass,
                                          T capability,
                                          PendingAddition<T> pending) {
+        if (MapConstructionScope.isConstructing()) {
+            return initializeAndPublishControlled(capabilityClass, capability, pending);
+        }
         if (isCancelled(pending)) {
             pending.completion.complete(Optional.empty());
             return false;
@@ -257,6 +347,51 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         }
         pending.completion.complete(Optional.ofNullable(existing));
         return false;
+    }
+
+    private boolean initializeAndPublishControlled(
+                                                   Class<? extends T> capabilityClass,
+                                                   T capability,
+                                                   PendingAddition<T> pending) {
+        // This method owns the candidate from entry, including cancellation before init.
+        try {
+            requireActiveRestoration(pending);
+            capability.init();
+            requireActiveRestoration(pending);
+            MinecraftForge.EVENT_BUS.register(capability);
+            requireActiveRestoration(pending);
+            synchronized (pending) {
+                requireActiveRestoration(pending);
+                if (capabilities.putIfAbsent(capabilityClass, capability) != null) {
+                    throw new IllegalStateException("Capability was not published: " + capabilityClass.getName());
+                }
+                pending.completion.complete(Optional.of(capability));
+                return true;
+            }
+        } catch (RuntimeException | Error failure) {
+            cleanupUnpublishedCapability(capability, failure);
+            pending.completion.completeExceptionally(failure);
+            throw failure;
+        }
+    }
+
+    private void requireActiveRestoration(PendingAddition<T> pending) {
+        if (closed || isCancelled(pending)) {
+            throw new IllegalStateException("Capability restoration was cancelled before publication");
+        }
+    }
+
+    private void cleanupUnpublishedCapability(T capability, Throwable failure) {
+        try {
+            MinecraftForge.EVENT_BUS.unregister(capability);
+        } catch (RuntimeException | Error cleanupFailure) {
+            if (cleanupFailure != failure) failure.addSuppressed(cleanupFailure);
+        }
+        try {
+            capability.destroy();
+        } catch (RuntimeException | Error cleanupFailure) {
+            if (cleanupFailure != failure) failure.addSuppressed(cleanupFailure);
+        }
     }
 
     private void discardInitializedAddition(T capability) {
@@ -437,6 +572,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      * @return 能力实例（Optional）
      */
     public final <C extends T> Optional<C> get(Class<C> capabilityClass) {
+        if (closed) return Optional.empty();
         return Optional.ofNullable((C) capabilities.get(capabilityClass));
     }
 
@@ -476,6 +612,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      * @return 是否拥有
      */
     public final <C extends T> boolean contains(Class<C> capabilityClass) {
+        if (closed) return false;
         return capabilities.containsKey(capabilityClass);
     }
 
@@ -483,14 +620,27 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      * 重置所有能力状态
      */
     public final void resetAll() {
-        capabilities.values().forEach(FPSMCapability::reset);
+        lifecycleLock.lock();
+        try {
+            if (closed) return;
+            capabilities.values().forEach(FPSMCapability::reset);
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     public final <C extends T> void reset(Class<C> capability) {
-        get(capability).ifPresent(FPSMCapability::reset);
+        lifecycleLock.lock();
+        try {
+            if (closed) return;
+            get(capability).ifPresent(FPSMCapability::reset);
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     public final List<T> values() {
+        if (closed) return List.of();
         return capabilities.values().stream().toList();
     }
 
@@ -509,9 +659,15 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      * @param buf             网络缓冲区
      */
     public final <C extends FPSMCapability<H> & FPSMCapability.CapabilitySynchronizable> void serializeCapability(Class<C> capabilityClass, FriendlyByteBuf buf) {
-        get((Class<T>) capabilityClass).ifPresent(capability -> {
-            ((FPSMCapability.CapabilitySynchronizable) capability).writeToBuf(buf);
-        });
+        lockLifecycleInterruptibly();
+        try {
+            requireOpen();
+            get((Class<T>) capabilityClass).ifPresent(capability -> {
+                ((FPSMCapability.CapabilitySynchronizable) capability).writeToBuf(buf);
+            });
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     /**
@@ -520,20 +676,26 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      * @param buf 网络缓冲区
      */
     public final void deserializeCapability(String className, FriendlyByteBuf buf) {
-        FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(className, getCapabilityType()).ifPresent(capabilityClass -> {
-            get(capabilityClass).ifPresentOrElse(
-                    capability -> {
-                        if (capability instanceof FPSMCapability.CapabilitySynchronizable synced) {
-                            synced.readFromBuf(buf);
-                        }
-                    },
-                    () -> FPSMCapabilityManager.createFromNetwork(this, className, buf)
-                            .ifPresent(capability -> {
-                                if (getCapabilityType().isAssignableFrom(capability.getClass())) {
-                                    this.addDirectly((T) capability);
-                                }
-                            }));
-        });
+        lockLifecycleInterruptibly();
+        try {
+            requireOpen();
+            FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(className, getCapabilityType()).ifPresent(capabilityClass -> {
+                get(capabilityClass).ifPresentOrElse(
+                        capability -> {
+                            if (capability instanceof FPSMCapability.CapabilitySynchronizable synced) {
+                                synced.readFromBuf(buf);
+                            }
+                        },
+                        () -> FPSMCapabilityManager.createFromNetwork(this, className, buf)
+                                .ifPresent(capability -> {
+                                    if (getCapabilityType().isAssignableFrom(capability.getClass())) {
+                                        this.addDirectly((T) capability);
+                                    }
+                                }));
+            });
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     /**
@@ -542,6 +704,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      * @return 包含所有能力的 Stream
      */
     public final Stream<T> stream() {
+        if (closed) return Stream.empty();
         return capabilities.values().stream();
     }
 
@@ -565,6 +728,12 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         return capabilityType;
     }
 
+    private BaseMap.LegacyPersistence openLegacyPersistence() {
+        if (holder instanceof BaseMap map) return map.openLegacyPersistence();
+        if (holder instanceof ServerTeam team) return team.getMap().openLegacyPersistence();
+        return null;
+    }
+
     public void clear() {
         Set<Class<? extends T>> classes = new HashSet<>(pendingAdditions.keySet());
         classes.addAll(capabilities.keySet());
@@ -572,27 +741,36 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     public void write(String className, JsonElement data) {
-        lockLifecycleInterruptibly();
-        try {
-            FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(className, getCapabilityType())
-                    .ifPresent(clazz -> {
-                        this.get(clazz).ifPresentOrElse(capability -> {
-                            decodePublishedCapability(clazz, data);
-                        }, () -> restoreCapability(clazz, data));
-                    });
-        } finally {
-            lifecycleLock.unlock();
+        try (BaseMap.LegacyPersistence legacyPersistence = openLegacyPersistence()) {
+            lockLifecycleInterruptibly();
+            try {
+                requireOpen();
+                FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(className, getCapabilityType())
+                        .ifPresent(clazz -> {
+                            this.get(clazz).ifPresentOrElse(capability -> {
+                                decodePublishedCapability(clazz, data);
+                            }, () -> restoreCapability(clazz, data));
+                        });
+            } finally {
+                lifecycleLock.unlock();
+            }
         }
     }
 
     private void restoreCapability(Class<? extends T> capabilityClass, JsonElement data) {
+        boolean controlled = MapConstructionScope.isConstructing();
         PendingAddition<T> pending = new PendingAddition<>();
         PendingAddition<T> active = pendingAdditions.putIfAbsent(capabilityClass, pending);
         if (active != null) {
-            awaitPending(active);
+            Optional<T> awaited = awaitPending(active);
+            if (controlled && (awaited.isEmpty() || isCancelled(active))) {
+                throw new IllegalStateException("Pending capability restoration did not publish: " + capabilityClass.getName());
+            }
             decodePublishedCapability(capabilityClass, data);
             return;
         }
+        T capability = null;
+        boolean initializationOwnsCandidate = false;
         try {
             T published = capabilities.get(capabilityClass);
             if (published != null) {
@@ -602,22 +780,38 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
                 return;
             }
             if (isCancelled(pending)) {
+                if (controlled) requireActiveRestoration(pending);
                 pending.completion.complete(Optional.empty());
                 return;
             }
             Optional<? extends T> candidate = FPSMCapabilityManager.createInstance(
                     this.getHolder(), capabilityClass);
             if (candidate.isEmpty()) {
+                if (controlled) {
+                    throw new IllegalStateException("Capability factory returned no instance: " + capabilityClass.getName());
+                }
                 pending.completion.complete(Optional.empty());
                 return;
             }
-            T capability = candidate.orElseThrow();
+            capability = candidate.orElseThrow();
+            if (controlled) requireActiveRestoration(pending);
             if (!decodeCapability(capability, data)) {
+                if (controlled) {
+                    throw new IllegalStateException("Capability payload was not restored: " + capabilityClass.getName());
+                }
                 pending.completion.complete(Optional.empty());
                 return;
             }
-            initializeAndPublish(capabilityClass, capability, pending);
+            if (controlled) requireActiveRestoration(pending);
+            initializationOwnsCandidate = true;
+            boolean initializedAndPublished = initializeAndPublish(capabilityClass, capability, pending);
+            if (controlled && !initializedAndPublished) {
+                throw new IllegalStateException("Capability was not published: " + capabilityClass.getName());
+            }
         } catch (RuntimeException | Error failure) {
+            if (controlled && capability != null && !initializationOwnsCandidate) {
+                cleanupUnpublishedCapability(capability, failure);
+            }
             if (!pending.completion.isDone()) {
                 pending.completion.completeExceptionally(failure);
             }
@@ -630,6 +824,15 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     private void decodePublishedCapability(
                                            Class<? extends T> capabilityClass,
                                            JsonElement data) {
+        if (MapConstructionScope.isConstructing()) {
+            T capability = capabilities.get(capabilityClass);
+            if (capability == null) {
+                throw new IllegalStateException("Missing capability to restore: " + capabilityClass.getName());
+            }
+            decodeCapability(capability, data);
+            requirePublishedCapability(capabilityClass, capability);
+            return;
+        }
         capabilities.computeIfPresent(capabilityClass, (ignored, capability) -> {
             decodeCapability(capability, data);
             return capability;
@@ -637,6 +840,27 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     private boolean decodeCapability(T capability, JsonElement data) {
+        if (MapConstructionScope.isConstructing()) {
+            Objects.requireNonNull(data, "Capability payload");
+            if (data.isJsonNull()) {
+                throw new IllegalStateException("Capability payload cannot be JsonNull");
+            }
+            boolean emptySentinel = data.isJsonPrimitive() && data.getAsJsonPrimitive().isString() && data.getAsString().isEmpty();
+            if (!(capability instanceof FPSMCapability.Savable<?> savable)) {
+                if (!emptySentinel) {
+                    throw new IllegalStateException("Non-savable capability requires an empty string payload");
+                }
+                return true;
+            }
+            if (emptySentinel) {
+                if (savable.read() != null) {
+                    throw new IllegalStateException("Empty string payload requires null capability state");
+                }
+                return true;
+            }
+            savable.decode(data);
+            return true;
+        }
         if (!(capability instanceof FPSMCapability.Savable<?> savable)) {
             return true;
         }
@@ -652,49 +876,87 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         }
     }
 
+    private void requirePublishedCapability(Class<? extends T> capabilityClass, T capability) {
+        requireOpen();
+        if (capabilities.get(capabilityClass) != capability) {
+            throw new IllegalStateException("Capability changed during restoration: " + capabilityClass.getName());
+        }
+    }
+
     public <D, C extends FPSMCapability<H> & FPSMCapability.Savable<D>> void write(Class<C> clazz, D data) {
-        lockLifecycleInterruptibly();
-        try {
-            get((Class<T>) clazz).ifPresent(cap -> {
-                ((FPSMCapability.Savable<D>) cap).write(data);
-            });
-        } finally {
-            lifecycleLock.unlock();
+        try (BaseMap.LegacyPersistence legacyPersistence = openLegacyPersistence()) {
+            lockLifecycleInterruptibly();
+            try {
+                requireOpen();
+                if (MapConstructionScope.isConstructing()) {
+                    T capability = capabilities.get((Class<T>) clazz);
+                    if (capability == null) {
+                        throw new IllegalStateException("Missing capability to write: " + clazz.getName());
+                    }
+                    ((FPSMCapability.Savable<D>) capability).write(data);
+                    requirePublishedCapability((Class<T>) clazz, capability);
+                    return;
+                }
+                get((Class<T>) clazz).ifPresent(cap -> {
+                    ((FPSMCapability.Savable<D>) cap).write(data);
+                });
+            } finally {
+                lifecycleLock.unlock();
+            }
         }
     }
 
     public void write(Wrapper wrapper) {
-        this.write(wrapper.data());
+        try (BaseMap.LegacyPersistence legacyPersistence = openLegacyPersistence()) {
+            lockLifecycleInterruptibly();
+            try {
+                requireOpen();
+                this.write(wrapper.data());
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
     }
 
     public void write(Map<String, JsonElement> data) {
-        data.forEach(this::write);
+        try (BaseMap.LegacyPersistence legacyPersistence = openLegacyPersistence()) {
+            lockLifecycleInterruptibly();
+            try {
+                requireOpen();
+                data.forEach(this::write);
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
     }
 
     public Wrapper getData() {
-        lockLifecycleInterruptibly();
-        try {
-            Map<String, JsonElement> map = new HashMap<>();
+        try (BaseMap.LegacyPersistence legacyPersistence = openLegacyPersistence()) {
+            lockLifecycleInterruptibly();
+            try {
+                requireOpen();
+                Map<String, JsonElement> map = new HashMap<>();
 
-            for (Map.Entry<Class<? extends T>, T> entry : capabilities.entrySet()) {
-                String key = entry.getKey().getSimpleName();
-                T capability = entry.getValue();
+                for (Map.Entry<Class<? extends T>, T> entry : capabilities.entrySet()) {
+                    String key = entry.getKey().getSimpleName();
+                    T capability = entry.getValue();
 
-                if (capability instanceof FPSMCapability.Savable<?> savable) {
-                    try {
-                        map.put(key, savable.toJson());
-                    } catch (Exception e) {
-                        LOGGER.error("Failed to serialize capability: {}", key, e);
+                    if (capability instanceof FPSMCapability.Savable<?> savable) {
+                        try {
+                            map.put(key, savable.toJson());
+                        } catch (Exception e) {
+                            LOGGER.error("Failed to serialize capability: {}", key, e);
+                            map.put(key, new JsonPrimitive(""));
+                        }
+                    } else {
                         map.put(key, new JsonPrimitive(""));
                     }
-                } else {
-                    map.put(key, new JsonPrimitive(""));
                 }
-            }
 
-            return new Wrapper(map);
-        } finally {
-            lifecycleLock.unlock();
+                return new Wrapper(map);
+            } finally {
+                lifecycleLock.unlock();
+            }
         }
     }
 

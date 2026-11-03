@@ -1,13 +1,10 @@
 package net.ptcrys.fpsmatch.common.item;
 
-import net.ptcrys.fpsmatch.FPSMatch;
 import net.ptcrys.fpsmatch.common.item.tool.CreatorToolItem;
 import net.ptcrys.fpsmatch.common.item.tool.handler.ClickActionContext;
-import net.ptcrys.fpsmatch.common.packet.OpenMatchConfigToolScreenS2CPacket;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
@@ -27,9 +24,8 @@ public class MatchConfigTool extends CreatorToolItem {
 
     @Override
     protected void onRightClick(ClickActionContext context) {
-        ServerPlayer player = context.player();
-        ItemStack stack = context.stack();
-        FPSMatch.sendToPlayer(player, OpenMatchConfigToolScreenS2CPacket.fromStack(player, stack));
+        // The local RightClickItem intent opens the view and sends correlated OPEN.
+        // An unsolicited server snapshot must never reopen a dismissed screen.
     }
 
     @Override

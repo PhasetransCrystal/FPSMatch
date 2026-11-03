@@ -1,3 +1,9 @@
+// Forge requests 0.6.+; pin the tested version to avoid querying unrelated
+// private/unavailable repositories for dynamic Maven version metadata.
+configurations.configureEach {
+    resolutionStrategy.force 'net.jodah:typetools:0.6.3'
+}
+
 // Modern UI shares these libraries with Minecraft.
 def withoutMinecraftLibraries = { dependency ->
     dependency.exclude group: 'org.apache.logging.log4j'
@@ -7,8 +13,10 @@ def withoutMinecraftLibraries = { dependency ->
     dependency.exclude group: 'it.unimi.dsi', module: 'fastutil'
 }
 
-// Dependencies
+// Editor sources compile into this project's main output.
 dependencies {
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'net.java.dev.jna:jna:5.12.1'
     implementation(jarJar("com.mysql:mysql-connector-j:9.4.0")) {
         transitive = false
     }
@@ -46,5 +54,7 @@ dependencies {
     testImplementation("com.h2database:h2:2.3.232")
     testImplementation("com.google.guava:guava:33.5.0-jre")
     testImplementation("it.unimi.dsi:fastutil:8.5.18")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.1")
+    // Native pack metadata calls ForgeHooks, whose logger needs the game logging backend.
+    testRuntimeOnly("org.apache.logging.log4j:log4j-core:2.19.0")
 }

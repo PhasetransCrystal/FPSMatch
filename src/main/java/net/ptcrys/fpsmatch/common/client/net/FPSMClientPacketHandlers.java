@@ -10,7 +10,7 @@ import net.ptcrys.fpsmatch.common.client.screen.MapCreatorToolScreen;
 import net.ptcrys.fpsmatch.common.client.screen.MatchConfigToolScreen;
 import net.ptcrys.fpsmatch.common.client.screen.SpawnPointToolScreen;
 import net.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
-import net.ptcrys.fpsmatch.common.client.screen.mapselect.modernui.*;
+import net.ptcrys.fpsmatch.common.client.screen.mapselect.studio.StudioMapRoomScreen;
 import net.ptcrys.fpsmatch.common.client.screen.shop.modernui.ModernShopConfigToolScreen;
 import net.ptcrys.fpsmatch.common.client.shop.ShopActionResultListener;
 import net.ptcrys.fpsmatch.common.packet.AddAreaDataS2CPacket;
@@ -48,7 +48,6 @@ import net.ptcrys.fpsmatch.util.RenderUtil;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.contents.TranslatableContents;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,11 +69,14 @@ public final class FPSMClientPacketHandlers {
     }
 
     public static void handleOpenMatchConfigToolScreen(OpenMatchConfigToolScreenS2CPacket packet) {
+        // The legacy registry route has no receiving connection identity. Ignore it.
+        // This packet's handle method dispatches to the correlated overload below.
+    }
+
+    public static void handleOpenMatchConfigToolScreen(OpenMatchConfigToolScreenS2CPacket packet, net.minecraft.network.Connection connection) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.screen instanceof MatchConfigToolScreen screen) {
-            screen.applyData(packet);
-        } else {
-            minecraft.setScreen(new MatchConfigToolScreen(packet));
+            screen.applyData(packet, connection);
         }
     }
 
@@ -292,15 +294,15 @@ public final class FPSMClientPacketHandlers {
     public static void handleMapSelectionSnapshot(MapSelectionSnapshotS2CPacket packet) {
         FPSMClient.getGlobalData().setMapSelectionSnapshot(packet);
         FPSMClient.getGlobalData().setMapSelectionButtonVisible(packet.viewerOp() || packet.nonOpButtonEnabled());
-        if (packet.passive()) {
-            FPSMMapSelectScreens.applySelectionIfOpen(packet);
-        } else {
-            FPSMMapSelectScreens.openSelection(packet);
-        }
+        FPSMMapSelectScreens.applyAccessIfOpen();
+        // Only an explicit local open creates a browser. A late active reply
+        // must not reopen one after the player closed it.
+        FPSMMapSelectScreens.applySelectionIfOpen(packet);
     }
 
     public static void handleMapSelectionAccess(MapSelectionAccessS2CPacket packet) {
         FPSMClient.getGlobalData().setMapSelectionButtonVisible(packet.visible());
+        FPSMMapSelectScreens.applyAccessIfOpen();
     }
 
     public static void handleMapRoomDetail(MapRoomDetailS2CPacket packet) {
@@ -313,30 +315,20 @@ public final class FPSMClientPacketHandlers {
     }
 
     public static void handleMapRoomReadyState(MapRoomReadyStateS2CPacket packet) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof ModernMapRoomScreen screen) {
-            screen.applyReadyState(packet.gameType(), packet.mapName(), packet.countdownSeconds(), packet.readyPlayers());
-        }
+        FPSMMapSelectScreens.applyReadyState(packet);
     }
 
     public static void handleMapImportSources(MapImportSourcesS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof ModernMapRoomScreen screen && screen.acceptsSources(packet)) {
+        if (minecraft.screen instanceof StudioMapRoomScreen screen && screen.acceptsSources(packet)) {
             screen.applySources(packet);
         }
     }
 
     public static void handleMapRoomToast(MapRoomToastS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        String toastKey = packet.message().getContents() instanceof TranslatableContents contents ? contents.getKey() : "";
-        boolean isMapSettingToast = toastKey.equals("gui.fpsm.map_select.action.no_permission") || toastKey.equals("gui.fpsm.map_select.action.map_not_found") || toastKey.equals("gui.fpsm.map_select.action.setting.invalid") || toastKey.equals("gui.fpsm.map_select.action.setting.not_found");
-        boolean isRegionToast = toastKey.startsWith("gui.fpsm.map_regions.action.") || toastKey.equals("gui.fpsm.map_select.action.no_permission") || toastKey.equals("gui.fpsm.map_select.action.map_not_found");
-        boolean isMapImportToast = toastKey.startsWith("gui.fpsm.map_import.") || toastKey.equals("gui.fpsm.map_select.action.no_permission") || toastKey.equals("gui.fpsm.map_select.action.map_not_found");
-        if (minecraft.screen instanceof ModernMapRoomScreen room) room.applyToast(packet);
         FPSMClient.getGlobalData().setMapRoomToast(packet);
-        if (minecraft.screen instanceof ModernMapSelectionScreen screen) {
-            screen.applyToast();
-        }
+        FPSMMapSelectScreens.applyToastIfOpen(packet);
         if (minecraft.player != null) {
             minecraft.player.displayClientMessage(packet.message(), packet.error());
         }

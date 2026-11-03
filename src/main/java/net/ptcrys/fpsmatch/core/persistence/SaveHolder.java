@@ -1,8 +1,11 @@
 package net.ptcrys.fpsmatch.core.persistence;
 
+import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -14,6 +17,7 @@ public class SaveHolder<T> implements ISavePort<T> {
     private final Consumer<FPSMDataManager> writeHandler;
     private final boolean isGlobal;
     private final BiFunction<T, T, T> mergeHandler;
+    private final Codec<?> validationCodec;
     private final String fileType;
 
     private Class<T> clazz;
@@ -28,7 +32,8 @@ public class SaveHolder<T> implements ISavePort<T> {
         private Consumer<T> readHandler = data -> {};
         private Consumer<FPSMDataManager> writeHandler = manager -> {};
         private boolean isGlobal = false;
-        private BiFunction<T, T, T> mergeHandler = (old, newData) -> newData;
+        private BiFunction<T, T, T> mergeHandler;
+        private Codec<?> validationCodec;
         private String fileType = "json";
         private int version = 1;
         private int loadPriority;
@@ -76,12 +81,25 @@ public class SaveHolder<T> implements ISavePort<T> {
             return this;
         }
 
+        /**
+         * Replaces existing data after validating its migrated payload with a pure codec.
+         * The validator must not construct runtime holders or change host state. Explicit
+         * reads still use the primary codec. Cannot be combined with a non-null merge handler.
+         */
+        public Builder<T> withValidatedReplacement(Codec<?> validationCodec) {
+            this.validationCodec = Objects.requireNonNull(validationCodec, "validationCodec");
+            return this;
+        }
+
         public Builder<T> withFileType(String type) {
             this.fileType = type;
             return this;
         }
 
         public SaveHolder<T> build() {
+            if (validationCodec != null && mergeHandler != null) {
+                throw new IllegalStateException("Validated replacement cannot be combined with a custom merge handler");
+            }
             return new SaveHolder<>(this);
         }
     }
@@ -92,6 +110,7 @@ public class SaveHolder<T> implements ISavePort<T> {
         this.writeHandler = builder.writeHandler;
         this.isGlobal = builder.isGlobal;
         this.mergeHandler = builder.mergeHandler;
+        this.validationCodec = builder.validationCodec;
         this.fileType = builder.fileType;
         this.version = builder.version;
         this.loadPriority = builder.loadPriority;
@@ -147,5 +166,23 @@ public class SaveHolder<T> implements ISavePort<T> {
     @Override
     public T mergeHandler(@Nullable T oldData, T newData) {
         return mergeHandler == null ? ISavePort.super.mergeHandler(oldData, newData) : mergeHandler.apply(oldData, newData);
+    }
+
+    @Override
+    public T mergeForSave(JsonElement existing, T current) {
+        if (validationCodec == null) return ISavePort.super.mergeForSave(existing, current);
+        SaveDataEnvelope envelope = SaveDataEnvelope.fromJson(existing);
+        validationCodec.decode(JsonOps.INSTANCE, envelope.migrateTo(getHolderClass(), getVersion()))
+                .getOrThrow(false, error -> {
+                    throw new DataPersistenceException("Failed to decode fixed data", error);
+                });
+        return current;
+    }
+
+    /** Preserves the legacy database Optional chain's null-decoded-value short circuit. */
+    T mergeForDatabaseSave(JsonElement existing, T current) {
+        if (validationCodec != null) return mergeForSave(existing, current);
+        T old = decodeFromJson(existing);
+        return old == null ? current : mergeHandler(old, current);
     }
 }

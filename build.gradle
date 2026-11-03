@@ -14,6 +14,7 @@ allprojects {
     group = 'net.ptcrys'
 }
 
+
 def isRelease = System.getenv('RELEASE_BUILD') == 'true'
 def buildDate = new Date()
 def year = String.format('%ty', buildDate)
@@ -39,7 +40,9 @@ java {
 }
 
 apply from: "$projectDir/gradle/scripts/moddevgradle.gradle"
+apply from: "$projectDir/gradle/scripts/native-item-tests.gradle"
 apply from: "$projectDir/dependencies.gradle"
+apply from: "$projectDir/gradle/scripts/editor-verification.gradle"
 apply from: "$projectDir/gradle/scripts/resources.gradle"
 apply from: "$projectDir/gradle/scripts/jars.gradle"
 apply from: "$projectDir/gradle/scripts/repositories.gradle"
@@ -54,7 +57,9 @@ generateModMetadata.doFirst {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
-    options.compilerArgs << "-Xlint:-deprecation" << "-Xlint:-removal"
+    if (!name.startsWith("compileEditor")) {
+        options.compilerArgs << "-Xlint:-deprecation" << "-Xlint:-removal"
+    }
 }
 
 jar{

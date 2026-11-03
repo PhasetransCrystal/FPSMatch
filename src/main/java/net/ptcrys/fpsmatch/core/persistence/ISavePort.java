@@ -1,7 +1,6 @@
 package net.ptcrys.fpsmatch.core.persistence;
 
-import net.ptcrys.fpsmatch.FPSMatch;
-import net.ptcrys.fpsmatch.core.persistence.datafixer.DataFixer;
+import net.ptcrys.fpsmatch.core.map.BaseMap;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -10,6 +9,7 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
@@ -64,28 +64,18 @@ public interface ISavePort<T> {
      * @return 解码后的数据
      */
     default T decodeFromJson(JsonElement json) {
-        int oldVersion;
-        JsonElement rawData;
-        if (!json.isJsonObject()) {
-            oldVersion = 0;
-            rawData = json;
-        } else {
-            JsonObject wrapper = json.getAsJsonObject();
-            oldVersion = wrapper.has("version") ? wrapper.get("version").getAsInt() : 0;
-            rawData = wrapper.has("data") ? wrapper.get("data") : json;
-        }
+        SaveDataEnvelope envelope = SaveDataEnvelope.fromJson(json);
+        if (envelope.version() == getVersion()) return decode(envelope.rawData());
 
-        if (oldVersion == getVersion()) return decode(rawData);
-
-        return codec()
-                .decode(JsonOps.INSTANCE, DataFixer.getInstance().fixJson(getHolderClass(), rawData, oldVersion, getVersion()))
+        return RuntimeItemStackCodec.owned(codec())
+                .decode(JsonOps.INSTANCE, envelope.migrateTo(getHolderClass(), getVersion()))
                 .getOrThrow(false, e -> {
                     throw new DataPersistenceException("Failed to decode fixed data", e);
                 }).getFirst();
     }
 
     default T decode(JsonElement jsonElement) {
-        return codec().decode(JsonOps.INSTANCE, jsonElement)
+        return RuntimeItemStackCodec.owned(codec()).decode(JsonOps.INSTANCE, jsonElement)
                 .getOrThrow(false, e -> {
                     throw new DataPersistenceException("Failed to decode fixed data", e);
                 })
@@ -101,12 +91,14 @@ public interface ISavePort<T> {
      * @return 编码后的 JSON 元素
      */
     default JsonElement encodeToJson(T data) {
-        JsonObject wrapper = new JsonObject();
-        wrapper.addProperty("version", getVersion());
-        wrapper.add("data", codec().encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, throwable -> {
-            throw new DataPersistenceException("Failed to encode data to JSON", throwable);
-        }));
-        return wrapper;
+        try (BaseMap.LegacyPersistence legacyPersistence = data instanceof BaseMap map ? map.openLegacyPersistence() : null) {
+            JsonObject wrapper = new JsonObject();
+            wrapper.addProperty("version", getVersion());
+            wrapper.add("data", codec().encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, throwable -> {
+                throw new DataPersistenceException("Failed to encode data to JSON", throwable);
+            }));
+            return wrapper;
+        }
     }
 
     /**
@@ -139,30 +131,32 @@ public interface ISavePort<T> {
      * @return 是否创建成功
      */
     default boolean createNewDataFile(File directory, String fileName, T initialData) {
-        if (!directory.exists() && !directory.mkdirs()) {
-            return false;
-        }
-
-        File file = new File(directory, fileName + "." + this.getFileType());
-        if (file.exists()) {
-            return false;
-        }
-
-        try {
-            if (!file.createNewFile()) {
+        try (BaseMap.LegacyPersistence legacyPersistence = initialData instanceof BaseMap map ? map.openLegacyPersistence() : null) {
+            if (!directory.exists() && !directory.mkdirs()) {
                 return false;
             }
 
-            Gson gson = PRETTY_GSON;
-            String jsonStr = gson.toJson(this.encodeToJson(initialData));
-
-            try (FileWriter writer = new FileWriter(file)) {
-                writer.write(jsonStr);
-                return true;
+            File file = new File(directory, fileName + "." + this.getFileType());
+            if (file.exists()) {
+                return false;
             }
-        } catch (Exception e) {
-            e.fillInStackTrace();
-            return false;
+
+            try {
+                if (!file.createNewFile()) {
+                    return false;
+                }
+
+                Gson gson = PRETTY_GSON;
+                String jsonStr = gson.toJson(this.encodeToJson(initialData));
+
+                try (FileWriter writer = new FileWriter(file)) {
+                    writer.write(jsonStr);
+                    return true;
+                }
+            } catch (Exception e) {
+                e.fillInStackTrace();
+                return false;
+            }
         }
     }
 
@@ -177,7 +171,7 @@ public interface ISavePort<T> {
      * 解码后的数据将通过 {@link #readHandler()} 进行处理。
      * <p>
      * 只读取json文件。
-     * 
+     *
      * @return 目录读取器
      */
     default Consumer<File> getReader() {
@@ -195,12 +189,12 @@ public interface ISavePort<T> {
                             T data = this.decodeFromJson(element);
                             this.readHandler().accept(data);
                         } catch (Exception e) {
-                            FPSMatch.LOGGER.error("error : {} data file is not a json file or doesn't exist.", file.getName(), e);
+                            LoggerFactory.getLogger(ISavePort.class).error("error : {} data file is not a json file or doesn't exist.", file.getName(), e);
                         }
                     }
                 }
             } else {
-                FPSMatch.LOGGER.error("error : {} data folder is not a directory or doesn't exist.", directory.getName());
+                LoggerFactory.getLogger(ISavePort.class).error("error : {} data folder is not a directory or doesn't exist.", directory.getName());
             }
         };
     }
@@ -212,47 +206,49 @@ public interface ISavePort<T> {
      * 如果目录不存在，则会尝试创建目录。
      * 如果文件不存在，则会尝试创建文件。
      * 数据将通过 {@link #encodeToJson(T)} 编码为 JSON，然后写入文件。
-     * 如果文件已存在，则会尝试读取旧数据并与新数据合并，合并逻辑由 {@link #mergeHandler(T, T)} 定义。
+     * 非覆盖保存已有文件时通过 {@link #mergeForSave(JsonElement, Object)} 处理旧定义。
      *
      * @param data     待写入的数据
      * @param fileName 文件名（不包含扩展名）
      * @return 文件写入器
      */
     default Consumer<File> getWriter(T data, String fileName, boolean overwrite) {
+        if (data instanceof BaseMap map) map.requireLegacyPersistence();
         return (directory) -> {
-            if (!directory.exists()) {
-                if (!directory.mkdirs()) throw new RuntimeException("error : can't create " + directory.getName() + " data folder.");
-            }
-            if (directory.isDirectory()) {
-                File file = new File(directory, PersistenceUtils.fixFileName(fileName) + "." + this.getFileType());
-                try {
-                    if (!file.exists()) {
-                        if (!file.createNewFile()) throw new RuntimeException("error : can't create " + fileName + " data file.");
-                    }
+            try (BaseMap.LegacyPersistence legacyPersistence = data instanceof BaseMap map ? map.openLegacyPersistence() : null) {
+                if (!directory.exists()) {
+                    if (!directory.mkdirs()) throw new RuntimeException("error : can't create " + directory.getName() + " data folder.");
+                }
+                if (directory.isDirectory()) {
+                    File file = new File(directory, PersistenceUtils.fixFileName(fileName) + "." + this.getFileType());
+                    try {
+                        if (!file.exists()) {
+                            if (!file.createNewFile()) throw new RuntimeException("error : can't create " + fileName + " data file.");
+                        }
 
-                    T merged = data;
-                    if (!overwrite && file.length() > 0) {
-                        try (FileReader reader = new FileReader(file)) {
-                            JsonElement element = GSON.fromJson(reader, JsonElement.class);
-                            if (element != null) {
-                                T old = this.decodeFromJson(element);
-                                merged = this.mergeHandler(old, data);
+                        T merged = data;
+                        if (!overwrite && file.length() > 0) {
+                            try (FileReader reader = new FileReader(file)) {
+                                JsonElement element = GSON.fromJson(reader, JsonElement.class);
+                                if (element != null) {
+                                    merged = this.mergeForSave(element, data);
+                                }
                             }
                         }
-                    }
 
-                    Gson gson = PRETTY_GSON;
-                    String jsonStr = gson.toJson(this.encodeToJson(merged));
-                    try (FileWriter writer = new FileWriter(file)) {
-                        writer.write(jsonStr);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        Gson gson = PRETTY_GSON;
+                        String jsonStr = gson.toJson(this.encodeToJson(merged));
+                        try (FileWriter writer = new FileWriter(file)) {
+                            writer.write(jsonStr);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } catch (Exception e) {
+                        LoggerFactory.getLogger(ISavePort.class).error("error : {} data folder is not a directory or doesn't exist.", directory.getName(), e);
                     }
-                } catch (Exception e) {
-                    FPSMatch.LOGGER.error("error : {} data folder is not a directory or doesn't exist.", directory.getName(), e);
+                } else {
+                    LoggerFactory.getLogger(ISavePort.class).error("error : {} data folder is not a directory or doesn't exist.", directory.getName());
                 }
-            } else {
-                FPSMatch.LOGGER.error("error : {} data folder is not a directory or doesn't exist.", directory.getName());
             }
         };
     }
@@ -280,6 +276,15 @@ public interface ISavePort<T> {
      */
     default T mergeHandler(@Nullable T oldData, T newData) {
         return newData;
+    }
+
+    /**
+     * Applies the save policy to an existing JSON definition. By default this decodes
+     * the old runtime value and dispatches to {@link #mergeHandler(Object, Object)}.
+     * Holders with a pure validation codec may explicitly select validated replacement.
+     */
+    default T mergeForSave(JsonElement existing, T current) {
+        return mergeHandler(decodeFromJson(existing), current);
     }
 
     default String getFileType() {

@@ -33,7 +33,7 @@ public class FPSClientMusicManager {
 
     /**
      * 播放指定的音乐资源。
-     * 
+     *
      * @param musicResource 音乐资源的 ResourceLocation
      */
     public static void playMusic(ResourceLocation musicResource) {
@@ -76,7 +76,7 @@ public class FPSClientMusicManager {
 
     /**
      * 开始播放音频流
-     * 
+     *
      * @param music 音频
      */
     public static void play(OnlineMusic music) {

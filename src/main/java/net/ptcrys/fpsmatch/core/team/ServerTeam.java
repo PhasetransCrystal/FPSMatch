@@ -215,6 +215,10 @@ public final class ServerTeam extends BaseTeam {
         this.enableRounds = enableRounds;
     }
 
+    public boolean isRoundsEnabled() {
+        return enableRounds;
+    }
+
     public BaseMap getMap() {
         return map;
     }

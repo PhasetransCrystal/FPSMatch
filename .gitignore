@@ -137,3 +137,6 @@ wiki-publish/
 
 # Local porting and decompilation workspace
 /porting/
+
+# Local validation artifacts and isolated worktrees
+/.local-artifacts/

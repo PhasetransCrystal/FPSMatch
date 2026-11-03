@@ -74,7 +74,7 @@ public record SpawnPointToolActionC2SPacket(
                 return;
             }
             if (!player.hasPermissions(2)) {
-                player.displayClientMessage(Component.literal("需要管理员(OP)权限才能修改复活点"), false);
+                player.displayClientMessage(Component.translatable("gui.fpsm.world_editor.spawn.no_permission"), false);
                 return;
             }
 

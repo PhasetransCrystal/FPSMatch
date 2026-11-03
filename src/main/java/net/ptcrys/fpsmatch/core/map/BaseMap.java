@@ -8,6 +8,8 @@ import net.ptcrys.fpsmatch.common.packet.AddAreaDataS2CPacket;
 import net.ptcrys.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
 import net.ptcrys.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
 import net.ptcrys.fpsmatch.core.FPSMCore;
+import net.ptcrys.fpsmatch.core.RuntimeMapLease;
+import net.ptcrys.fpsmatch.core.RuntimeMapLeaseException;
 import net.ptcrys.fpsmatch.core.capability.CapabilityMap;
 import net.ptcrys.fpsmatch.core.capability.map.MapCapability;
 import net.ptcrys.fpsmatch.core.data.AreaData;
@@ -63,6 +65,67 @@ public abstract class BaseMap {
     public final String mapName;
     // 游戏是否开始
     protected boolean isStart = false;
+    private long resetGeneration;
+    private int resetObservationDepth;
+    private boolean resetObservationFailed;
+    private boolean resetCompletionValid;
+    private long resetCompletionGeneration;
+    private boolean resetObservationPresent;
+    private long resetObservationGeneration;
+
+    public enum ResetObservation {
+        UNOBSERVED,
+        INCOMPLETE,
+        COMPLETE
+    }
+
+    /** Observes attempted reset before extensible events, including partially failed resets. */
+    public final long resetGeneration() {
+        return resetGeneration;
+    }
+
+    /** True only after the exact implementation's entire observed reset returned normally. */
+    public final boolean resetCompleted(long generation) {
+        return resetObservation(generation) == ResetObservation.COMPLETE;
+    }
+
+    /** Distinguishes a legacy unobserved reset from a known incomplete observed attempt. */
+    public final ResetObservation resetObservation(long generation) {
+        if (generation != resetGeneration || !resetObservationPresent || generation != resetObservationGeneration) return ResetObservation.UNOBSERVED;
+        return resetObservationDepth == 0 && resetCompletionValid && generation == resetCompletionGeneration ? ResetObservation.COMPLETE : ResetObservation.INCOMPLETE;
+    }
+
+    /**
+     * Wrap the complete concrete reset body, including its superclass call and all tail work.
+     * Unobserved subclasses cannot inherit completion evidence for their additional work.
+     * Any nested failure is retained even if an extension catches that exception.
+     */
+    protected final void runObservedReset(Class<? extends BaseMap> implementation, Runnable body) {
+        Objects.requireNonNull(implementation);
+        Objects.requireNonNull(body);
+        boolean outermost = resetObservationDepth == 0;
+        long before = resetGeneration;
+        if (outermost) {
+            resetCompletionValid = false;
+            resetObservationFailed = false;
+            resetObservationPresent = true;
+            resetObservationGeneration = before;
+        }
+        resetObservationDepth++;
+        boolean returned = false;
+        try {
+            body.run();
+            returned = true;
+        } finally {
+            if (!returned) resetObservationFailed = true;
+            resetObservationDepth--;
+            if (outermost && !resetObservationFailed && getClass() == implementation && resetGeneration != before) {
+                resetCompletionGeneration = resetGeneration;
+                resetCompletionValid = true;
+            }
+        }
+    }
+
     private final net.ptcrys.fpsmatch.core.data.MatchClock matchClock = new net.ptcrys.fpsmatch.core.data.MatchClock();
 
     public final int getElapsedMatchSeconds() {
@@ -87,6 +150,75 @@ public abstract class BaseMap {
     private final ServerLevel serverLevel;
     // 地图团队
     private final MapTeams mapTeams;
+    private volatile boolean runtimeOwnershipClaimed;
+    private final boolean installationConstruction;
+    private final Object legacyPersistenceLock = new Object();
+    private int activeLegacyPersistence;
+
+    public final boolean hasRuntimeOwnership() {
+        return runtimeOwnershipClaimed;
+    }
+
+    /** Pure preflight; an executing legacy operation must hold its own scope. */
+    public final void requireLegacyPersistence() {
+        if (runtimeOwnershipClaimed || installationConstruction) {
+            throw new RuntimeMapLeaseException(RuntimeMapLeaseException.Reason.OWNED_DEFINITION);
+        }
+    }
+
+    /** Coordinates the complete legacy operation with this map's one-time claim. */
+    public final LegacyPersistence openLegacyPersistence() {
+        synchronized (legacyPersistenceLock) {
+            requireLegacyPersistence();
+            if (activeLegacyPersistence == Integer.MAX_VALUE) {
+                throw new RuntimeMapLeaseException(RuntimeMapLeaseException.Reason.BUSY);
+            }
+            LegacyPersistence scope = new LegacyPersistence(this);
+            activeLegacyPersistence++;
+            return scope;
+        }
+    }
+
+    public static final class LegacyPersistence implements AutoCloseable {
+
+        private final Thread owner = Thread.currentThread();
+        private BaseMap map;
+
+        private LegacyPersistence(BaseMap map) {
+            this.map = map;
+        }
+
+        @Override
+        public void close() {
+            if (Thread.currentThread() != owner) {
+                throw new RuntimeMapLeaseException(RuntimeMapLeaseException.Reason.WRONG_THREAD);
+            }
+            BaseMap captured = map;
+            if (captured == null) return;
+            synchronized (captured.legacyPersistenceLock) {
+                map = null;
+                captured.activeLegacyPersistence--;
+            }
+        }
+    }
+
+    /** Claims this exact map once without retaining its lease or resource owner. */
+    public final void claimRuntimeOwnership(RuntimeMapLease lease) {
+        if (!serverLevel.getServer().isSameThread()) {
+            throw new RuntimeMapLeaseException(RuntimeMapLeaseException.Reason.WRONG_THREAD);
+        }
+        if (lease == null) throw new RuntimeMapLeaseException(RuntimeMapLeaseException.Reason.INVALID_INPUT);
+        lease.requireOpen();
+        synchronized (legacyPersistenceLock) {
+            if (runtimeOwnershipClaimed) {
+                throw new RuntimeMapLeaseException(RuntimeMapLeaseException.Reason.DUPLICATE);
+            }
+            if (activeLegacyPersistence != 0) {
+                throw new RuntimeMapLeaseException(RuntimeMapLeaseException.Reason.BUSY);
+            }
+            runtimeOwnershipClaimed = true;
+        }
+    }
 
     private final List<Setting<?>> settings = new LinkedList<>();
 
@@ -134,9 +266,11 @@ public abstract class BaseMap {
      * @param areaData    地图的区域数据。
      */
     public BaseMap(ServerLevel serverLevel, String mapName, AreaData areaData) {
+        FPSMCore.requireMapConstructionAvailable(serverLevel);
         this.serverLevel = serverLevel;
         this.mapName = mapName;
         this.mapArea = areaData;
+        this.installationConstruction = FPSMCore.getInstance().runtimeInstallations().isInstallationConstruction();
         this.mapTeams = new MapTeams(serverLevel, this);
         this.capabilities = CapabilityMap.ofMapCapability(this);
     }
@@ -145,6 +279,9 @@ public abstract class BaseMap {
         this(serverLevel, mapName, areaData);
         for (Class<? extends MapCapability> cap : capabilities) {
             if (!this.capabilities.add(cap)) {
+                if (MapConstructionScope.isConstructing()) {
+                    throw new IllegalStateException("Required map capability could not be added: " + cap.getName());
+                }
                 FPSMatch.LOGGER.error("Failed to add capability {} to map {}", cap.getSimpleName(), this.mapName);
             }
         }
@@ -457,6 +594,8 @@ public abstract class BaseMap {
      * 重置游戏
      */
     public void reset() {
+        resetGeneration++;
+        if (resetObservationDepth != 0) resetObservationGeneration = resetGeneration;
         resetMatchClock();
         MinecraftForge.EVENT_BUS.post(new FPSMapEvent.ResetEvent(this));
         this.clearReadyPlayers();
@@ -682,18 +821,22 @@ public abstract class BaseMap {
      *
      */
     public boolean reload() {
-        boolean flag = !MinecraftForge.EVENT_BUS.post(new FPSMapEvent.ReloadEvent(this));
-        if (flag) {
-            loadConfig();
+        try (LegacyPersistence legacyPersistence = openLegacyPersistence()) {
+            boolean flag = !MinecraftForge.EVENT_BUS.post(new FPSMapEvent.ReloadEvent(this));
+            if (flag) {
+                loadConfig();
+            }
+            return flag;
         }
-        return flag;
     }
 
     public final void load() {
-        if (FPSMCore.getInstance().isRegistered(this)) return;
+        try (LegacyPersistence legacyPersistence = openLegacyPersistence()) {
+            if (FPSMCore.getInstance().isRegistered(this)) return;
 
-        MinecraftForge.EVENT_BUS.post(new FPSMapEvent.LoadEvent(this));
-        FPSMCore.getInstance().registerMap(this.getGameType(), this);
+            MinecraftForge.EVENT_BUS.post(new FPSMapEvent.LoadEvent(this));
+            FPSMCore.getInstance().registerMap(this.getGameType(), this);
+        }
     }
 
     /**
@@ -860,11 +1003,13 @@ public abstract class BaseMap {
      * @return 包含所有配置项的 JSON 对象。
      */
     public JsonElement configToJson() {
-        JsonElement json = new JsonObject();
-        for (Setting<?> setting : settings()) {
-            json.getAsJsonObject().add(setting.getConfigName(), setting.toJson());
+        try (LegacyPersistence legacyPersistence = openLegacyPersistence()) {
+            JsonElement json = new JsonObject();
+            for (Setting<?> setting : settings()) {
+                json.getAsJsonObject().add(setting.getConfigName(), setting.toJson());
+            }
+            return json;
         }
-        return json;
     }
 
     /**
@@ -877,12 +1022,14 @@ public abstract class BaseMap {
      * @param json 包含配置项的 JSON 对象。
      */
     public void configFromJson(JsonElement json) {
-        JsonObject jsonObject = json.getAsJsonObject();
-        for (Setting<?> setting : settings()) {
-            if (jsonObject.has(setting.getConfigName())) {
-                setting.fromJson(jsonObject.get(setting.getConfigName()));
-            } else {
-                FPSMatch.LOGGER.warn("Setting {} not found in config file.", setting.getConfigName());
+        try (LegacyPersistence legacyPersistence = openLegacyPersistence()) {
+            JsonObject jsonObject = json.getAsJsonObject();
+            for (Setting<?> setting : settings()) {
+                if (jsonObject.has(setting.getConfigName())) {
+                    setting.fromJson(jsonObject.get(setting.getConfigName()));
+                } else {
+                    FPSMatch.LOGGER.warn("Setting {} not found in config file.", setting.getConfigName());
+                }
             }
         }
     }
@@ -912,17 +1059,19 @@ public abstract class BaseMap {
      * 如果配置文件不存在或读取失败，则记录错误日志。
      */
     public void loadConfig() {
-        File dataFile = getConfigFile();
-        if (dataFile == null) return;
-        try {
-            if (dataFile.exists()) {
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                try (FileReader reader = new FileReader(dataFile, StandardCharsets.UTF_8)) {
-                    this.configFromJson(gson.fromJson(reader, JsonElement.class));
+        try (LegacyPersistence legacyPersistence = openLegacyPersistence()) {
+            File dataFile = getConfigFile();
+            if (dataFile == null) return;
+            try {
+                if (dataFile.exists()) {
+                    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                    try (FileReader reader = new FileReader(dataFile, StandardCharsets.UTF_8)) {
+                        this.configFromJson(gson.fromJson(reader, JsonElement.class));
+                    }
                 }
+            } catch (Exception e) {
+                FPSMatch.LOGGER.error("Failed to load map config {}", dataFile.getAbsolutePath(), e);
             }
-        } catch (Exception e) {
-            FPSMatch.LOGGER.error("Failed to load map config {}", dataFile.getAbsolutePath(), e);
         }
     }
 
@@ -934,18 +1083,20 @@ public abstract class BaseMap {
      * 如果保存失败，则记录错误日志。
      */
     public void saveConfig() {
-        File dataFile = getConfigFile();
-        if (dataFile == null) return;
-        try {
-            if (!dataFile.exists() && !dataFile.createNewFile()) {
-                return;
+        try (LegacyPersistence legacyPersistence = openLegacyPersistence()) {
+            File dataFile = getConfigFile();
+            if (dataFile == null) return;
+            try {
+                if (!dataFile.exists() && !dataFile.createNewFile()) {
+                    return;
+                }
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                try (FileWriter writer = new FileWriter(dataFile, StandardCharsets.UTF_8)) {
+                    gson.toJson(this.configToJson(), writer);
+                }
+            } catch (Exception e) {
+                FPSMatch.LOGGER.error("Failed to save map config {}", dataFile.getAbsolutePath(), e);
             }
-            Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            try (FileWriter writer = new FileWriter(dataFile, StandardCharsets.UTF_8)) {
-                gson.toJson(this.configToJson(), writer);
-            }
-        } catch (Exception e) {
-            FPSMatch.LOGGER.error("Failed to save map config {}", dataFile.getAbsolutePath(), e);
         }
     }
 

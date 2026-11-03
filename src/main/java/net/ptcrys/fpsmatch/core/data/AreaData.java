@@ -1,16 +1,11 @@
 package net.ptcrys.fpsmatch.core.data;
 
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -27,9 +22,10 @@ public class AreaData {
     private final AABB aabb;
 
     public AreaData(@Nonnull BlockPos pos1, @Nonnull BlockPos pos2) {
-        this.pos1 = pos1;
-        this.pos2 = pos2;
-        this.aabb = new AABB(pos1, pos2);
+        // MutableBlockPos 会被调用方复用/重定位，构造时固定为 immutable 快照，避免 AABB 与角点随外部漂移。
+        this.pos1 = pos1.immutable();
+        this.pos2 = pos2.immutable();
+        this.aabb = new AABB(this.pos1, this.pos2);
     }
 
     public BlockPos pos1() {
@@ -76,25 +72,5 @@ public class AreaData {
 
     public AABB aabb() {
         return aabb;
-    }
-
-    public void renderArea(PoseStack poseStack, MultiBufferSource bufferSource) {
-        this.renderArea(poseStack, bufferSource, 0xFFFFFF00);
-    }
-
-    public void renderArea(PoseStack poseStack, MultiBufferSource bufferSource, int color) {
-        VertexConsumer vertexconsumer = bufferSource.getBuffer(RenderType.lines());
-        AABB aabb = aabb();
-        float red = ((color >> 16) & 0xFF) / 255.0F;
-        float green = ((color >> 8) & 0xFF) / 255.0F;
-        float blue = (color & 0xFF) / 255.0F;
-
-        LevelRenderer.renderLineBox(poseStack, vertexconsumer,
-                aabb.minX, aabb.minY, aabb.minZ,
-                aabb.maxX, aabb.maxY, aabb.maxZ,
-                red, green, blue, 1.0F,
-                Math.max(red * 0.55F, 0.1F),
-                Math.max(green * 0.55F, 0.1F),
-                Math.max(blue * 0.55F, 0.1F));
     }
 }

@@ -10,6 +10,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 public record RenderableArea(String key, Component name, int color, AreaData area) {
 
     public void render(PoseStack poseStack, MultiBufferSource bufferSource) {
-        area.renderArea(poseStack, bufferSource, color);
+        AreaRenderer.renderArea(poseStack, bufferSource, area, color);
     }
 }

@@ -5,6 +5,7 @@ import net.ptcrys.fpsmatch.common.capability.map.DemolitionModeCapability;
 import net.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import net.ptcrys.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
 import net.ptcrys.fpsmatch.core.FPSMCore;
+import net.ptcrys.fpsmatch.core.RuntimeMapLeaseException;
 import net.ptcrys.fpsmatch.core.data.AreaData;
 import net.ptcrys.fpsmatch.core.data.Setting;
 import net.ptcrys.fpsmatch.core.map.BaseMap;
@@ -15,10 +16,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 public final class MapRoomActionService {
 
@@ -207,19 +211,56 @@ public final class MapRoomActionService {
     }
 
     public static Result setSetting(ServerPlayer player, BaseMap map, String settingName, String value) {
-        if (!MapRoomQueryService.isMapOperator(player)) {
+        return writeSetting(MapRoomQueryService.isMapOperator(player), map::isStart, map::openLegacyPersistence,
+                map::settings, settingName, value, () -> FPSMCore.getInstance().getFPSMDataManager().saveAllData(),
+                () -> Result.success(Component.translatable("gui.fpsm.map_select.action.setting.success", settingName), map, player));
+    }
+
+    /** The production authority and mutation path, with side effects injectable for refusal/rollback tests. */
+    static Result writeSetting(boolean operator, BooleanSupplier running, Supplier<? extends AutoCloseable> openScope,
+                               Supplier<Collection<Setting<?>>> inventory, String name, String value,
+                               Runnable persist, Supplier<Result> success) {
+        if (!operator) {
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.no_permission"));
         }
-        for (Setting<?> setting : map.settings()) {
-            if (setting.getConfigName().equals(settingName)) {
-                if (setting.parse(value)) {
-                    FPSMCore.getInstance().getFPSMDataManager().saveAllData();
-                    return Result.success(Component.translatable("gui.fpsm.map_select.action.setting.success", settingName), map, player);
+        if (running.getAsBoolean()) return settingFailure("in_progress");
+        // The ownership check must precede even parsing. Hold the scope until rollback or success finishes.
+        try (AutoCloseable ignored = openScope.get()) {
+            if (running.getAsBoolean()) return settingFailure("in_progress");
+            for (Setting<?> setting : inventory.get()) {
+                if (setting.getConfigName().equals(name)) {
+                    return mutateSetting(setting, value, persist, success);
                 }
-                return Result.failure(Component.translatable("gui.fpsm.map_select.action.setting.invalid", settingName));
             }
+            return Result.failure(Component.translatable("gui.fpsm.map_select.action.setting.not_found", name));
+        } catch (RuntimeMapLeaseException owned) {
+            return settingFailure("runtime_owned");
+        } catch (Exception failure) {
+            return settingFailure("save_failed");
         }
-        return Result.failure(Component.translatable("gui.fpsm.map_select.action.setting.not_found", settingName));
+    }
+
+    private static <T> Result mutateSetting(Setting<T> setting, String value, Runnable persist, Supplier<Result> success) {
+        T original = setting.get();
+        boolean committed = false;
+        try {
+            if (!setting.parse(value)) return Result.failure(Component.translatable(
+                    "gui.fpsm.map_select.action.setting.invalid", setting.getConfigName()));
+            persist.run();
+            Result result = success.get();
+            committed = result.success();
+            return result;
+        } catch (RuntimeException failure) {
+            return settingFailure("save_failed");
+        } finally {
+            // This also restores the original value before a fatal Error propagates.
+            // saveAllData is not a disk transaction; no cross-holder disk rollback is implied.
+            if (!committed) setting.set(original);
+        }
+    }
+
+    private static Result settingFailure(String reason) {
+        return Result.failure(Component.translatable("gui.fpsm.map_select.action.setting." + reason));
     }
 
     public static Result setMapArea(ServerPlayer player, String gameType, String mapName, AreaData area) {

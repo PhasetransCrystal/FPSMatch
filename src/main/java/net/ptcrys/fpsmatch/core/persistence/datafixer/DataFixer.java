@@ -25,7 +25,7 @@ public class DataFixer {
 
     /**
      * 注册Json转换逻辑（从fromVersion到fromVersion+1）
-     * 
+     *
      * @param dataClass   数据类型
      * @param fromVersion 旧版本号
      * @param fixer       转换逻辑
@@ -36,7 +36,7 @@ public class DataFixer {
 
     /**
      * 执行数据修复（从旧版本到目标版本）
-     * 
+     *
      * @param dataClass     数据类型
      * @param oldJson       旧版本Json数据
      * @param oldVersion    旧版本号
@@ -74,7 +74,7 @@ public class DataFixer {
 
         /**
          * 修复Json数据
-         * 
+         *
          * @param oldJson 旧版本Json数据
          * @return 修复后的新版本Json数据
          */

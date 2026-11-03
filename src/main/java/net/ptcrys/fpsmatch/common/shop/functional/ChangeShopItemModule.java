@@ -5,8 +5,10 @@ import net.ptcrys.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
 import net.ptcrys.fpsmatch.compat.gun.GunCompatManager;
 import net.ptcrys.fpsmatch.compat.gun.IGunProvider;
 import net.ptcrys.fpsmatch.core.FPSMCore;
+import net.ptcrys.fpsmatch.core.persistence.RuntimeItemStackCodec;
 import net.ptcrys.fpsmatch.core.persistence.SaveHolder;
 import net.ptcrys.fpsmatch.core.shop.event.ShopSlotChangeEvent;
+import net.ptcrys.fpsmatch.core.shop.functional.GroupReturnDependent;
 import net.ptcrys.fpsmatch.core.shop.functional.ListenerModule;
 import net.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
 
@@ -25,7 +27,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
  * 支持在购买时替换物品和价格，并在退回时恢复默认设置。
  */
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemStack changedItem, int changedCost, String moduleName) implements ListenerModule {
+public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemStack changedItem, int changedCost, String moduleName) implements ListenerModule, GroupReturnDependent {
 
     public ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemStack changedItem, int changedCost) {
         this(defaultItem, defaultCost, changedItem, changedCost, "");
@@ -33,7 +35,18 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
 
     public ChangeShopItemModule {
         defaultItem = defaultItem.copy();
-        changedItem = changedItem.copy();
+        try {
+            changedItem = changedItem.copy();
+        } catch (RuntimeException | Error failure) {
+            if (defaultItem != ItemStack.EMPTY) {
+                try {
+                    defaultItem.invalidateCaps();
+                } catch (RuntimeException | Error cleanup) {
+                    if (failure != cleanup) failure.addSuppressed(cleanup);
+                }
+            }
+            throw failure;
+        }
     }
 
     @Override
@@ -49,12 +62,29 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
     /**
      * 该模块的编解码器，用于序列化和反序列化。
      */
-    public static final Codec<ChangeShopItemModule> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ItemStack.CODEC.fieldOf("defaultItem").forGetter(ChangeShopItemModule::defaultItem),
+    public static final Codec<ChangeShopItemModule> CODEC = RuntimeItemStackCodec.owned(RecordCodecBuilder.create(instance -> instance.group(
+            RuntimeItemStackCodec.CODEC.fieldOf("defaultItem").forGetter(ChangeShopItemModule::defaultItem),
             Codec.INT.fieldOf("defaultCost").forGetter(ChangeShopItemModule::defaultCost),
-            ItemStack.CODEC.fieldOf("changedItem").forGetter(ChangeShopItemModule::changedItem),
+            RuntimeItemStackCodec.CODEC.fieldOf("changedItem").forGetter(ChangeShopItemModule::changedItem),
             Codec.INT.fieldOf("changedCost").forGetter(ChangeShopItemModule::changedCost),
-            Codec.STRING.optionalFieldOf("moduleName", "").forGetter(ChangeShopItemModule::moduleName)).apply(instance, ChangeShopItemModule::new));
+            Codec.STRING.optionalFieldOf("moduleName", "").forGetter(ChangeShopItemModule::moduleName)).apply(instance, ChangeShopItemModule::decodeOwned)));
+
+    private static ChangeShopItemModule decodeOwned(ItemStack original, int cost, ItemStack changed,
+                                                    int changedCost, String name) {
+        // The record keeps defensive copies; the decoder retains responsibility for both inputs.
+        Throwable primary = null;
+        try {
+            ChangeShopItemModule result = new ChangeShopItemModule(original, cost, changed, changedCost, name);
+            RuntimeItemStackCodec.ownDecoded(result.defaultItem);
+            RuntimeItemStackCodec.ownDecoded(result.changedItem);
+            return result;
+        } catch (RuntimeException | Error failure) {
+            primary = failure;
+            throw failure;
+        } finally {
+            RuntimeItemStackCodec.releaseDecodedInputs(primary, original, changed);
+        }
+    }
 
     /**
      * 注册该模块到监听模块管理器。
@@ -115,7 +145,7 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
 
     /**
      * 获取该模块的优先级。
-     * 
+     *
      * @return 模块优先级
      */
     @Override

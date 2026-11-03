@@ -35,7 +35,7 @@ public record DownloadProgress(long bytesDownloaded, long totalBytes, double pro
 
     /**
      * 创建总大小未知的下载进度
-     * 
+     *
      * @param bytesDownloaded 已下载字节数
      */
     public DownloadProgress(long bytesDownloaded) {
@@ -44,7 +44,7 @@ public record DownloadProgress(long bytesDownloaded, long totalBytes, double pro
 
     /**
      * 创建已知总大小的下载进度
-     * 
+     *
      * @param bytesDownloaded 已下载字节数
      * @param totalBytes      总字节数
      */
@@ -79,7 +79,7 @@ public record DownloadProgress(long bytesDownloaded, long totalBytes, double pro
 
     /**
      * 计算下载速度
-     * 
+     *
      * @param previousProgress 前一个进度状态
      * @param elapsedNanos     经过的时间（纳秒）
      * @return 下载速度（字节/秒），无法计算时返回-1
@@ -103,7 +103,7 @@ public record DownloadProgress(long bytesDownloaded, long totalBytes, double pro
 
     /**
      * 估算剩余时间
-     * 
+     *
      * @param speedBytesPerSec 当前速度（字节/秒）
      * @return 剩余时间，无法计算时返回null
      */

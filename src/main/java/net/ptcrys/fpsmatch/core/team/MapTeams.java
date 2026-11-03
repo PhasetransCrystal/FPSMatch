@@ -8,12 +8,14 @@ import net.ptcrys.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
 import net.ptcrys.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
 import net.ptcrys.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
 import net.ptcrys.fpsmatch.core.FPSMCore;
+import net.ptcrys.fpsmatch.core.ShutdownCleanup;
 import net.ptcrys.fpsmatch.core.capability.CapabilityMap;
 import net.ptcrys.fpsmatch.core.capability.FPSMCapability;
 import net.ptcrys.fpsmatch.core.capability.team.TeamCapability;
 import net.ptcrys.fpsmatch.core.data.PlayerData;
 import net.ptcrys.fpsmatch.core.data.SpawnPointData;
 import net.ptcrys.fpsmatch.core.map.BaseMap;
+import net.ptcrys.fpsmatch.core.map.MapConstructionScope;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -67,7 +69,7 @@ public class MapTeams {
 
     /**
      * 构造函数，用于创建 MapTeams 对象
-     * 
+     *
      * @param level 服务器级别。
      * @param map   地图对象。
      */
@@ -84,7 +86,7 @@ public class MapTeams {
 
     /**
      * 构造函数，用于创建 MapTeams 对象
-     * 
+     *
      * @param level 服务器级别。
      * @param teams 包含团队名称,能力,玩家限制的映射。
      * @param map   地图对象。
@@ -224,18 +226,31 @@ public class MapTeams {
     }
 
     public ServerTeam addTeam(TeamData data, boolean isSpectator) {
+        FPSMCore core = FPSMCore.requireMapConstructionAvailable(this.level);
+        String type = map.getGameType();
+        String mapName = map.getMapName();
+        core.runtimeInstallations().requireConstruction(type, map.mapName);
         String teamName = data.name();
         int limit = data.limit();
-        String fixedName = map.getGameType() + "_" + map.getMapName() + "_" + teamName;
+        String fixedName = type + "_" + mapName + "_" + teamName;
 
         Scoreboard scoreboard = this.level.getScoreboard();
-        PlayerTeam invalid = scoreboard.getPlayerTeam(fixedName);
-        if (invalid != null) scoreboard.removePlayerTeam(invalid);
-
-        PlayerTeam playerteam = scoreboard.addPlayerTeam(fixedName);
+        PlayerTeam playerteam = MapConstructionScope.acquire(() -> {
+            PlayerTeam invalid = scoreboard.getPlayerTeam(fixedName);
+            if (invalid != null) {
+                if (MapConstructionScope.isConstructing()) {
+                    throw new IllegalStateException("Scoreboard team already exists before construction: " + fixedName);
+                }
+                scoreboard.removePlayerTeam(invalid);
+            }
+            return scoreboard.addPlayerTeam(fixedName);
+        }, owned -> TeamShutdown.run(() -> {}, scoreboard, owned));
         ServerTeam team = new ServerTeam(map, teamName, limit, playerteam);
         for (Class<? extends TeamCapability> capClazz : data.getCapabilities()) {
             if (!team.getCapabilityMap().add(capClazz)) {
+                if (MapConstructionScope.isConstructing()) {
+                    throw new IllegalStateException("Required team capability could not be added: " + capClazz.getName());
+                }
                 FPSMatch.LOGGER.error("{} Team Capability is not registered : {}", fixedName, capClazz.getName());
             }
         }
@@ -288,11 +303,10 @@ public class MapTeams {
         }
         if (teamName == null) return;
         ServerTeam removedTeam = this.teams.remove(teamName);
-        // 队伍被彻底删除时，反注册其各能力在全局事件总线上的监听器，防止泄漏
         if (removedTeam != null) {
-            removedTeam.getCapabilityMap().unregisterAllFromBus();
+            TeamShutdown.run(removedTeam.getCapabilityMap()::close, this.level.getScoreboard(),
+                    removedTeam.getPlayerTeam());
         }
-        this.level.getScoreboard().removePlayerTeam(team);
     }
 
     /**
@@ -656,7 +670,7 @@ public class MapTeams {
      * 根据队伍名称获取队伍对象。
      * <p>
      *
-     * 
+     *
      * @param teamName 队伍名称
      * @return 队伍对象
      */
@@ -968,19 +982,23 @@ public class MapTeams {
     }
 
     public Map<String, CapabilityMap.Wrapper> getData() {
-        Map<String, CapabilityMap.Wrapper> capabilityMap = new HashMap<>();
-        teams.values().forEach((t) -> capabilityMap.put(t.getName(), t.getCapabilityMap().getData()));
-        return capabilityMap;
+        try (BaseMap.LegacyPersistence legacyPersistence = map.openLegacyPersistence()) {
+            Map<String, CapabilityMap.Wrapper> capabilityMap = new HashMap<>();
+            teams.values().forEach((t) -> capabilityMap.put(t.getName(), t.getCapabilityMap().getData()));
+            return capabilityMap;
+        }
     }
 
     public void writeData(Map<String, CapabilityMap.Wrapper> capabilityMap) {
-        capabilityMap.forEach((name, wrapper) -> {
-            if (teams.containsKey(name)) {
-                teams.get(name).getCapabilityMap().write(wrapper);
-            } else {
-                FPSMatch.LOGGER.error("Team {} not found : capability is not instantiated", name);
-            }
-        });
+        try (BaseMap.LegacyPersistence legacyPersistence = map.openLegacyPersistence()) {
+            capabilityMap.forEach((name, wrapper) -> {
+                if (teams.containsKey(name)) {
+                    teams.get(name).getCapabilityMap().write(wrapper);
+                } else {
+                    FPSMatch.LOGGER.error("Team {} not found : capability is not instantiated", name);
+                }
+            });
+        }
     }
 
     public Map<UUID, PlayerData.Damage> getDamageReceivedByPlayer() {
@@ -1016,11 +1034,14 @@ public class MapTeams {
     // 只有在服务器关闭时调用 否则会出现空指针异常！
     // 删除队伍使用
     public void shutdown(Scoreboard scoreboard) {
+        List<Runnable> cleanup = new ArrayList<>();
         for (ServerTeam team : teams.values()) {
-            // 关停时反注册能力在全局事件总线上的监听器，避免事件总线累积持有对象
-            team.getCapabilityMap().unregisterAllFromBus();
-            scoreboard.removePlayerTeam(team.getPlayerTeam());
+            var capabilities = team.getCapabilityMap();
+            PlayerTeam owned = team.getPlayerTeam();
+            cleanup.add(() -> TeamShutdown.run(capabilities::close, scoreboard, owned));
         }
+        // Capture all team resources before a capability cleanup can change the caller's roster.
+        ShutdownCleanup.run(() -> {}, cleanup);
     }
 
     /**

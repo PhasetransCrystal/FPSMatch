@@ -41,10 +41,13 @@ public class FPSMClient {
 
     @SubscribeEvent
     public static void onClientSetup(RegisterKeyMappingsEvent event) {
-        // 注册键位
+        // Initialize key classes here, after parallel mod construction.
         event.register(CustomHudKey.KEY);
         event.register(SwitchPreviousItemKey.KEY);
         event.register(ClearRenderableAreasKey.KEY);
+        MinecraftForge.EVENT_BUS.register(CustomHudKey.class);
+        MinecraftForge.EVENT_BUS.register(SwitchPreviousItemKey.class);
+        MinecraftForge.EVENT_BUS.register(ClearRenderableAreasKey.class);
     }
 
     @SubscribeEvent

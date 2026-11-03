@@ -217,7 +217,8 @@ public class FPSMapCommand {
                             break;
                         case "switch":
                             boolean debug = map.switchDebugMode();
-                            context.getSource().sendSuccess(() -> Component.literal("Debug Mode : " + debug), true);
+                            context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.debug.switch.success",
+                                    Component.translatable(debug ? "commands.fpsm.debug.state.enabled" : "commands.fpsm.debug.state.disabled")), true);
                             break;
                         default:
                             return 0;

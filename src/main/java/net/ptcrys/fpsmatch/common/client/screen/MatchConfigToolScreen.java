@@ -1,329 +1,251 @@
 package net.ptcrys.fpsmatch.common.client.screen;
 
 import net.ptcrys.fpsmatch.FPSMatch;
-import net.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMGuiTheme;
+import net.ptcrys.fpsmatch.common.client.screen.mapselect.studio.StudioMapScreen;
+import net.ptcrys.fpsmatch.common.item.MatchConfigTool;
 import net.ptcrys.fpsmatch.common.packet.MatchConfigToolActionC2SPacket;
 import net.ptcrys.fpsmatch.common.packet.OpenMatchConfigToolScreenS2CPacket;
 import net.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSettingInfo;
+import net.ptcrys.fpsmatch.editor.common.client.workbench.WorkbenchClient;
+import net.ptcrys.fpsmatch.editor.common.ui.component.StudioComponents;
+import net.ptcrys.fpsmatch.editor.common.ui.component.StudioView;
+import net.ptcrys.fpsmatch.editor.common.ui.control.ControlTree.Bounds;
+import net.ptcrys.fpsmatch.editor.common.ui.layout.FlowLayout.Insets;
+import net.ptcrys.fpsmatch.editor.common.ui.layout.FlowLayout.Style;
 
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Mth;
-
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class MatchConfigToolScreen extends Screen {
+import static net.ptcrys.fpsmatch.common.client.screen.MatchConfigToolState.*;
+import static net.ptcrys.fpsmatch.editor.common.ui.component.StudioComponent.*;
 
-    // 统一设计 Token：颜色全部引用 FPSMGuiTheme，消除与主界面割裂的私有色板
-    private static final int PANEL_BACKGROUND = FPSMGuiTheme.BG_PANEL;
-    private static final int PANEL_BORDER = FPSMGuiTheme.BORDER_INNER;
-    private static final int ROW_BACKGROUND = FPSMGuiTheme.ROW_NORMAL;
-    private static final int ROW_HOVER = FPSMGuiTheme.ROW_HOVER;
-    private static final int TEXT_MAIN = FPSMGuiTheme.TEXT_BODY;
-    private static final int TEXT_SUB = FPSMGuiTheme.TEXT_SUB;
-    private static final int TEXT_DISABLED = FPSMGuiTheme.TEXT_DISABLED;
-    private static final int ROW_HEIGHT = 25;
-    private static final int TOP = 28;
-    private static final int FIELD_WIDTH = 126;
-    private static final int BUTTON_HEIGHT = FPSMGuiTheme.BUTTON_HEIGHT;
+/** A read-only runtime snapshot. Authoring continues in the existing workbench. */
+@Mod.EventBusSubscriber(modid = FPSMatch.MODID, value = Dist.CLIENT)
+public final class MatchConfigToolScreen extends StudioMapScreen {
 
-    private OpenMatchConfigToolScreenS2CPacket data;
-    private final List<EditBox> valueFields = new ArrayList<>();
-    private final List<Button> applyButtons = new ArrayList<>();
-    private final List<Button> toggleButtons = new ArrayList<>();
-    private Button typeButton;
-    private Button mapButton;
-    private Button refreshButton;
-    private int scrollOffset;
+    private static final AtomicLong SESSIONS = new AtomicLong(System.currentTimeMillis());
+    private static final String PREFIX = "gui.fpsm.match_config.studio.";
+    private final MatchConfigToolState<OpenMatchConfigToolScreenS2CPacket> state;
+    private String search = "";
+    private int bodyScroll;
+    private boolean choosingMap;
 
-    public MatchConfigToolScreen(OpenMatchConfigToolScreenS2CPacket data) {
-        super(Component.translatable("gui.fpsm.match_config.title"));
-        this.data = data;
+    private MatchConfigToolScreen(Connection connection) {
+        super(Component.translatable("gui.fpsm.match_config.title"), null, "match-config");
+        state = new MatchConfigToolState<>(connection, SESSIONS.incrementAndGet());
     }
 
-    public void applyData(OpenMatchConfigToolScreenS2CPacket data) {
-        this.data = data;
-        this.scrollOffset = 0;
-        rebuildToolWidgets();
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onLocalRightClick(PlayerInteractEvent.RightClickItem event) {
+        Minecraft client = Minecraft.getInstance();
+        if (!event.getLevel().isClientSide || event.getEntity() != client.player || event.getHand() != InteractionHand.MAIN_HAND || event.isCanceled() || !(event.getItemStack().getItem() instanceof MatchConfigTool) || client.screen != null || client.getConnection() == null) return;
+        // This main-hand interaction is handled; do not continue into an off-hand use.
+        event.setCancellationResult(InteractionResult.SUCCESS);
+        event.setCanceled(true);
+        MatchConfigToolScreen screen = new MatchConfigToolScreen(client.getConnection().getConnection());
+        // Publish local intent before sending: even an immediate reply must find this exact page.
+        client.setScreen(screen);
+        screen.begin(Operation.OPEN, Target.NONE);
+    }
+
+    private static long now() {
+        return System.nanoTime() / 1_000_000L;
+    }
+
+    private Object currentConnection() {
+        Connection connection = minecraft == null || minecraft.getConnection() == null ? null : minecraft.getConnection().getConnection();
+        return connection != null && connection.isConnected() ? connection : null;
+    }
+
+    private void begin(Operation operation, Target target) {
+        if (state.tick(currentConnection(), now())) showState();
+        state.begin(operation, target, now()).ifPresent(this::send);
+    }
+
+    private void send(Ticket ticket) {
+        showState();
+        FPSMatch.sendToServer(new MatchConfigToolActionC2SPacket(
+                MatchConfigToolActionC2SPacket.Action.valueOf(ticket.operation().name()),
+                ticket.target().gameType(), ticket.target().mapName(), "", "", ticket.session(), ticket.request()));
+    }
+
+    private void retry() {
+        if (state.tick(currentConnection(), now())) showState();
+        state.retry(now()).ifPresent(this::send);
+    }
+
+    public void applyData(OpenMatchConfigToolScreenS2CPacket packet, Connection source) {
+        if (state.tick(currentConnection(), now())) showState();
+        if (packet.action() == MatchConfigToolActionC2SPacket.Action.SET_SETTING) return;
+        Target previous = state.selected();
+        if (!state.complete(source, packet.session(), packet.request(), Operation.valueOf(packet.action().name()),
+                new Target(packet.selectedType(), packet.selectedMap()), packet, packet.success() ? "" : (packet.notice().isBlank() ? "failed" : packet.notice())))
+            return;
+        if (packet.success() && !previous.equals(state.selected())) bodyScroll = 0;
+        showState();
+        if (packet.success() && !packet.notice().isBlank()) message(tr(PREFIX + packet.notice()), true);
+    }
+
+    private void showState() {
+        if (state.pending() != null) {
+            String key = switch (state.pending().operation()) {
+                case OPEN -> "loading";
+                case SELECT -> "selecting";
+                case REFRESH -> "refreshing";
+            };
+            message(tr(PREFIX + key), false);
+        } else if (!state.failure().isEmpty()) {
+            String key = switch (state.failure()) {
+                case "timeout", "disconnected", "cancelled", "removed", "no_tool" -> state.failure();
+                default -> "failed";
+            };
+            String text = tr(PREFIX + key);
+            if (state.snapshot() != null && !key.equals("failed") && !key.equals("cancelled")) text += " " + tr(PREFIX + "failed");
+            message(text, true);
+        } else message("", false);
     }
 
     @Override
-    protected void init() {
-        rebuildToolWidgets();
+    protected void onScreenTick() {
+        if (state.tick(currentConnection(), now())) showState();
     }
 
-    private void rebuildToolWidgets() {
-        clearWidgets();
-        valueFields.clear();
-        applyButtons.clear();
-        toggleButtons.clear();
+    @Override
+    protected void onScreenRemoved() {
+        state.close();
+    }
 
-        int left = panelLeft();
-        int top = TOP;
-        this.typeButton = addRenderableWidget(Button.builder(selectedTypeLabel(), button -> cycleType())
-                .bounds(left + 64, top + 22, 132, BUTTON_HEIGHT)
-                .build());
-        this.mapButton = addRenderableWidget(Button.builder(selectedMapLabel(), button -> cycleMap())
-                .bounds(left + 250, top + 22, 170, BUTTON_HEIGHT)
-                .build());
-        this.refreshButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.match_config.refresh"), button -> refresh())
-                .bounds(left + panelWidth() - 76, top + 22, 64, BUTTON_HEIGHT)
-                .build());
+    @Override
+    public void onClose() {
+        if (choosingMap) {
+            choosingMap = false;
+            requestLayout();
+            return;
+        }
+        state.close();
+        if (minecraft != null) minecraft.setScreen(null);
+    }
 
-        int listLeft = left + 12;
-        int valueX = left + panelWidth() - FIELD_WIDTH - 82;
-        int buttonX = left + panelWidth() - 74;
-        for (int i = 0; i < data.settings().size(); i++) {
-            MapRoomSettingInfo setting = data.settings().get(i);
-            int rowY = listTop() + i * ROW_HEIGHT;
-            if (setting.type() == MapRoomSettingInfo.SettingType.BOOLEAN) {
-                valueFields.add(null);
-                applyButtons.add(null);
-                Button toggleButton = addRenderableWidget(Button.builder(toggleLabel(Boolean.parseBoolean(setting.value())),
-                        button -> toggleSetting(setting, button))
-                        .bounds(valueX, rowY + 2, FIELD_WIDTH + 66, BUTTON_HEIGHT)
-                        .build());
-                toggleButton.active = setting.editable();
-                toggleButtons.add(toggleButton);
-            } else {
-                EditBox field = new EditBox(font, valueX, rowY + 3, FIELD_WIDTH, 18, Component.translatable(setting.translationKey()));
-                field.setMaxLength(1024);
-                field.setValue(setting.value());
-                field.setEditable(setting.editable());
-                addRenderableWidget(field);
-                valueFields.add(field);
+    private void openWorkbench() {
+        state.close();
+        if (minecraft != null) minecraft.setScreen(null);
+        WorkbenchClient.openWorkbench();
+    }
 
-                Button applyButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.match_config.apply"),
-                        button -> applySetting(setting, field))
-                        .bounds(buttonX, rowY + 2, 62, BUTTON_HEIGHT)
-                        .build());
-                applyButton.active = setting.editable();
-                applyButtons.add(applyButton);
-                toggleButtons.add(null);
+    @Override
+    protected String backLabel() {
+        return tr("gui.done");
+    }
+
+    @Override
+    protected String pageSubtitle() {
+        Target selected = state.selected();
+        return selected.equals(Target.NONE) ? tr(PREFIX + "choose_map") : selected.gameType() + " / " + selected.mapName();
+    }
+
+    @Override
+    protected StudioView.Element topControls(StudioView view) {
+        boolean idle = state.canRequest();
+        var data = state.snapshot();
+        var actions = new ArrayList<StudioComponents.Action>();
+        actions.add(action("config/maps", tr(PREFIX + "choose_map"), Icon.MAP, Variant.OUTLINED,
+                idle && data != null && !data.maps().isEmpty(), () -> {
+                    choosingMap = true;
+                    resetOverlayScroll();
+                    requestLayout();
+                }));
+        actions.add(action("config/refresh", tr("gui.fpsm.match_config.refresh"), Icon.REDO, Variant.OUTLINED,
+                idle && data != null, () -> begin(Operation.REFRESH, state.selected())));
+        if (state.pending() != null) actions.add(action("config/cancel", tr("gui.cancel"), Icon.CLOSE, Variant.DEFAULT, true,
+                () -> {
+                    state.cancel();
+                    showState();
+                }));
+        else if (!state.failure().isEmpty()) actions.add(action("config/retry", tr(PREFIX + "retry"), Icon.REDO, Variant.DEFAULT, idle, this::retry));
+        return buttons(view, "config/controls", actions);
+    }
+
+    @Override
+    protected void composeBody(Composition content, Bounds body) {
+        var view = content.view();
+        var entries = new ArrayList<StudioView.Element>();
+        entries.add(view.paragraph("config/read-only", tr(PREFIX + "read_only"), TextSize.SMALL, Variant.MUTED));
+        entries.add(view.button(action("config/workbench", tr(PREFIX + "workbench"), Icon.FOLDER, Variant.OUTLINED, true, this::openWorkbench)));
+        var data = state.snapshot();
+        if (data == null) {
+            entries.add(view.paragraph("config/initial", tr(PREFIX + (state.pending() != null ? "loading" : "choose_map"))));
+        } else if (data.maps().isEmpty()) {
+            entries.add(view.paragraph("config/no-maps", tr("gui.fpsm.match_config.empty_maps")));
+        } else if (state.selected().equals(Target.NONE)) {
+            entries.add(view.paragraph("config/no-selection", tr(PREFIX + "choose_map")));
+        } else {
+            entries.add(view.input(new StudioView.Input("config/search", tr("gui.fpsm.map_select.settings.search"), search, true, false, false, "", null,
+                    value -> {
+                        search = value;
+                        bodyScroll = 0;
+                        requestLayout();
+                    }, null)));
+            if (data.settings().isEmpty()) entries.add(view.paragraph("config/no-settings", tr("gui.fpsm.match_config.empty_settings")));
+            else composeSettings(view, entries, data.settings());
+        }
+        bodyScroll = content.scroll("config/body", view.column("config/entries", Style.defaults().gap(10), entries), body, 0, bodyScroll,
+                value -> {
+                    bodyScroll = value;
+                    requestLayout();
+                });
+    }
+
+    private void composeSettings(StudioView view, List<StudioView.Element> entries, List<MapRoomSettingInfo> settings) {
+        String query = search.strip().toLowerCase(Locale.ROOT);
+        String category = null;
+        int count = 0;
+        for (var setting : settings.stream().sorted(Comparator.comparing(MapRoomSettingInfo::category).thenComparing(MapRoomSettingInfo::name)).toList()) {
+            if (!(tr(setting.translationKey()) + " " + setting.name() + " " + tr(setting.categoryTranslationKey())).toLowerCase(Locale.ROOT).contains(query)) continue;
+            count++;
+            if (!setting.category().equals(category)) {
+                category = setting.category();
+                entries.add(view.paragraph("config/category/" + part(category), tr(setting.categoryTranslationKey()), TextSize.HEADING, Variant.MUTED));
             }
+            String id = "config/value/" + part(setting.category()) + part(setting.name());
+            entries.add(view.surface(id, Kind.INLINE_CARD, Style.defaults().padding(Insets.all(10)).gap(5), List.of(
+                    view.paragraph(id + "/name", tr(setting.translationKey()), TextSize.HEADING, Variant.DEFAULT),
+                    view.paragraph(id + "/current", setting.value()),
+                    view.paragraph(id + "/default", tr("gui.fpsm.match_config.default", setting.defaultValue()), TextSize.SMALL, Variant.MUTED),
+                    view.paragraph(id + "/description", tr(setting.descriptionKey()), TextSize.SMALL, Variant.MUTED))));
         }
+        if (count == 0) entries.add(view.paragraph("config/no-match", tr(PREFIX + "no_match")));
     }
 
     @Override
-    public void tick() {
-        super.tick();
-        valueFields.stream().filter(Objects::nonNull).forEach(EditBox::tick);
-    }
-
-    @Override
-    public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
-        int left = panelLeft();
-        int right = left + panelWidth();
-        int bottom = height - 24;
-        graphics.fill(left, TOP, right, bottom, PANEL_BACKGROUND);
-        graphics.fill(left, TOP, right, TOP + 1, PANEL_BORDER);
-        graphics.fill(left, bottom - 1, right, bottom, PANEL_BORDER);
-        graphics.fill(left, TOP, left + 1, bottom, PANEL_BORDER);
-        graphics.fill(right - 1, TOP, right, bottom, PANEL_BORDER);
-
-        graphics.drawString(font, title, left + 12, TOP + 8, TEXT_MAIN, false);
-        graphics.drawString(font, Component.translatable("gui.fpsm.match_config.type"), left + 12, TOP + 28, TEXT_SUB, false);
-        graphics.drawString(font, Component.translatable("gui.fpsm.match_config.map"), left + 214, TOP + 28, TEXT_SUB, false);
-
-        int listTop = listTop();
-        int listBottom = bottom - 10;
-        int visibleRows = visibleRows();
-        int maxScroll = maxScroll();
-        scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
-        Component tooltip = null;
-        graphics.enableScissor(left + 8, listTop, right - 8, listBottom);
-        for (int i = 0; i < data.settings().size(); i++) {
-            int rowY = listTop + (i - scrollOffset) * ROW_HEIGHT;
-            boolean visible = rowY + ROW_HEIGHT > listTop && rowY < listBottom;
-            setRowVisible(i, visible, rowY);
-            if (!visible) continue;
-
-            MapRoomSettingInfo setting = data.settings().get(i);
-            boolean hovered = mouseX >= left + 12 && mouseX <= right - 12 && mouseY >= rowY && mouseY <= rowY + ROW_HEIGHT;
-            graphics.fill(left + 10, rowY, right - 10, rowY + ROW_HEIGHT - 1, hovered ? ROW_HOVER : ROW_BACKGROUND);
-            int color = setting.editable() ? TEXT_MAIN : TEXT_DISABLED;
-            drawClipped(graphics, Component.translatable(setting.translationKey()), left + 18, rowY + 8, color, 136);
-            drawClipped(graphics, Component.translatable("gui.fpsm.match_config.default", setting.defaultValue()), left + 158, rowY + 8, TEXT_SUB, 130);
-            if (hovered && mouseX >= left + 18 && mouseX <= left + 154) {
-                tooltip = Component.translatable(setting.translationKey() + ".desc");
-            }
+    protected void composeOverlay(Composition content) {
+        if (!choosingMap || state.snapshot() == null) return;
+        var actions = new ArrayList<StudioComponents.Action>();
+        for (var map : state.snapshot().maps()) {
+            String name = map.displayName().isBlank() ? map.mapName() : map.displayName();
+            actions.add(action("config/map/" + part(map.gameType()) + part(map.mapName()),
+                    name + " · " + map.gameType() + " / " + map.mapName(), Icon.MAP, Variant.DEFAULT, state.canRequest(),
+                    () -> {
+                        choosingMap = false;
+                        begin(Operation.SELECT, new Target(map.gameType(), map.mapName()));
+                    }));
         }
-        graphics.disableScissor();
-
-        super.render(graphics, mouseX, mouseY, partialTick);
-
-        if (data.maps().isEmpty()) {
-            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.match_config.empty_maps"), width / 2, listTop + 36, TEXT_SUB);
-        } else if (data.settings().isEmpty()) {
-            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.match_config.empty_settings"), width / 2, listTop + 36, TEXT_SUB);
-        }
-
-        if (!data.settings().isEmpty() && maxScroll > 0) {
-            int barX = right - 8;
-            int barTop = listTop;
-            int barHeight = listBottom - listTop;
-            int handleHeight = Math.max(18, barHeight * visibleRows / data.settings().size());
-            int handleY = barTop + (barHeight - handleHeight) * scrollOffset / maxScroll;
-            graphics.fill(barX - 2, barTop, barX, listBottom, 0x552C3640);
-            graphics.fill(barX - 2, handleY, barX, handleY + handleHeight, PANEL_BORDER);
-        }
-        if (tooltip != null) {
-            graphics.renderTooltip(font, tooltip, mouseX, mouseY);
-        }
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
-        scrollOffset = Mth.clamp(scrollOffset - (int) scrollY, 0, maxScroll());
-        return true;
-    }
-
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        for (EditBox field : valueFields) {
-            if (field != null && field.keyPressed(keyCode, scanCode, modifiers)) {
-                return true;
-            }
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
-    }
-
-    @Override
-    public boolean charTyped(char codePoint, int modifiers) {
-        for (EditBox field : valueFields) {
-            if (field != null && field.charTyped(codePoint, modifiers)) {
-                return true;
-            }
-        }
-        return super.charTyped(codePoint, modifiers);
-    }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
-
-    private void setRowVisible(int index, boolean visible, int rowY) {
-        if (index >= valueFields.size()) return;
-        EditBox field = valueFields.get(index);
-        Button applyButton = applyButtons.get(index);
-        Button toggleButton = toggleButtons.get(index);
-        if (field != null) {
-            field.visible = visible;
-            field.setY(rowY + 3);
-        }
-        if (applyButton != null) {
-            applyButton.visible = visible;
-            applyButton.setY(rowY + 2);
-        }
-        if (toggleButton != null) {
-            toggleButton.visible = visible;
-            toggleButton.setY(rowY + 2);
-        }
-    }
-
-    private void cycleType() {
-        List<String> types = data.maps().stream().map(OpenMatchConfigToolScreenS2CPacket.MapEntry::gameType).distinct().toList();
-        if (types.isEmpty()) return;
-        int index = types.indexOf(data.selectedType());
-        String nextType = types.get(index < 0 ? 0 : (index + 1) % types.size());
-        String nextMap = data.maps().stream()
-                .filter(map -> map.gameType().equals(nextType))
-                .findFirst()
-                .map(OpenMatchConfigToolScreenS2CPacket.MapEntry::mapName)
-                .orElse("");
-        select(nextType, nextMap);
-    }
-
-    private void cycleMap() {
-        List<OpenMatchConfigToolScreenS2CPacket.MapEntry> maps = data.maps().stream()
-                .filter(map -> map.gameType().equals(data.selectedType()))
-                .toList();
-        if (maps.isEmpty()) return;
-        int index = -1;
-        for (int i = 0; i < maps.size(); i++) {
-            if (maps.get(i).mapName().equals(data.selectedMap())) {
-                index = i;
-                break;
-            }
-        }
-        OpenMatchConfigToolScreenS2CPacket.MapEntry next = maps.get(index < 0 ? 0 : (index + 1) % maps.size());
-        select(next.gameType(), next.mapName());
-    }
-
-    private void refresh() {
-        FPSMatch.sendToServer(new MatchConfigToolActionC2SPacket(MatchConfigToolActionC2SPacket.Action.REFRESH,
-                data.selectedType(), data.selectedMap(), "", ""));
-    }
-
-    private void select(String gameType, String mapName) {
-        FPSMatch.sendToServer(new MatchConfigToolActionC2SPacket(MatchConfigToolActionC2SPacket.Action.SELECT, gameType, mapName, "", ""));
-    }
-
-    private void applySetting(MapRoomSettingInfo setting, EditBox field) {
-        FPSMatch.sendToServer(new MatchConfigToolActionC2SPacket(MatchConfigToolActionC2SPacket.Action.SET_SETTING,
-                data.selectedType(), data.selectedMap(), setting.name(), field.getValue()));
-    }
-
-    private void toggleSetting(MapRoomSettingInfo setting, Button button) {
-        boolean value = !Boolean.parseBoolean(setting.value());
-        button.setMessage(toggleLabel(value));
-        FPSMatch.sendToServer(new MatchConfigToolActionC2SPacket(MatchConfigToolActionC2SPacket.Action.SET_SETTING,
-                data.selectedType(), data.selectedMap(), setting.name(), String.valueOf(value)));
-    }
-
-    private Component selectedTypeLabel() {
-        return Component.literal(data.selectedType().isBlank() ? "-" : data.selectedType());
-    }
-
-    private Component selectedMapLabel() {
-        if (data.selectedMap().isBlank()) {
-            return Component.literal("-");
-        }
-        return data.maps().stream()
-                .filter(map -> map.gameType().equals(data.selectedType()) && map.mapName().equals(data.selectedMap()))
-                .findFirst()
-                .map(map -> Component.literal(map.displayName().isBlank() ? map.mapName() : map.displayName()))
-                .orElseGet(() -> Component.literal(data.selectedMap()));
-    }
-
-    private Component toggleLabel(boolean value) {
-        return Component.translatable(value ? "options.on" : "options.off");
-    }
-
-    private int panelWidth() {
-        return Math.min(560, width - 24);
-    }
-
-    private int panelLeft() {
-        return (width - panelWidth()) / 2;
-    }
-
-    private int listTop() {
-        return TOP + 54;
-    }
-
-    private int visibleRows() {
-        return Math.max(1, (height - 24 - listTop() - 10) / ROW_HEIGHT);
-    }
-
-    private int maxScroll() {
-        return Math.max(0, data.settings().size() - visibleRows());
-    }
-
-    private void drawClipped(GuiGraphics graphics, Component text, int x, int y, int color, int maxWidth) {
-        String value = text.getString();
-        if (font.width(value) > maxWidth) {
-            value = font.plainSubstrByWidth(value, maxWidth - font.width("...")) + "...";
-        }
-        graphics.drawString(font, value, x, y, color, false);
+        choices(content, "config/map-picker", tr(PREFIX + "choose_map"), actions, () -> {
+            choosingMap = false;
+            requestLayout();
+        });
     }
 }

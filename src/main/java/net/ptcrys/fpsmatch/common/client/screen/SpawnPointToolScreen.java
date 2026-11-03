@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class SpawnPointToolScreen extends Screen {
 
@@ -218,8 +219,13 @@ public class SpawnPointToolScreen extends Screen {
             return Component.translatable("gui.fpsm.spawn_point_tool.no_point");
         }
         SpawnPointData data = spawnPoints.get(selectedIndex);
-        return Component.literal(String.format("X %.1f Y %.1f Z %.1f  Yaw %.1f Pitch %.1f",
-                data.getX(), data.getY(), data.getZ(), data.getYaw(), data.getPitch()));
+        // 数值一律用 Locale.ROOT 固定点小数：不同语言下仍是点小数，且保持原有显示精度。
+        return Component.translatable("gui.fpsm.spawn_point_tool.detail",
+                String.format(Locale.ROOT, "%.1f", data.getX()),
+                String.format(Locale.ROOT, "%.1f", data.getY()),
+                String.format(Locale.ROOT, "%.1f", data.getZ()),
+                String.format(Locale.ROOT, "%.1f", data.getYaw()),
+                String.format(Locale.ROOT, "%.1f", data.getPitch()));
     }
 
     private void sendAction(SpawnPointToolActionC2SPacket.Action action) {

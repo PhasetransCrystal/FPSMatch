@@ -1,0 +1,201 @@
+// Internal classpath checks only: production classes stay in main and the FPSMatch JAR.
+def editorPath = 'net/ptcrys/fpsmatch/editor/'
+def pureLibraries = configurations.create('editorVerificationLibraries') {
+    canBeConsumed = false
+    transitive = false
+}
+dependencies { add(pureLibraries.name, 'com.google.code.gson:gson:2.10.1') }
+def compiler17 = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(17) }
+def strictCompile = { String taskName, String outputName, List<String> patterns, def compilePath ->
+    tasks.register(taskName, JavaCompile) {
+        group = 'verification'
+        description = 'Compile editor ' + outputName + ' with an isolated allowed classpath.'
+        source = fileTree('src/main/java') { patterns.each { include it } }
+        classpath = compilePath
+        destinationDirectory = layout.buildDirectory.dir('editor-verification/' + outputName)
+        javaCompiler = compiler17
+        options.release = 17
+        options.encoding = 'UTF-8'
+        options.sourcepath = files()
+        options.compilerArgs.addAll(['-proc:none', '-Xlint:all', '-Werror'])
+    }
+}
+def apiCheck = strictCompile('compileEditorApiVerification', 'api', [editorPath + 'api/**/*.java'], files())
+def apiClasses = files(apiCheck.flatMap { it.destinationDirectory }).builtBy(apiCheck)
+def coreCheck = strictCompile('compileEditorCoreVerification', 'core', [editorPath + 'core/**/*.java'], apiClasses + pureLibraries)
+def coreClasses = files(coreCheck.flatMap { it.destinationDirectory }).builtBy(coreCheck)
+def commonPatterns = ['codec', 'model', 'layout', 'ui', 'domain/item', 'domain/weapon', 'domain/spatial', 'domain/map'].collect {
+    editorPath + 'common/' + it + '/**/*.java'
+}
+// Public script checking front is Java-only; the private engine needs exact optional LuaJ.
+commonPatterns.add(editorPath + 'common/backend/tacz/script/*.java')
+// Viewport rectangles and transforms are pure; native View/GPU bridges are not.
+commonPatterns.addAll([editorPath + 'common/client/viewport/*.java', editorPath + 'common/client/viewport/math/**/*.java'])
+// Chunk-boundary picking stays Java-only even though the native viewport consumes it.
+commonPatterns.add(editorPath + 'common/client/workbench/WorkbenchLoadedChunkRay.java')
+def commonCheck = strictCompile('compileEditorCommonVerification', 'common', commonPatterns, apiClasses + coreClasses + pureLibraries)
+def commonClasses = files(commonCheck.flatMap { it.destinationDirectory }).builtBy(commonCheck)
+def storageCheck = strictCompile('compileEditorStorageVerification', 'storage', [editorPath + 'core/storage/**/*.java'], pureLibraries)
+def verifyBoundaries = tasks.register('verifyEditorBoundaries') {
+    group = 'verification'
+    description = 'Verify api, core, common pure code and storage without game/UI dependencies.'
+    dependsOn apiCheck, coreCheck, commonCheck, storageCheck
+}
+
+// Explicit client/Forge diagnostics share the test tree, not the ordinary Jupiter classpath.
+// The BO integration gate and their opt-in init tasks compile these against the host classpath.
+sourceSets.test.java {
+    exclude 'net/ptcrys/probe/binding/**'
+    exclude 'net/ptcrys/fpsmatch/editor/core/fontprobe/**'
+    exclude 'net/ptcrys/fpsmatch/editor/core/viewportprobe/**'
+    exclude 'net/ptcrys/fpsmatch/editor/core/nativeitemprobe/**'
+    exclude 'net/ptcrys/fpsmatch/editor/core/pinnedprobe/**'
+    exclude 'net/ptcrys/fpsmatch/editor/core/examples/PinnedPackConsumer.java'
+}
+
+// Java2D is a production client backend, with a separate strict/headless verification slice.
+// Pure UI remains independent of java.desktop and of this implementation.
+def experiments = [editorPath + 'common/text/java2d/**', editorPath + 'common/backend/tacz/**']
+sourceSets.test.java { experiments.each { exclude it } }
+// Deliberately replace the automatically constructed classpaths, avoiding Forge/Kotlin leakage.
+def experimentTestLibraries = configurations.create('editorExperimentalTestLibraries') {
+    canBeConsumed = false
+}
+dependencies {
+    add(experimentTestLibraries.name, 'org.junit.jupiter:junit-jupiter:6.0.1')
+    add(experimentTestLibraries.name, 'org.apiguardian:apiguardian-api:1.1.2')
+    add(experimentTestLibraries.name, 'org.junit.platform:junit-platform-launcher:6.0.1')
+}
+
+configurations {
+    taczScriptContainer { canBeConsumed = false; transitive = false }
+}
+dependencies {
+    taczScriptContainer 'maven.modrinth:timeless-and-classics-zero:1.1.7-hotfix'
+}
+
+// Keep the exact optional backend runtime out of the public API and resulting JAR.
+// The actual game integration must use the same TACZ-provided classes, never bundle a second VM.
+def containerFile = providers.gradleProperty('taczScriptContainer').map { file(it) }
+        .orElse(providers.provider { configurations.taczScriptContainer.singleFile })
+def extracted = layout.buildDirectory.dir('verified-luaj')
+def expected = [
+    'luaj-core-3.0.8-figura.jar': '6050678ca1dad5e2a4c401cc9ce968d282d30105b2ea46f79c30abccdfa30fbe',
+    'luaj-jse-3.0.8-figura.jar': '1783d249b5152c6f110c1bcca5fb0d4ef0075fc291c912f6b74e2bb61472e95e'
+]
+def hashFile = { File input ->
+    def digest = java.security.MessageDigest.getInstance('SHA-256')
+    input.withInputStream { stream ->
+        byte[] buffer = new byte[65536]
+        for (int count = stream.read(buffer); count != -1; count = stream.read(buffer)) {
+            digest.update(buffer, 0, count)
+        }
+    }
+    java.util.HexFormat.of().formatHex(digest.digest())
+}
+def extractRuntime = tasks.register('extractVerifiedLuaJ') {
+    inputs.file(containerFile)
+    inputs.property('expectedRuntimeHashes', expected)
+    outputs.files(expected.keySet().collect { name -> extracted.map { it.file(name) } })
+    doLast {
+        File source = containerFile.get()
+        if (hashFile(source) != 'd8cfadd19fd760573967d78e1bb25defda4c649c2655a8b033d9a70dd4caa176') {
+            throw new GradleException('Unexpected TACZ 1.1.7-hotfix container bytes')
+        }
+        Map<String, byte[]> verified = [:]
+        new java.util.zip.ZipFile(source).withCloseable { archive ->
+            expected.each { name, hash ->
+                def entry = archive.getEntry('META-INF/jarjar/' + name)
+                if (entry == null || entry.size < 0 || entry.size > 1048576) {
+                    throw new GradleException('Missing or oversized exact LuaJ runtime: ' + name)
+                }
+                byte[] bytes = archive.getInputStream(entry).withCloseable { it.readNBytes(1048577) }
+                if (bytes.length != entry.size || java.util.HexFormat.of().formatHex(
+                        java.security.MessageDigest.getInstance('SHA-256').digest(bytes)) != hash) {
+                    throw new GradleException('Unexpected exact LuaJ runtime bytes: ' + name)
+                }
+                verified[name] = bytes
+            }
+        }
+        def target = extracted.get().asFile
+        target.mkdirs()
+        verified.each { name, bytes -> new File(target, name).bytes = bytes }
+    }
+}
+def runtimeJars = files(expected.keySet().collect { name -> extracted.map { it.file(name) } }).builtBy(extractRuntime)
+// Runtime is provided by TACZ. Compile/check against its verified original nested jars,
+// never shade or package a second VM into FPSMatch.
+dependencies {
+    compileOnly runtimeJars
+    testRuntimeOnly runtimeJars
+}
+def registerExperiment = { String name, String pattern, def backendLibraries, boolean headless ->
+    def sources = sourceSets.create(name) {
+        java.setSrcDirs(['src/main/java'])
+        java.include pattern
+        resources.setSrcDirs([])
+    }
+    def tests = sourceSets.create(name + 'Test') {
+        java.setSrcDirs(['src/test/java'])
+        java.include pattern
+        resources.setSrcDirs(['src/test/resources'])
+    }
+    sources.compileClasspath = apiClasses + backendLibraries
+    sources.runtimeClasspath = sources.output + sources.compileClasspath
+    tests.compileClasspath = sources.output + apiClasses + backendLibraries + experimentTestLibraries
+    tests.runtimeClasspath = tests.output + tests.compileClasspath
+    [sources.compileJavaTaskName, tests.compileJavaTaskName].each { taskName ->
+        tasks.named(taskName, JavaCompile).configure {
+            javaCompiler = compiler17
+            options.release = 17
+            options.sourcepath = files()
+            options.compilerArgs.addAll(['-proc:none', '-Xlint:all', '-Werror'])
+        }
+    }
+    tasks.register(name + 'Test', Test) {
+        group = 'verification'
+        description = 'Explicit optional editor backend regression: ' + name
+        testClassesDirs = tests.output.classesDirs
+        classpath = tests.runtimeClasspath
+        dependsOn tests.classesTaskName
+        useJUnitPlatform()
+        maxHeapSize = '256m'
+        maxParallelForks = 1
+        if (headless) systemProperty 'java.awt.headless', 'true'
+    }
+}
+def java2dTest = registerExperiment('editorJava2d', experiments[0], commonClasses, true)
+def luaJTest = registerExperiment('editorLuaJ', experiments[1], runtimeJars, false)
+tasks.register('editorExperimentalTest') {
+    group = 'verification'
+    description = 'Explicitly run both optional Java2D and exact TACZ LuaJ regression suites.'
+    dependsOn java2dTest, luaJTest
+}
+def mapDataPatterns = ['model', 'codec', 'layout'].collect { editorPath + 'common/' + it + '/**' }
+def mapDataTest = tasks.register('editorMapDataTest', Test) {
+    group = 'verification'
+    description = 'Exact map-data/codec/layout regressions at the original 384 MiB heap.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    dependsOn tasks.named('testClasses')
+    mapDataPatterns.each { include it }
+    useJUnitPlatform()
+    maxHeapSize = '384m'
+    maxParallelForks = 1
+}
+tasks.named('test', Test).configure {
+    mapDataPatterns.each { exclude it }
+    maxHeapSize = '256m'
+    maxParallelForks = 1
+    // The merged project discovers former independent suites together. Keep the real
+    // 128 MiB retention-boundary case in a fresh 256 MiB worker, as verified in isolation.
+    forkEvery = 1
+    dependsOn storageCheck
+    // Storage child processes need test helpers, production classes, resources and runtime jars.
+    // Its public API walker needs a package-preserving root containing storage classes ONLY.
+    doFirst {
+        systemProperty 'storage.test.classpath', sourceSets.test.runtimeClasspath.asPath
+        systemProperty 'storage.main.classes', storageCheck.get().destinationDirectory.get().asFile.absolutePath
+    }
+}
+tasks.named('check').configure { dependsOn verifyBoundaries, mapDataTest }

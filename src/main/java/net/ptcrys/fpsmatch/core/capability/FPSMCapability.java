@@ -3,6 +3,7 @@ package net.ptcrys.fpsmatch.core.capability;
 import net.ptcrys.fpsmatch.common.command.FPSMHelpManager;
 import net.ptcrys.fpsmatch.common.event.register.RegisterFPSMCommandEvent;
 import net.ptcrys.fpsmatch.core.persistence.DataPersistenceException;
+import net.ptcrys.fpsmatch.core.persistence.RuntimeItemStackCodec;
 
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -18,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 基础能力接口，定义所有能力的通用规范
- * 
+ *
  * @param <H> 能力的持有者类型（如BaseTeam、BaseMap）
  * @apiNote 更多功能拓展请见：
  * @see Factory 注册在Manager的能力工厂 - 当command方法不为null时自动在指令树注册命令
@@ -67,7 +68,7 @@ public abstract class FPSMCapability<H> {
 
     /**
      * 能力工厂接口，负责创建能力实例
-     * 
+     *
      * @param <H> 持有者类型
      * @param <T> 能力类型
      */
@@ -83,7 +84,7 @@ public abstract class FPSMCapability<H> {
 
         /**
          * 创建能力实例
-         * 
+         *
          * @param holder 能力的持有者
          */
         T create(H holder);
@@ -97,7 +98,7 @@ public abstract class FPSMCapability<H> {
 
         /**
          * 能力相关的命令接口
-         * 
+         *
          * @see RegisterFPSMCommandEvent 命令注册相关
          */
         interface Command {
@@ -138,7 +139,7 @@ public abstract class FPSMCapability<H> {
                 }
             }
 
-            write(codec().decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> {
+            write(RuntimeItemStackCodec.owned(codec()).decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> {
                 throw new DataPersistenceException("Error decoding data from JSON", e);
             }).getFirst());
         }
@@ -156,7 +157,7 @@ public abstract class FPSMCapability<H> {
 
     /**
      * 支持网络同步接口
-     * 
+     *
      * @apiNote 你不应该在初始化能力时对Holder进行任何操作
      * @see FPSMCapability 使用init()方法对holder进行操作;
      */

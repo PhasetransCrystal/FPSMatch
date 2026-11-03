@@ -1,0 +1,166 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.nio.file.NoSuchFileException
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
+import java.nio.file.attribute.BasicFileAttributes
+
+// A Forge launch, not a Gradle Test worker: event subclasses must be transformed by ModLauncher.
+def nativeTests = sourceSets.create('nativeTest') {
+    compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+    runtimeClasspath += sourceSets.main.runtimeClasspath
+}
+// Do not forward nativeTest's plugin-injected dependencies (notably Kotlin stdlib) to Forge.
+def nativeItemJupiter = configurations.create('nativeItemJupiter') {
+    canBeConsumed = false
+    canBeResolved = false
+}
+configurations.nativeTestImplementation.extendsFrom(nativeItemJupiter)
+dependencies {
+    add(nativeItemJupiter.name, 'org.junit.jupiter:junit-jupiter-api:6.0.1')
+    add(nativeItemJupiter.name, 'org.junit.platform:junit-platform-launcher:6.0.1')
+    add(nativeItemJupiter.name, 'org.junit.jupiter:junit-jupiter-engine:6.0.1')
+}
+tasks.named(nativeTests.compileJavaTaskName, JavaCompile).configure {
+    options.release = 17
+    options.compilerArgs.add('-proc:none')
+}
+
+def attemptId = UUID.randomUUID().toString()
+// Deliberately no property/environment override for the game directory.
+Path nativeRoot = project.file('build/native-item-tests').toPath().toAbsolutePath().normalize()
+Path attempt = nativeRoot.resolve(attemptId)
+Path game = attempt.resolve('game')
+def noLinks = { Path path ->
+    Path cursor = path.root
+    for (Path part : path) {
+        cursor = cursor.resolve(part)
+        try {
+            def attrs = Files.readAttributes(cursor, BasicFileAttributes, LinkOption.NOFOLLOW_LINKS)
+            if (!attrs.isDirectory() || attrs.isSymbolicLink() || attrs.isOther()
+                    || cursor.toRealPath() != cursor.toAbsolutePath().normalize()) {
+                throw new GradleException('Native test refuses linked/reparsed directory: ' + cursor)
+            }
+        } catch (NoSuchFileException absent) {
+            break
+        }
+    }
+}
+def noInjection = {
+    ['JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', '_JAVA_OPTIONS'].each { key ->
+        if (System.getenv(key)?.trim()) throw new GradleException('Native test refuses JVM injection: ' + key)
+    }
+    if (System.properties.keySet().any { it.toString().startsWith('fpsmatch.storage.jdbc.') }
+            || gradle.startParameter.systemPropertiesArgs.keySet().any { it.startsWith('fpsmatch.storage.jdbc.') }) {
+        throw new GradleException('Native test refuses fpsmatch.storage.jdbc.* injection')
+    }
+}
+def prepareNative = tasks.register('prepareNativeItemTestDirectory') {
+    group = 'verification'
+    description = 'Create a fresh, isolated Forge native-test game directory.'
+    doLast {
+        noInjection()
+        noLinks(game)
+        if (Files.exists(attempt, LinkOption.NOFOLLOW_LINKS)) {
+            throw new GradleException('Native test attempt already exists: ' + attempt)
+        }
+        Files.createDirectories(nativeRoot)
+        noLinks(nativeRoot)
+        Files.createDirectory(attempt)
+        Files.createDirectory(game)
+        Path configDir = Files.createDirectory(game.resolve('fpsmatch'))
+        Files.writeString(configDir.resolve('config.json'), JsonOutput.toJson([
+                globalDataPath: game.resolve('fpsmatch/global').toString()
+        ]), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+        Files.writeString(attempt.resolve('attempt.json'), JsonOutput.toJson([
+                schema: 'Q69_NATIVE_ITEM_TESTS_V1', attemptId: attemptId, game: game.toString()
+        ]), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+        logger.lifecycle('Q69 native Forge attempt: ' + attempt)
+    }
+}
+
+// Preserve native acceptance in verification lifecycles; ordinary runs stay production-only.
+// Included builds receive their requested tasks from the enclosing build, so inspect
+// that invocation as well before configuring the Forge mod source sets.
+def nativeRequestNames = []
+for (def invocation = gradle; invocation != null; invocation = invocation.parent) {
+    nativeRequestNames.addAll(invocation.startParameter.taskNames.collect { it.tokenize(':').last() })
+}
+def nativeRequested = nativeRequestNames.any {
+    it in ['runNativeRuntimeTests', 'verifyNativeRuntimeTests',
+           'check', 'build', 'buildNeeded', 'buildDependents']
+}
+if (nativeRequested && nativeRequestNames.any { it.startsWith('run') && it != 'runNativeRuntimeTests' }) {
+    throw new GradleException('Native verification cannot be combined with an ordinary game run')
+}
+if (nativeRequested) {
+    legacyForge.mods.named('fpsmatch') { sourceSet(nativeTests) }
+}
+def nativeRun = legacyForge.runs.create('nativeRuntimeTests') {
+    type = 'gameTestServer'
+    sourceSet = sourceSets.main
+    gameDirectory = game.toFile()
+    systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+    systemProperty 'q69.native.game', game.toString()
+    taskBefore(prepareNative)
+}
+nativeRun.additionalRuntimeClasspathConfiguration.extendsFrom(nativeItemJupiter)
+tasks.named('runNativeRuntimeTests').configure {
+    dependsOn(nativeTests.classesTaskName, prepareNative)
+    doFirst {
+        noInjection()
+        noLinks(game)
+        if (nativeRun.gameDirectory.get().asFile.toPath().toAbsolutePath().normalize() != game) {
+            throw new GradleException('Native game path override refused')
+        }
+        if (nativeRun.systemProperties.get().get('q69.native.game') != game.toString()) {
+            throw new GradleException('Native evidence path override refused')
+        }
+        def injected = nativeRun.jvmArguments.get().any {
+            it.startsWith('-javaagent:') || it.startsWith('-agentlib:') || it.startsWith('-agentpath:')
+                    || it.startsWith('-Dfpsmatch.storage.jdbc.')
+        }
+        if (injected || nativeRun.systemProperties.get().keySet().any { it.startsWith('fpsmatch.storage.jdbc.') }) {
+            throw new GradleException('Native run JVM/JDBC injection refused')
+        }
+        Files.writeString(attempt.resolve('launch-requested.json'), JsonOutput.toJson([
+                schema: 'Q69_NATIVE_ITEM_TESTS_V1', at: java.time.Instant.now().toString()
+        ]), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+    }
+}
+
+def verifyNative = tasks.register('verifyNativeRuntimeTests') {
+    group = 'verification'
+    description = 'Require successful real Forge exit and complete native Jupiter evidence.'
+    dependsOn 'runNativeRuntimeTests'
+    doLast {
+        noLinks(attempt)
+        def readReport = { String name ->
+            Path path = attempt.resolve(name)
+            def attrs = Files.readAttributes(path, BasicFileAttributes, LinkOption.NOFOLLOW_LINKS)
+            if (!attrs.isRegularFile() || attrs.isSymbolicLink() || attrs.isOther()) {
+                throw new GradleException('Native report must be a regular file: ' + path)
+            }
+            new JsonSlurper().parse(path.toFile())
+        }
+        def started = readReport('native-started.json')
+        def result = readReport('native-results.json')
+        Set expected = file('src/nativeTest/resources/native-item-expected-methods.txt').readLines('UTF-8')
+                .findAll { !it.isBlank() }.toSet()
+        if (expected.size() != 106 || started.schema != 'Q69_NATIVE_ITEM_TESTS_V1'
+                || result.schema != started.schema || result.status != 'PASS'
+                || result.processId != started.processId || result.processStartedAt != started.processStartedAt
+                || result.ownerThreadId != started.ownerThreadId || result.expectedTests.toSet() != expected
+                || result.tests.size() != expected.size() || result.tests.collect { it.id }.toSet() != expected
+                || result.tests.any { it.status != 'SUCCESSFUL' }
+                || result.containers.isEmpty() || result.containers.any { it.status != 'SUCCESSFUL' }
+                || result.discoveredTests != expected.size() || result.succeededTests != expected.size()
+                || result.failedTests != 0 || result.abortedTests != 0 || result.skippedTests != 0) {
+            throw new GradleException('Incomplete/failed native Jupiter evidence: ' + attempt)
+        }
+        logger.lifecycle('Q69 native Forge gate PASS: 106 actual methods; evidence ' + attempt)
+    }
+}
+tasks.named('check').configure { dependsOn tasks.named('test'), verifyNative }

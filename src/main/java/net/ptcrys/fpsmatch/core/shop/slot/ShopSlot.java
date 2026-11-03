@@ -5,10 +5,12 @@ import net.ptcrys.fpsmatch.common.drop.DropType;
 import net.ptcrys.fpsmatch.common.event.PlayerObtainItemEvent;
 import net.ptcrys.fpsmatch.compat.gun.GunCompatManager;
 import net.ptcrys.fpsmatch.core.FPSMCore;
+import net.ptcrys.fpsmatch.core.persistence.RuntimeItemStackCodec;
 import net.ptcrys.fpsmatch.core.shop.INamedType;
 import net.ptcrys.fpsmatch.core.shop.ShopData;
 import net.ptcrys.fpsmatch.core.shop.event.CheckCostEvent;
 import net.ptcrys.fpsmatch.core.shop.event.ShopSlotChangeEvent;
+import net.ptcrys.fpsmatch.core.shop.functional.GroupReturnDependent;
 import net.ptcrys.fpsmatch.core.shop.functional.ListenerModule;
 import net.ptcrys.fpsmatch.util.FPSMUtil;
 
@@ -30,8 +32,8 @@ import java.util.function.Supplier;
 
 public class ShopSlot {
 
-    public static final Codec<ShopSlot> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ItemStack.CODEC.fieldOf("ItemStack").forGetter(ShopSlot::process),
+    public static final Codec<ShopSlot> CODEC = RuntimeItemStackCodec.owned(RecordCodecBuilder.create(instance -> instance.group(
+            RuntimeItemStackCodec.CODEC.fieldOf("ItemStack").forGetter(ShopSlot::process),
             Codec.INT.fieldOf("defaultCost").forGetter(ShopSlot::getDefaultCost),
             Codec.INT.fieldOf("maxBuyCount").forGetter(ShopSlot::getMaxBuyCount),
             Codec.INT.fieldOf("groupId").forGetter(ShopSlot::getGroupId),
@@ -46,7 +48,7 @@ public class ShopSlot {
                     }
                 });
                 return shopSlot;
-            }));
+            })));
 
     // 物品供应器，用于提供物品栈
     public Supplier<ItemStack> itemSupplier;
@@ -70,10 +72,32 @@ public class ShopSlot {
     // 索引
     private int index = -1;
     private final ArrayList<ListenerModule> listener = new ArrayList<>();
+    private Object listenerReferenceVersion = new Object();
+    private int listenerMutationDepth;
+
+    protected void requireDefinitionMutable() {}
+
+    protected void requireRuntimeState() {}
+
+    protected final Object listenerReferenceVersion() {
+        return listenerReferenceVersion;
+    }
+
+    protected final boolean isListenerMutationActive() {
+        return listenerMutationDepth != 0;
+    }
+
+    protected final boolean hasListenerReferences(List<ListenerModule> references) {
+        if (listener.size() != references.size()) return false;
+        for (int i = 0; i < listener.size(); i++) {
+            if (listener.get(i) != references.get(i)) return false;
+        }
+        return true;
+    }
 
     /**
      * 获取当前价格
-     * 
+     *
      * @return 当前价格
      */
     public int getCost() {
@@ -81,10 +105,12 @@ public class ShopSlot {
     }
 
     public void setCost(int count) {
+        requireRuntimeState();
         this.cost = count;
     }
 
     public void setDefaultCost(int count) {
+        requireDefinitionMutable();
         this.defaultCost = count;
     }
 
@@ -94,7 +120,7 @@ public class ShopSlot {
 
     /**
      * 获取组ID
-     * 
+     *
      * @return 组ID
      */
     public int getGroupId() {
@@ -102,12 +128,13 @@ public class ShopSlot {
     }
 
     public void setGroupId(int groupId) {
+        requireDefinitionMutable();
         this.groupId = groupId;
     }
 
     /**
      * 获取已购买数量
-     * 
+     *
      * @return 已购买数量
      */
     public int getBoughtCount() {
@@ -120,7 +147,7 @@ public class ShopSlot {
 
     /**
      * 获取最大购买数量
-     * 
+     *
      * @return 最大购买数量
      */
     public int getMaxBuyCount() {
@@ -129,7 +156,7 @@ public class ShopSlot {
 
     /**
      * 判断是否锁定
-     * 
+     *
      * @return 是否锁定
      */
     public boolean isLocked() {
@@ -138,17 +165,22 @@ public class ShopSlot {
 
     /**
      * 处理物品，返回一个新的物品栈
-     * 
+     *
      * @return 新的物品栈
      */
     public ItemStack process() {
         return itemSupplier.get();
     }
 
+    public boolean isEmptyItem() {
+        return process().isEmpty();
+    }
+
     /**
      * 重置当前价格为默认价格
      */
     public void resetCost() {
+        requireRuntimeState();
         cost = defaultCost;
     }
 
@@ -156,15 +188,18 @@ public class ShopSlot {
      * 设置为锁定状态
      */
     public void lock() {
+        requireRuntimeState();
         locked = true;
     }
 
     public void lock(int boughtCount) {
+        requireRuntimeState();
         locked = true;
         this.boughtCount = Math.min(this.getMaxBuyCount(), boughtCount);
     }
 
     public void lockPickedUp(int count) {
+        requireRuntimeState();
         carriedCount = Math.min(Math.max(0, maxBuyCount - boughtCount), carriedCount + Math.max(0, count));
         locked = true;
     }
@@ -173,10 +208,12 @@ public class ShopSlot {
      * 设置为非锁定状态
      */
     public void unlock() {
+        requireRuntimeState();
         locked = false;
     }
 
     public void unlock(int count) {
+        requireRuntimeState();
         int remaining = Math.max(0, count);
         int boughtRemoved = Math.min(boughtCount, remaining);
         boughtCount -= boughtRemoved;
@@ -188,6 +225,7 @@ public class ShopSlot {
     }
 
     public void reconcileCarriedItems(int count) {
+        requireRuntimeState();
         carriedCount = Math.min(maxBuyCount, Math.max(0, count));
         boughtCount = 0;
         locked = carriedCount >= maxBuyCount;
@@ -195,16 +233,17 @@ public class ShopSlot {
 
     /**
      * 设置最大购买数量
-     * 
+     *
      * @param maxBuyCount 最大购买数量
      */
     public void setMaxBuyCount(int maxBuyCount) {
+        requireDefinitionMutable();
         this.maxBuyCount = maxBuyCount;
     }
 
     /**
      * 判断是否有组
-     * 
+     *
      * @return 是否有组
      */
     public boolean haveGroup() {
@@ -213,7 +252,7 @@ public class ShopSlot {
 
     /**
      * 设置索引
-     * 
+     *
      * @param index 索引
      */
     public void setIndex(int index) {
@@ -224,7 +263,7 @@ public class ShopSlot {
 
     /**
      * 获取索引
-     * 
+     *
      * @return 索引
      */
     public int getIndex() {
@@ -233,7 +272,7 @@ public class ShopSlot {
 
     /**
      * 构造函数，用于创建一个新的物品槽位
-     * 
+     *
      * @param itemStack   物品栈
      * @param defaultCost 默认价格
      */
@@ -250,7 +289,7 @@ public class ShopSlot {
 
     /**
      * 构造函数，用于创建一个新的物品槽位，并设置最大购买数量
-     * 
+     *
      * @param itemStack   物品栈
      * @param defaultCost 默认价格
      * @param maxBuyCount 最大购买数量
@@ -262,7 +301,7 @@ public class ShopSlot {
 
     /**
      * 构造函数，用于创建一个新的物品槽位，并设置组ID和返回检查器
-     * 
+     *
      * @param itemStack   物品
      * @param defaultCost 默认价格
      * @param maxBuyCount 最大购买数量
@@ -275,7 +314,7 @@ public class ShopSlot {
 
     /**
      * 构造函数，用于创建一个新的物品槽位，并设置组ID和返回检查器
-     * 
+     *
      * @param supplier    物品供应器
      * @param defaultCost 默认价格
      * @param maxBuyCount 最大购买数量
@@ -294,21 +333,25 @@ public class ShopSlot {
 
     /**
      * 判断是否可以购买
-     * 
+     *
      * @param money 当前金钱
      * @return 是否可以购买
      */
     public boolean canBuy(int money) {
+        requireRuntimeState();
         return ShopSlotPurchaseRules.canBuy(money, cost, getCountAgainstLimit(), maxBuyCount, locked);
     }
 
     /**
      * 判断是否可以返回
-     * 
+     *
      * @return 是否可以返回
      */
     public boolean canReturn(Player player) {
-        if (player.getInventory().clearOrCountMatchingItems(this.returningChecker, 0, player.inventoryMenu.getCraftSlots()) > 0) {
+        requireRuntimeState();
+        int matching = player.getInventory().clearOrCountMatchingItems(this.returningChecker, 0, player.inventoryMenu.getCraftSlots());
+        requireRuntimeState();
+        if (matching > 0) {
             return boughtCount > 0 && !locked;
         } else {
             return false;
@@ -331,73 +374,150 @@ public class ShopSlot {
      * 重置物品槽位
      */
     public void reset() {
+        requireRuntimeState();
         cost = defaultCost;
         boughtCount = 0;
         carriedCount = 0;
         locked = false;
-        this.listener.forEach((listenerModule -> listenerModule.onReset(this)));
+        this.listener.forEach(listenerModule -> {
+            requireRuntimeState();
+            listenerModule.onReset(this);
+            requireRuntimeState();
+        });
     }
 
     /**
      * 当组内物品槽位发生变化时调用
      */
     public final void onGroupSlotChanged(ShopSlotChangeEvent event) {
+        requireRuntimeState();
         if (!event.isCancelLogic() && this.isLocked() && this.getBoughtCount() >= 1) {
             int i = event.player.getInventory().clearOrCountMatchingItems(this.returningChecker, 1, event.player.inventoryMenu.getCraftSlots());
             if (i > 0) {
                 this.boughtCount--;
                 this.unlock();
-                FPSMUtil.playerDropMatchItem(event.player, this.process().copy());
+                FPSMUtil.playerDropMatchItem(event.player, createGroupDropItem());
                 event.setCancelLogic(true);
             }
         }
         if (!this.listener.isEmpty()) {
-            listener.forEach(listenerModule -> listenerModule.onChange(event));
+            listener.forEach(listenerModule -> {
+                requireRuntimeState();
+                listenerModule.onChange(event);
+                requireRuntimeState();
+            });
         }
     }
 
     public void handleCheckCostEvent(CheckCostEvent event) {
-        listener.forEach(listenerModule -> listenerModule.onCostCheck(event, this));
+        requireRuntimeState();
+        listener.forEach(listenerModule -> {
+            requireRuntimeState();
+            listenerModule.onCostCheck(event, this);
+            requireRuntimeState();
+        });
     }
 
     public void addListener(ListenerModule listener) {
-        this.listener.add(listener);
-        this.listener.sort(Comparator.comparingInt(ListenerModule::getPriority).reversed());
+        requireDefinitionMutable();
+        listenerReferenceVersion = new Object();
+        listenerMutationDepth++;
+        try {
+            this.listener.add(listener);
+            this.listener.sort(Comparator.comparingInt(ListenerModule::getPriority).reversed());
+        } finally {
+            listenerMutationDepth--;
+        }
     }
 
     public void replaceListener(ListenerModule replacement) {
-        for (int i = 0; i < listener.size(); i++) {
-            if (listener.get(i).getName().equals(replacement.getName())) listener.set(i, replacement);
+        requireDefinitionMutable();
+        listenerReferenceVersion = new Object();
+        listenerMutationDepth++;
+        try {
+            for (int i = 0; i < listener.size(); i++) {
+                if (listener.get(i).getName().equals(replacement.getName())) listener.set(i, replacement);
+            }
+            listener.sort(Comparator.comparingInt(ListenerModule::getPriority).reversed());
+        } finally {
+            listenerMutationDepth--;
         }
-        listener.sort(Comparator.comparingInt(ListenerModule::getPriority).reversed());
     }
 
     public List<String> getListenerNames() {
+        requireRuntimeState();
         List<String> names = new ArrayList<>();
-        this.listener.forEach(listenerModule -> names.add(listenerModule.getName()));
+        this.listener.forEach(listenerModule -> {
+            requireRuntimeState();
+            String name = listenerModule.getName();
+            requireRuntimeState();
+            names.add(name);
+        });
         return names;
     }
 
     /**
+     * Snapshot of the actual listener references in dispatch order. This does not
+     * invoke callbacks; the modules themselves remain mutable runtime objects.
+     */
+    public List<ListenerModule> getListenerModules() {
+        return List.copyOf(listener);
+    }
+
+    protected final void copyListenerReferencesTo(ShopSlot target) {
+        target.requireDefinitionMutable();
+        target.listenerReferenceVersion = new Object();
+        target.listenerMutationDepth++;
+        try {
+            target.listener.addAll(listener);
+        } finally {
+            target.listenerMutationDepth--;
+        }
+    }
+
+    public boolean requiresGroupReturn() {
+        requireRuntimeState();
+        return listener.stream().anyMatch(module -> {
+            if (module instanceof GroupReturnDependent) return true;
+            requireRuntimeState();
+            String name = module.getName();
+            requireRuntimeState();
+            return name.contains("changeItem");
+        });
+    }
+
+    protected ItemStack createGroupDropItem() {
+        return process().copy();
+    }
+
+    /**
      * 购买物品 不要直接使用！从ShopData层判定与调用
-     * 
+     *
      * @param player 玩家
      * @param money  当前金钱
      * @return 购买后剩余金钱
      */
     public int buy(ServerPlayer player, int money) {
+        requireRuntimeState();
         ItemStack itemStack = FPSMUtil.preparePlayerItem(player, process());
+        requireRuntimeState();
         ItemStack obtainedItem = itemStack.copy();
+        requireRuntimeState();
         DropType type = DropType.getItemDropType(itemStack);
+        requireRuntimeState();
 
         checkAndHandleExistingItems(player, type);
+        requireRuntimeState();
 
         boolean delivered = FPSMUtil.addPreparedItemToPlayerInventory(player, itemStack);
+        requireRuntimeState();
         if (!delivered) {
             FPSMUtil.playerDropMatchItem(player, itemStack);
+            requireRuntimeState();
         }
 
         MinecraftForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, obtainedItem));
+        requireRuntimeState();
         boughtCount++;
 
         return money == -1 ? money : money - cost;
@@ -442,10 +562,11 @@ public class ShopSlot {
     // 同上
     /**
      * 返回物品
-     * 
+     *
      * @param player 玩家
      */
     public void returnItem(Player player) {
+        requireRuntimeState();
         returnItem(player, 1);
     }
 
@@ -456,15 +577,26 @@ public class ShopSlot {
      * @param count  返回数量
      */
     public void returnItem(Player player, int count) {
+        requireRuntimeState();
         count = Math.min(boughtCount, count);
         player.getInventory().clearOrCountMatchingItems(returningChecker, count, player.inventoryMenu.getCraftSlots());
+        requireRuntimeState();
         player.getInventory().setChanged();
+        requireRuntimeState();
         player.inventoryMenu.broadcastChanges();
+        requireRuntimeState();
         boughtCount -= count;
     }
 
     public void removeListenerModule(String module) {
-        this.listener.removeIf(listenerModule -> listenerModule.getName().equals(module));
+        requireDefinitionMutable();
+        listenerReferenceVersion = new Object();
+        listenerMutationDepth++;
+        try {
+            this.listener.removeIf(listenerModule -> listenerModule.getName().equals(module));
+        } finally {
+            listenerMutationDepth--;
+        }
     }
 
     public ShopSlot copy() {
@@ -474,7 +606,7 @@ public class ShopSlot {
         }
         ShopSlot slot = new ShopSlot(itemStack::copy, this.defaultCost, this.maxBuyCount, this.groupId, usesDefaultReturningChecker ? null : this.returningChecker);
         slot.setIndex(this.index);
-        slot.listener.addAll(this.listener);
+        copyListenerReferencesTo(slot);
         return slot;
     }
 

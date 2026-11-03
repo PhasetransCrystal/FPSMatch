@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.mojang.datafixers.util.Pair;
@@ -25,10 +26,32 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 同时支持广播事件以处理槽位变更和成本检查。
  */
 public class ShopData<T extends Enum<T> & INamedType> {
+
     private static final java.util.concurrent.atomic.AtomicLong NEXT_REVISION = new java.util.concurrent.atomic.AtomicLong();
     private long revision;
 
-    public long getRevision() { return revision; }
+    public long getRevision() {
+        requireRuntimeState();
+        return revision;
+    }
+
+    protected void requireRuntimeState() {}
+
+    protected void requireRuntimeGraph() {
+        requireRuntimeState();
+    }
+
+    protected void requireRuntimeSlot(ShopSlot slot) {
+        requireRuntimeState();
+    }
+
+    protected void requireDefinitionMutable() {}
+
+    /** Install an already validated fixed graph without virtual validation hooks. */
+    protected ShopData(ImmutableMap<T, ImmutableList<ShopSlot>> fixedData, int money) {
+        installData(fixedData);
+        this.money = money;
+    }
 
     private int maxMoney = 16000;
 
@@ -64,7 +87,12 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param shopData 商店数据
      */
     public <E extends ImmutableList<ShopSlot>> void setDoneData(Map<T, E> shopData) {
+        requireDefinitionMutable();
         checkData(shopData, shopData.size());
+        installData(shopData);
+    }
+
+    private void installData(Map<T, ? extends ImmutableList<ShopSlot>> shopData) {
         revision = NEXT_REVISION.incrementAndGet();
         // 赋值给 data 字段
         data.clear();
@@ -105,6 +133,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param data 商店数据
      */
     public <E extends List<ShopSlot>> void checkData(Map<T, E> data, int checker) {
+        requireRuntimeState();
         // 获取枚举类的所有值
         List<T> enumConstants = data.keySet().stream().toList();
         int typeN = enumConstants.size();
@@ -129,6 +158,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @return 商店数据
      */
     public Map<T, ImmutableList<ShopSlot>> getData() {
+        requireRuntimeState();
         return data;
     }
 
@@ -138,6 +168,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param money 玩家的金钱数量
      */
     public void setMoney(int money) {
+        requireRuntimeState();
         // 保留 -1（无限金钱）哨兵，与 unlimited() 语义一致；
         // 否则 addMoney/reduceMoney 中的 unlimited() 短路分支形同虚设（-1 在入口即被夹成 0）
         if (money == -1) {
@@ -153,6 +184,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param money 减少的金钱数量
      */
     public void reduceMoney(int money) {
+        requireRuntimeState();
         if (unlimited()) return;
         this.money = Math.max(0, this.money -= Math.max(0, money));
     }
@@ -163,6 +195,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param money 增加的金钱数量
      */
     public void addMoney(int money) {
+        requireRuntimeState();
         if (unlimited()) return;
         this.money = Math.min(getMaxMoney(), this.money += Math.max(0, money));
     }
@@ -174,6 +207,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @return 商店槽位列表
      */
     public List<ShopSlot> getShopSlotsByType(T type) {
+        requireRuntimeState();
         return this.data.get(type);
     }
 
@@ -183,10 +217,12 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @return 玩家的金钱数量
      */
     public int getMoney() {
+        requireRuntimeState();
         return this.money;
     }
 
     public boolean unlimited() {
+        requireRuntimeState();
         return this.money == -1;
     }
 
@@ -201,16 +237,21 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param action 操作类型
      */
     public ShopActionResult handleButton(ServerPlayer player, T type, int index, ShopAction action) {
+        requireRuntimeState();
+        requireRuntimeGraph();
         List<ShopSlot> shopSlotList = data.get(type);
         if (shopSlotList == null || index < 0 || index >= shopSlotList.size()) {
+            requireRuntimeGraph();
             return ShopActionResult.failure(ShopActionResult.Code.INVALID_REQUEST);
         }
         ShopSlot currentSlot = shopSlotList.get(index);
 
-        return switch (action) {
+        ShopActionResult result = switch (action) {
             case BUY -> this.handleBuy(player, currentSlot);
             case RETURN -> this.handleReturn(player, currentSlot);
         };
+        requireRuntimeGraph();
+        return result;
     }
 
     /**
@@ -222,13 +263,20 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param currentSlot 当前槽位
      */
     protected ShopActionResult handleBuy(ServerPlayer player, ShopSlot currentSlot) {
+        requireRuntimeState();
         if (currentSlot.isLocked() || currentSlot.getCountAgainstLimit() >= currentSlot.getMaxBuyCount()) {
             return ShopActionResult.failure(ShopActionResult.Code.LOCKED_OR_MAX_COUNT);
         }
         boolean check = this.broadcastCostCheckEvent(player, currentSlot);
+        requireRuntimeState();
+        requireRuntimeSlot(currentSlot);
         if (check || currentSlot.canBuy(this.money)) {
             this.broadcastGroupChangeEvent(player, currentSlot, 1);
-            this.setMoney(currentSlot.buy(player, this.money));
+            requireRuntimeState();
+            int remainingMoney = currentSlot.buy(player, this.money);
+            requireRuntimeState();
+            requireRuntimeSlot(currentSlot);
+            this.setMoney(remainingMoney);
             return ShopActionResult.success();
         }
         return ShopActionResult.failure(ShopActionResult.Code.INSUFFICIENT_FUNDS);
@@ -243,20 +291,25 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param currentSlot 当前槽位
      */
     protected ShopActionResult handleReturn(ServerPlayer player, ShopSlot currentSlot) {
+        requireRuntimeState();
         AtomicBoolean checkFlag = new AtomicBoolean(true);
         List<ShopSlot> groupSlot = currentSlot.haveGroup() ? this.grouped.get(currentSlot.getGroupId()).stream().filter((slot) -> slot != currentSlot).toList() : new ArrayList<>();
         for (ShopSlot slot : groupSlot) {
-            slot.getListenerNames().forEach(name -> {
-                if (name.contains("changeItem") && slot.getBoughtCount() > 0 && !slot.canReturn(player)) {
-                    checkFlag.set(false);
-                }
-            });
+            requireRuntimeState();
+            if (slot.requiresGroupReturn() && slot.getBoughtCount() > 0 && !slot.canReturn(player)) {
+                checkFlag.set(false);
+            }
+            requireRuntimeState();
+            requireRuntimeSlot(slot);
+            requireRuntimeSlot(currentSlot);
         }
 
         if (currentSlot.canReturn(player) && checkFlag.get()) {
             this.broadcastGroupChangeEvent(player, currentSlot, -1);
             this.addMoney(currentSlot.getCost());
             currentSlot.returnItem(player);
+            requireRuntimeState();
+            requireRuntimeSlot(currentSlot);
             return ShopActionResult.success();
         }
         return ShopActionResult.failure(ShopActionResult.Code.CANNOT_RETURN);
@@ -270,10 +323,20 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param player 玩家对象
      */
     public void lockShopSlots(ServerPlayer player) {
+        requireRuntimeState();
+        requireRuntimeGraph();
         List<NonNullList<ItemStack>> items = ImmutableList.of(player.getInventory().items, player.getInventory().armor, player.getInventory().offhand);
         data.values().forEach(shopSlots -> shopSlots.forEach(shopSlot -> {
             int count = items.stream().flatMap(Collection::stream)
-                    .filter(itemStack -> !itemStack.isEmpty() && shopSlot.returningChecker.test(itemStack))
+                    .filter(itemStack -> {
+                        requireRuntimeState();
+                        requireRuntimeSlot(shopSlot);
+                        if (itemStack.isEmpty()) return false;
+                        boolean matches = shopSlot.returningChecker.test(itemStack);
+                        requireRuntimeState();
+                        requireRuntimeSlot(shopSlot);
+                        return matches;
+                    })
                     .mapToInt(ItemStack::getCount).sum();
             if (count == 0) {
                 if (shopSlot.getCountAgainstLimit() > 0) shopSlot.reset();
@@ -281,6 +344,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
                 shopSlot.reconcileCarriedItems(count);
             }
         }));
+        requireRuntimeGraph();
     }
 
     /**
@@ -293,9 +357,17 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @return 如果检查通过，返回 true；否则返回 false
      */
     protected boolean broadcastCostCheckEvent(ServerPlayer player, ShopSlot currentSlot) {
+        requireRuntimeState();
         List<ShopSlot> groupSlot = currentSlot.haveGroup() ? this.grouped.get(currentSlot.getGroupId()).stream().filter((slot) -> slot != currentSlot).toList() : new ArrayList<>();
         CheckCostEvent event = new CheckCostEvent(player, currentSlot.getCost());
-        groupSlot.forEach(slot -> slot.handleCheckCostEvent(event));
+        groupSlot.forEach(slot -> {
+            requireRuntimeState();
+            requireRuntimeSlot(slot);
+            slot.handleCheckCostEvent(event);
+            requireRuntimeState();
+            requireRuntimeSlot(slot);
+            requireRuntimeSlot(currentSlot);
+        });
 
         return event.success(this.money, this.maxMoney);
     }
@@ -310,11 +382,17 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param flag        变更标志（1 表示购买，-1 表示退回）
      */
     protected void broadcastGroupChangeEvent(ServerPlayer player, ShopSlot currentSlot, int flag) {
+        requireRuntimeState();
         List<ShopSlot> groupSlot = currentSlot.haveGroup() ? this.grouped.get(currentSlot.getGroupId()).stream().filter((slot) -> slot != currentSlot).toList() : new ArrayList<>();
 
         groupSlot.forEach(slot -> {
+            requireRuntimeState();
+            requireRuntimeSlot(slot);
             ShopSlotChangeEvent event = new ShopSlotChangeEvent(slot, player, this.money, flag);
             slot.onGroupSlotChanged(event);
+            requireRuntimeState();
+            requireRuntimeSlot(slot);
+            requireRuntimeSlot(currentSlot);
             this.setMoney(event.getMoney());
         });
     }
@@ -327,22 +405,40 @@ public class ShopData<T extends Enum<T> & INamedType> {
      */
     @Nullable
     public Pair<T, ShopSlot> checkItemStackIsInData(ItemStack itemStack) {
-        if (itemStack.isEmpty()) return null;
-        for (Map.Entry<T, ImmutableList<ShopSlot>> entry : data.entrySet()) {
-            for (ShopSlot slot : entry.getValue()) {
-                if (!slot.process().isEmpty() && slot.returningChecker.test(itemStack)) {
-                    return new Pair<>(entry.getKey(), slot);
+        requireRuntimeState();
+        requireRuntimeGraph();
+        Pair<T, ShopSlot> result = null;
+        if (!itemStack.isEmpty()) {
+            search:
+            for (Map.Entry<T, ImmutableList<ShopSlot>> entry : data.entrySet()) {
+                for (ShopSlot slot : entry.getValue()) {
+                    requireRuntimeState();
+                    boolean empty = slot.isEmptyItem();
+                    requireRuntimeState();
+                    requireRuntimeSlot(slot);
+                    if (!empty) {
+                        boolean matches = slot.returningChecker.test(itemStack);
+                        requireRuntimeState();
+                        requireRuntimeSlot(slot);
+                        if (matches) {
+                            result = new Pair<>(entry.getKey(), slot);
+                            break search;
+                        }
+                    }
                 }
             }
         }
-        return null;
+        requireRuntimeGraph();
+        return result;
     }
 
     public int getMaxMoney() {
+        requireRuntimeState();
         return maxMoney;
     }
 
     public void setMaxMoney(int maxMoney) {
+        requireRuntimeState();
         this.maxMoney = maxMoney;
     }
 }

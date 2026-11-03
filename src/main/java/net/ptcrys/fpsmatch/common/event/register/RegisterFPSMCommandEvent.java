@@ -42,7 +42,7 @@ public class RegisterFPSMCommandEvent extends Event {
 
     /**
      * 注册命令帮助信息
-     * 
+     *
      * @param commandPath 命令路径，如 "fpsm map modify capability mycap"
      * @param description 命令描述
      */
@@ -52,7 +52,7 @@ public class RegisterFPSMCommandEvent extends Event {
 
     /**
      * 注册命令帮助信息
-     * 
+     *
      * @param commandPath    命令路径，如 "fpsm map modify capability mycap"
      * @param descriptionKey 命令描述的语言键
      */
@@ -62,7 +62,7 @@ public class RegisterFPSMCommandEvent extends Event {
 
     /**
      * 注册命令参数
-     * 
+     *
      * @param commandPath 命令路径，如 "fpsm map modify capability mycap"
      * @param parameters  参数列表，如 "amount"
      */

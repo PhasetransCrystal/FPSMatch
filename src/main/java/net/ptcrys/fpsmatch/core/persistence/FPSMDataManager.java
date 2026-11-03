@@ -2,6 +2,7 @@ package net.ptcrys.fpsmatch.core.persistence;
 
 import net.ptcrys.fpsmatch.FPSMatch;
 import net.ptcrys.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
+import net.ptcrys.fpsmatch.core.map.BaseMap;
 import net.ptcrys.fpsmatch.core.persistence.storage.DocumentStore;
 import net.ptcrys.fpsmatch.core.persistence.storage.ExecutorShutdown;
 import net.ptcrys.fpsmatch.core.persistence.storage.FileDocumentStore;
@@ -21,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -79,6 +81,15 @@ public class FPSMDataManager {
         MinecraftForge.EVENT_BUS.post(new RegisterFPSMSaveDataEvent(this));
     }
 
+    FPSMDataManager(Path level, Path global, DocumentStore store, boolean databaseDefinitions) {
+        this.levelDataPath = Objects.requireNonNull(level, "level");
+        this.globalDataPath = Objects.requireNonNull(global, "global");
+        this.documentStore = Objects.requireNonNull(store, "store");
+        this.databaseDefinitions = databaseDefinitions;
+        PersistenceUtils.ensureDirectoryExists(levelDataPath);
+        PersistenceUtils.ensureDirectoryExists(globalDataPath);
+    }
+
     // 注册数据类型
     public <T> void registerData(Class<T> clazz, String folderName, SaveHolder<T> holder) {
         String fixedFolderName = PersistenceUtils.fixFileName(folderName);
@@ -89,50 +100,54 @@ public class FPSMDataManager {
     // 同步保存数据
     @SuppressWarnings("unchecked")
     public <T> void saveData(T data, String fileName, boolean overwrite) {
-        if (!registry.containsKey(data.getClass())) return;
-        DataEntry<T> entry = getEntry((Class<T>) data.getClass());
-        if (databaseDefinitions) {
-            documentStore.transact(transaction -> {
-                String namespace = namespace(entry);
-                String key = PersistenceUtils.fixFileName(fileName);
-                T merged = overwrite ? data : transaction.get(namespace, key)
-                        .map(entry.holder::decodeFromJson).map(old -> entry.holder.mergeHandler(old, data)).orElse(data);
-                transaction.put(namespace, key, entry.holder.encodeToJson(merged));
-                return null;
-            });
-            return;
+        try (BaseMap.LegacyPersistence legacyPersistence = data instanceof BaseMap map ? map.openLegacyPersistence() : null) {
+            if (!registry.containsKey(data.getClass())) return;
+            DataEntry<T> entry = getEntry((Class<T>) data.getClass());
+            if (databaseDefinitions) {
+                documentStore.transact(transaction -> {
+                    String namespace = namespace(entry);
+                    String key = PersistenceUtils.fixFileName(fileName);
+                    T merged = overwrite ? data : transaction.get(namespace, key)
+                            .map(existing -> entry.holder.mergeForDatabaseSave(existing, data)).orElse(data);
+                    transaction.put(namespace, key, entry.holder.encodeToJson(merged));
+                    return null;
+                });
+                return;
+            }
+            File file = getSaveFolder(data);
+            entry.holder.getWriter(data, fileName, overwrite).accept(file);
         }
-        File file = getSaveFolder(data);
-        entry.holder.getWriter(data, fileName, overwrite).accept(file);
     }
 
     /** Writes editor-managed definitions without swallowing disk failures. */
     @SuppressWarnings("unchecked")
     public <T> void saveDataAtomic(T data, String fileName) {
-        DataEntry<T> entry = getEntry((Class<T>) data.getClass());
-        if (databaseDefinitions) {
-            saveData(data, fileName, true);
-            return;
-        }
-        Path folder = getSaveFolder(entry).toPath();
-        Path temporary = null;
-        try {
-            Files.createDirectories(folder);
-            Path destination = folder.resolve(PersistenceUtils.fixFileName(fileName) + "." + entry.holder.getFileType());
-            temporary = Files.createTempFile(folder, "definition-", ".tmp");
-            Files.writeString(temporary, GSON.toJson(entry.holder.encodeToJson(data)));
-            try {
-                Files.move(temporary, destination, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException unsupported) {
-                Files.move(temporary, destination, StandardCopyOption.REPLACE_EXISTING);
+        try (BaseMap.LegacyPersistence legacyPersistence = data instanceof BaseMap map ? map.openLegacyPersistence() : null) {
+            DataEntry<T> entry = getEntry((Class<T>) data.getClass());
+            if (databaseDefinitions) {
+                saveData(data, fileName, true);
+                return;
             }
-        } catch (IOException failure) {
-            throw new DataPersistenceException("Failed to save definition: " + fileName, failure);
-        } finally {
-            if (temporary != null) {
+            Path folder = getSaveFolder(entry).toPath();
+            Path temporary = null;
+            try {
+                Files.createDirectories(folder);
+                Path destination = folder.resolve(PersistenceUtils.fixFileName(fileName) + "." + entry.holder.getFileType());
+                temporary = Files.createTempFile(folder, "definition-", ".tmp");
+                Files.writeString(temporary, GSON.toJson(entry.holder.encodeToJson(data)));
                 try {
-                    Files.deleteIfExists(temporary);
-                } catch (IOException ignored) {}
+                    Files.move(temporary, destination, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException unsupported) {
+                    Files.move(temporary, destination, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } catch (IOException failure) {
+                throw new DataPersistenceException("Failed to save definition: " + fileName, failure);
+            } finally {
+                if (temporary != null) {
+                    try {
+                        Files.deleteIfExists(temporary);
+                    } catch (IOException ignored) {}
+                }
             }
         }
     }

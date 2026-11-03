@@ -3,6 +3,7 @@ package net.ptcrys.fpsmatch.core.capability;
 import net.ptcrys.fpsmatch.FPSMatch;
 import net.ptcrys.fpsmatch.core.capability.map.MapCapability;
 import net.ptcrys.fpsmatch.core.capability.team.TeamCapability;
+import net.ptcrys.fpsmatch.core.map.MapConstructionScope;
 
 import net.minecraft.network.FriendlyByteBuf;
 
@@ -28,7 +29,7 @@ public class FPSMCapabilityManager {
 
     /**
      * 注册能力工厂
-     * 
+     *
      * @param capabilityClass 能力类型
      * @param factory         能力工厂
      * @param <H>             持有者类型
@@ -95,7 +96,7 @@ public class FPSMCapabilityManager {
 
     /**
      * 为持有者创建能力实例
-     * 
+     *
      * @param holder          能力持有者
      * @param capabilityClass 能力类型
      * @return 能力实例（若工厂存在则返回）
@@ -131,6 +132,20 @@ public class FPSMCapabilityManager {
     }
 
     public static <T extends FPSMCapability<?>> Optional<Class<T>> getRegisteredCapabilityClassByFormated(String className, Class<T> format) {
+        if (MapConstructionScope.isConstructing()) {
+            List<Class<? extends FPSMCapability<?>>> matches = getRegisteredCapabilities().stream()
+                    .filter(clazz -> clazz.getSimpleName().equals(className))
+                    .distinct()
+                    .toList();
+            if (matches.size() != 1) {
+                throw new IllegalStateException("Expected exactly one registered capability named " + className + ", found " + matches.size());
+            }
+            Class<? extends FPSMCapability<?>> capabilityClass = matches.get(0);
+            if (!format.isAssignableFrom(capabilityClass)) {
+                throw new IllegalStateException("Capability " + capabilityClass.getName() + " is not assignable to " + format.getName());
+            }
+            return Optional.of((Class<T>) capabilityClass);
+        }
         Optional<Class<? extends FPSMCapability<?>>> cap = getCapabilityClassByName(className);
         if (cap.isPresent() && format.isAssignableFrom(cap.get())) {
             return Optional.of((Class<T>) cap.get());
@@ -141,7 +156,7 @@ public class FPSMCapabilityManager {
 
     /**
      * 从网络缓冲区创建同步能力实例
-     * 
+     *
      * @param holder    能力持有者
      * @param className 能力类名
      * @param buf       网络缓冲区

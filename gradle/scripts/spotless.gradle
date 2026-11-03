@@ -7,6 +7,7 @@ spotless {
         removeUnusedImports('cleanthat-javaparser-unnecessaryimport')
         endWithNewline()
         eclipse('4.31').configFile(file("$projectDir/gradle/spotless/spotless.eclipseformat.xml"))
+        trimTrailingWhitespace()
     }
     kotlin {
         target 'src/main/java/**/*.kt'

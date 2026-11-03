@@ -1,0 +1,57 @@
+// Explicit development entry point. This script is absent from normal production builds.
+import java.nio.file.Path
+import java.nio.file.Files
+
+gradle.afterProject { p ->
+    if (p != p.rootProject || p.projectDir.canonicalFile != new File('F:/BlockOffensive/FPSMatch').canonicalFile) {
+        return
+    }
+    def requested = gradle.startParameter.taskNames.collect { it.tokenize(':').last() }
+    def allowed = ['compileEditorFontSmokeJava', 'processEditorFontSmokeResources', 'runEditorFontSmoke']
+    if (requested.isEmpty() || requested.any { !allowed.contains(it) }) {
+        throw new GradleException('Font probe init accepts only its explicit compile/resource/run tasks')
+    }
+    def rawGameDir = p.findProperty('editorFontSmokeGameDir')
+    if (rawGameDir == null) {
+        throw new GradleException('Supply -PeditorFontSmokeGameDir inside the font-client-smoke artifact root')
+    }
+    Path artifactRoot = new File(p.rootDir, '../.local-artifacts/world-editor/rewrite/font-client-smoke').canonicalFile.toPath()
+    Path gameDir = new File(rawGameDir.toString()).canonicalFile.toPath()
+    if (!gameDir.startsWith(artifactRoot) || gameDir == artifactRoot || gameDir.fileName.toString() != 'game') {
+        throw new GradleException('Font probe requires a separate game directory inside its artifact root')
+    }
+    // Prepared bootstrap/options are allowed; any evidence of a previous execution is refused.
+    if (Files.exists(gameDir.parent.resolve('results')) || Files.exists(gameDir.resolve('logs'))
+            || Files.exists(gameDir.resolve('saves')) || Files.exists(gameDir.resolve('mcagent'))
+            || Files.exists(gameDir.parent.resolve('run.started'))) {
+        throw new GradleException('Font probe requires a fresh, never-run game directory')
+    }
+    def probe = p.sourceSets.create('editorFontSmoke') {
+        java.setSrcDirs(['src/test/java/net/ptcrys/fpsmatch/editor/core/fontprobe'])
+        resources.setSrcDirs([])
+        compileClasspath += p.sourceSets.main.compileClasspath
+        runtimeClasspath += p.sourceSets.main.runtimeClasspath
+    }
+    p.tasks.named(probe.compileJavaTaskName) {
+        options.release = 17
+        options.compilerArgs.addAll(['-Xlint:all', '-Werror', '-proc:none'])
+    }
+    p.legacyForge.mods.named('fpsmatch') { sourceSet(probe) }
+    p.legacyForge.runs.create('editorFontSmoke') {
+        client()
+        gameDirectory = gameDir.toFile()
+        programArguments.addAll('--width', '1600', '--height', '900')
+        systemProperty 'editorFontSmoke.enabled', 'true'
+        systemProperty 'editorFontSmoke.output', gameDir.parent.resolve('results').toString()
+        systemProperty 'mixin.debug.verbose', 'true'
+        systemProperty 'mixin.debug.export', 'true'
+        systemProperty 'mcagent.testMode', 'false'
+        jvmArgument '-javaagent:C:/Users/jumao/.codex/skills/minecraft-client-agent/assets/project/build/libs/mcagent-agent.jar=gameDir=' + gameDir + ';minecraftVersion=1.20.1;target=forge'
+    }
+    p.tasks.named('runEditorFontSmoke').configure {
+        doFirst {
+            // Atomically reserve this one-shot run before its JVM may start.
+            Files.createFile(gameDir.parent.resolve('run.started'))
+        }
+    }
+}

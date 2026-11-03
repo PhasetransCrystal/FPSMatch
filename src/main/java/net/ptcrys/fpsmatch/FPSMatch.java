@@ -27,10 +27,30 @@ import net.ptcrys.fpsmatch.compat.cloth.FPSMenuIntegration;
 import net.ptcrys.fpsmatch.compat.impl.FPSMImpl;
 import net.ptcrys.fpsmatch.compat.tacz.TACZBootstrap;
 import net.ptcrys.fpsmatch.config.FPSMConfig;
+import net.ptcrys.fpsmatch.editor.api.EditorId;
+import net.ptcrys.fpsmatch.editor.api.extensions.ExtensionRegistry;
+import net.ptcrys.fpsmatch.editor.api.registry.ApiVersion;
+import net.ptcrys.fpsmatch.editor.api.registry.ModuleSpec;
+import net.ptcrys.fpsmatch.editor.common.domain.host.v1201.item.BasicNativeItems;
+import net.ptcrys.fpsmatch.editor.common.domain.host.v1201.item.LrNativeItems;
+import net.ptcrys.fpsmatch.editor.common.domain.host.v1201.item.TaczNativeItems;
+import net.ptcrys.fpsmatch.editor.common.domain.item.BasicItemModules;
+import net.ptcrys.fpsmatch.editor.common.domain.map.EmptyItem;
+import net.ptcrys.fpsmatch.editor.common.domain.map.MapDomainValues;
+import net.ptcrys.fpsmatch.editor.common.domain.spatial.SpatialValues;
+import net.ptcrys.fpsmatch.editor.common.domain.weapon.WeaponItemValues;
+import net.ptcrys.fpsmatch.editor.common.domain.weapon.assets.BuiltinWeaponPackFormat;
+import net.ptcrys.fpsmatch.editor.common.domain.weapon.assets.LrBuiltinAssetFormat;
+import net.ptcrys.fpsmatch.editor.common.host.forge.EditorRegistrationEvent;
+import net.ptcrys.fpsmatch.editor.common.host.forge.ForgeEditorPlatform;
+import net.ptcrys.fpsmatch.editor.common.host.minecraft.v1201.item.NativeItemFactories;
+import net.ptcrys.fpsmatch.editor.common.host.minecraft.v1201.item.NativeItemFactory;
 
+import net.minecraft.SharedConstants;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
@@ -38,6 +58,7 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -53,17 +74,17 @@ import org.slf4j.LoggerFactory;
 /*
  * <FPSMatch>
  * Copyright (C) <2025> <SSOrangeCATY>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
@@ -77,6 +98,8 @@ public class FPSMatch {
     public static final SimpleChannel INSTANCE = PACKET_REGISTER.getChannel();
     public static final String DEBUG_SYS_PROP = "fpsm.debug";
     private static volatile boolean DEBUG_ENABLED = Boolean.parseBoolean(System.getProperty(DEBUG_SYS_PROP, "false"));
+    private final ForgeEditorPlatform editorPlatform = new ForgeEditorPlatform(new ApiVersion(1, 0));
+    private final String editorBuildVersion;
 
     @SuppressWarnings("removal")
     public FPSMatch() {
@@ -85,6 +108,9 @@ public class FPSMatch {
 
     public FPSMatch(FMLJavaModLoadingContext context) {
         IEventBus modEventBus = context.getModEventBus();
+        editorBuildVersion = context.getContainer().getModInfo().getVersion().toString();
+        modEventBus.addListener(this::registerEditor);
+        editorPlatform.attach(modEventBus);
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::onRegisterPackets);
         modEventBus.addListener(this::onEnqueue);
@@ -102,6 +128,53 @@ public class FPSMatch {
         if (FPSMBukkit.isBukkitEnvironment()) {
             FPSMBukkit.register();
         }
+    }
+
+    /** The distribution's frozen editor registry, available after successful load-complete work. */
+    public ExtensionRegistry editorRegistry() {
+        return editorPlatform.registry();
+    }
+
+    private void registerEditor(EditorRegistrationEvent event) {
+        // The stable resource descriptor protocol owner, supplied by this FPSMatch distribution.
+        // This is a source module and does not add a Forge mod entry.
+        event.registry().addModule(new ModuleSpec(EditorId.parse("editor:resources"), "1", new ApiVersion(1, 0),
+                java.util.Set.of(), java.util.Set.of()));
+        SpatialValues.register(event.registry(), editorBuildVersion);
+        MapDomainValues.register(event.registry(), editorBuildVersion);
+        BasicItemModules.registerVanilla(event.registry(), editorBuildVersion,
+                SharedConstants.getCurrentVersion().getName());
+        BasicItemModules.registerFpsMatch(event.registry(), editorBuildVersion);
+        NativeItemFactories.register(event.registry(), MapDomainValues.EMPTY_ITEM,
+                MapDomainValues.MODULE, new NativeItemFactory<>(EmptyItem.class, true, ignored -> ItemStack.EMPTY));
+        NativeItemFactories.register(event.registry(), BasicItemModules.VANILLA_ITEM,
+                BasicItemModules.VANILLA_MODULE, BasicNativeItems.factory());
+        NativeItemFactories.register(event.registry(), BasicItemModules.FPSMATCH_ITEM,
+                BasicItemModules.FPSMATCH_MODULE, BasicNativeItems.factory());
+        ModList.get().getModContainerById("csgrenades").ifPresent(container -> {
+            BasicItemModules.registerCsGrenades(event.registry(), editorBuildVersion,
+                    container.getModInfo().getVersion().toString());
+            NativeItemFactories.register(event.registry(), BasicItemModules.CSGRENADES_ITEM,
+                    BasicItemModules.CSGRENADES_MODULE, BasicNativeItems.factory());
+        });
+        ModList.get().getModContainerById("tacz").ifPresent(container -> {
+            WeaponItemValues.registerTacz(event.registry(), editorBuildVersion,
+                    container.getModInfo().getVersion().toString());
+            BuiltinWeaponPackFormat.registerTacz(event.registry());
+            net.ptcrys.fpsmatch.editor.common.domain.weapon.assets.TaczBuiltinAssetFormat.register(event.registry());
+            net.ptcrys.fpsmatch.editor.common.host.minecraft.v1201.resources.TaczResourceImporter.register(event.registry());
+            NativeItemFactories.register(event.registry(), WeaponItemValues.TACZ_GUN,
+                    WeaponItemValues.TACZ_MODULE, TaczNativeItems.factory());
+        });
+        ModList.get().getModContainerById("lrtactical").ifPresent(container -> {
+            WeaponItemValues.registerLrTactical(event.registry(), editorBuildVersion,
+                    container.getModInfo().getVersion().toString());
+            BuiltinWeaponPackFormat.registerLrTactical(event.registry());
+            LrBuiltinAssetFormat.register(event.registry());
+            net.ptcrys.fpsmatch.editor.common.host.minecraft.v1201.resources.LrResourceImporter.register(event.registry());
+            NativeItemFactories.register(event.registry(), WeaponItemValues.LR_MELEE,
+                    WeaponItemValues.LR_MODULE, LrNativeItems.factory());
+        });
     }
 
     @SubscribeEvent

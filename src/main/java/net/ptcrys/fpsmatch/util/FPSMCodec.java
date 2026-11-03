@@ -1,6 +1,7 @@
 package net.ptcrys.fpsmatch.util;
 
 import net.ptcrys.fpsmatch.core.persistence.DataPersistenceException;
+import net.ptcrys.fpsmatch.core.persistence.RuntimeItemStackCodec;
 
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
@@ -15,7 +16,7 @@ public class FPSMCodec {
     }
 
     public static <T> T decodeFromJson(Codec<T> codec, JsonElement json) {
-        return codec.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> {
+        return RuntimeItemStackCodec.owned(codec).decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> {
             throw new DataPersistenceException(e);
         }).getFirst();
     }

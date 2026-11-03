@@ -40,7 +40,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
 
     /**
      * 注册商店类型
-     * 
+     *
      * @param typeId    类型标识符
      * @param typeClass 类型类
      */
@@ -120,7 +120,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
     /**
      * 存储所有玩家的商店数据，键为玩家 UUID，值为对应的 ShopData。
      */
-    public final Map<UUID, ShopData<T>> playersData = new HashMap<>();
+    public final Map<UUID, ShopData<T>> playersData;
 
     /**
      * FPSMShop 的编解码器，用于序列化和反序列化商店配置。
@@ -165,6 +165,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      * @param startMoney 玩家初始金钱
      */
     public FPSMShop(Class<T> enumClass, String name, Map<T, ArrayList<ShopSlot>> data, int startMoney) {
+        this.playersData = new HashMap<>();
         this.enumClass = enumClass;
         this.typeCount = getEnums().size();
         this.defaultShopData = data;
@@ -182,6 +183,20 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      * @param startMoney 玩家初始金钱
      */
     public FPSMShop(Class<T> enumClass, String name, Map<T, ArrayList<ShopSlot>> data, int startMoney, List<AreaData> areas) {
+        this.playersData = new HashMap<>();
+        this.enumClass = enumClass;
+        this.typeCount = getEnums().size();
+        this.defaultShopData = data;
+        this.startMoney = startMoney;
+        this.name = name;
+        this.codec = withCodec(enumClass);
+        this.areas = areas;
+    }
+
+    /** Constructor seam for a runtime shop's immutable configuration and player view. */
+    protected FPSMShop(Class<T> enumClass, String name, Map<T, ArrayList<ShopSlot>> data,
+                       int startMoney, List<AreaData> areas, Map<UUID, ShopData<T>> playersData) {
+        this.playersData = playersData;
         this.enumClass = enumClass;
         this.typeCount = getEnums().size();
         this.defaultShopData = data;

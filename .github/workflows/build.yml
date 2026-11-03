@@ -6,10 +6,13 @@ on:
     branches:
       - master
       - main
+      - dev
   push:
     branches:
       - master
       - main
+      - dev
+      - 'codex/studio-*'
 
 concurrency:
   group: build-${{ github.ref }}

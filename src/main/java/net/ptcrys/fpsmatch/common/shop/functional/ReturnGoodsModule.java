@@ -41,7 +41,7 @@ public class ReturnGoodsModule implements ListenerModule {
      * 获取模块名称。
      * <p>
      * 该模块的名称为 "returnGoods"，表示其功能是处理退货逻辑。
-     * 
+     *
      * @return 模块名称
      */
     @Override
@@ -52,7 +52,7 @@ public class ReturnGoodsModule implements ListenerModule {
     /**
      * 获取模块优先级。
      * <p>
-     * 
+     *
      * @return 模块优先级
      */
     @Override

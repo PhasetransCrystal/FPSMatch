@@ -47,10 +47,10 @@ public class VoteObj {
 
     /**
      * 弃权计票策略。
-     * 
+     *
      * {@link #COUNT_AS_NO} —— 弃权视为反对：门槛分母为全部在线有资格者（历史默认行为）。
      * {@link #IGNORE} —— 弃权忽略：超时结算时分母只算已投票人数。
-     * 
+     *
      */
     public enum AbstentionPolicy {
         COUNT_AS_NO,
@@ -141,7 +141,7 @@ public class VoteObj {
 
     /**
      * 自动检查投票状态并执行相应操作
-     * 
+     *
      * @return true 如果投票已结束，false 如果投票仍在进行中
      */
     public boolean tick() {
