@@ -104,17 +104,22 @@ public class ConfigManager {
 
     public static Path getGlobalDataPath() {
         String pathStr = config.get("globalDataPath");
-        if (pathStr == null) {
-            // 如果配置缺失，创建默认路径
-            pathStr = CONFIG_DIR.resolve("global").toString();
-            config.put("globalDataPath", pathStr);
+        Path defaultPath = CONFIG_DIR.resolve("global");
+        boolean missingConfiguration = pathStr == null || pathStr.isBlank();
+        if (missingConfiguration) {
+            pathStr = defaultPath.toString();
+        }
+        Path resolved = GlobalDataPathResolver.resolve(pathStr, defaultPath);
+        Path configured = GlobalDataPathResolver.safeAbsolutePath(pathStr);
+        if (missingConfiguration || !resolved.equals(configured)) {
+            config.put("globalDataPath", resolved.toString());
             try {
                 saveConfig();
-            } catch (Exception e) {
-                throw new DataPersistenceException("Failed to save default globalDataPath", e);
+            } catch (RuntimeException failure) {
+                FPSMatch.LOGGER.warn("Failed to persist the fallback global data path; continuing with {}", resolved, failure);
             }
         }
-        return Paths.get(pathStr);
+        return resolved;
     }
 
     /**
