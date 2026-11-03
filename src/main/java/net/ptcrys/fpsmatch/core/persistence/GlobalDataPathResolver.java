@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 final class GlobalDataPathResolver {
+
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private GlobalDataPathResolver() {}
